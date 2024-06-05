@@ -26,6 +26,16 @@ You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
 
 
 
+## Dealing with sources
+
+# Annotate sources
+
+Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoUGOQyRI6HuUisTf-4wTsWY/edit#gid=0
+
+
+# Download sources
+
+
 To use the `sources_downloader.py` script to download PDFs listed in the `sources.csv` file into the `/data` folder (which is gitignored), follow these steps:
 
 1. Ensure that you have the `requests` library installed in your Python environment. If not, you can install it using pip:
