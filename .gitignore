@@ -166,3 +166,6 @@ cython_debug/
 
 # Ignore ragatouille indices
 .ragatouille/
+
+# Concatenated Python code
+concatenated_python_code.py

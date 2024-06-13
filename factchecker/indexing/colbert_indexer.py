@@ -47,4 +47,8 @@ class ColBERTIndexer(BaseIndexer):
             max_document_length=self.max_document_length,
             split_documents=self.split_documents
         )
-        print(f"Index created at .ragatouille/colbert/indexes/{self.index_name}")
+
+        # Store the path to the created index instead of the index object as implemented in the base class
+        index_path = f".ragatouille/colbert/indexes/{self.index_name}"
+        self.index = index_path
+        print(f"Index created at {index_path}")
