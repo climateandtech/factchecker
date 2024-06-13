@@ -1,5 +1,5 @@
 
-import fitz  # PyMuPDF
+import pymupdf 
 
 def transform_pdf_to_txt(pdf_path):
     """
@@ -13,7 +13,7 @@ def transform_pdf_to_txt(pdf_path):
     """
     text = ""
     try:
-        doc = fitz.open(pdf_path)
+        doc = pymupdf.open(pdf_path)
         for page in doc:
             text += page.get_text()
     except Exception as e:

@@ -12,26 +12,26 @@ class ColBERTIndexer(BaseIndexer):
         self.split_documents = self.options.pop('split_documents', True) # Whether to split documents into chunks
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0') # The checkpoint of the pre-trained ColBERT model
     
-        def load_and_transform_files(self):
-            # Check if files are provided
-            if not self.files:
-                # Load files from source_directory using SimpleDirectoryReader
-                self.files = SimpleDirectoryReader(self.source_directory).load_data()
-            
-            # Ensure documents are in text format
-            documents = []
-            for file in self.files:
-                if isinstance(file, str) and file.endswith('.pdf'):
-                    documents.append(transform_pdf_to_txt(file))
-                elif isinstance(file, str) and file.endswith('.txt'):
-                    with open(file, 'r') as f:
-                        documents.append(f.read())
-                elif hasattr(file, 'text'):
-                    documents.append(file.text)
-                else:
-                    print(f"Unsupported file format: {file}")
-            
-            return documents
+    def load_and_transform_files(self):
+        # Check if files are provided
+        if not self.files:
+            # Load files from source_directory using SimpleDirectoryReader
+            self.files = SimpleDirectoryReader(self.source_directory).load_data()
+        
+        # Ensure documents are in text format
+        documents = []
+        for file in self.files:
+            if isinstance(file, str) and file.endswith('.pdf'):
+                documents.append(transform_pdf_to_txt(file))
+            elif isinstance(file, str) and file.endswith('.txt'):
+                with open(file, 'r') as f:
+                    documents.append(f.read())
+            elif hasattr(file, 'text'):
+                documents.append(file.text)
+            else:
+                print(f"Unsupported file format: {file}")
+        
+        return documents
     
     def create_index(self):
         # Load and transform the files to a list of Strings
