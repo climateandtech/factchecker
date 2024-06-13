@@ -1,4 +1,4 @@
-
+import os
 from factchecker.indexing.base import BaseIndexer
 from ragatouille import RAGPretrainedModel
 from factchecker.tools.pdf_transformer import transform_pdf_to_txt
@@ -7,18 +7,17 @@ from llama_index.core import SimpleDirectoryReader
 class ColBERTIndexer(BaseIndexer):
     def __init__(self, options=None):
         super().__init__(options)
-        self.index_name = self.options.pop('index_name', 'colbert_index') # Name of the index that will be built
-        self.max_document_length = self.options.pop('max_document_length', 180) # The maximum length of a document. Documents longer than this will be split into chunks.
-        self.split_documents = self.options.pop('split_documents', True) # Whether to split documents into chunks
-        self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0') # The checkpoint of the pre-trained ColBERT model
-    
+        self.index_name = self.options.pop('index_name', 'colbert_index')
+        self.max_document_length = self.options.pop('max_document_length', 180)
+        self.split_documents = self.options.pop('split_documents', True)
+        self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
+        self.index_path = f".ragatouille/colbert/indexes/{self.index_name}"
+        self.index = self.index_path if os.path.exists(self.index_path) else None
+
     def load_and_transform_files(self):
-        # Check if files are provided
         if not self.files:
-            # Load files from source_directory using SimpleDirectoryReader
             self.files = SimpleDirectoryReader(self.source_directory).load_data()
-        
-        # Ensure documents are in text format
+
         documents = []
         for file in self.files:
             if isinstance(file, str) and file.endswith('.pdf'):
@@ -32,23 +31,19 @@ class ColBERTIndexer(BaseIndexer):
                 print(f"Unsupported file format: {file}")
         
         return documents
-    
+
     def create_index(self):
-        # Load and transform the files to a list of Strings
+        if self.index is not None:
+            print(f"Index already exists at {self.index_path}")
+            return
+
         documents = self.load_and_transform_files()
-        
-        # Load the pre-trained ColBERT model
         rag = RAGPretrainedModel.from_pretrained(self.checkpoint)
-        
-        # Index the documents
         rag.index(
             collection=documents,
             index_name=self.index_name,
             max_document_length=self.max_document_length,
             split_documents=self.split_documents
         )
-
-        # Store the path to the created index instead of the index object as implemented in the base class
-        index_path = f".ragatouille/colbert/indexes/{self.index_name}"
-        self.index = index_path
-        print(f"Index created at {index_path}")
+        self.index = self.index_path
+        print(f"Index created at {self.index_path}")
