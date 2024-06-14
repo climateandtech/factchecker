@@ -5,14 +5,14 @@ import os
 class ColBERTRetriever(BaseRetriever):
     def __init__(self, indexer, options=None):
         super().__init__(indexer, options)
-        self.index_path = indexer.index
-        self.retriever = None  # Initialize retriever attribute
+        self.index_path = self.indexer.index_path
+        self.retriever = None
 
     def create_retriever(self):
         if not os.path.exists(self.index_path):
             print(f"Index not found at {self.index_path}. Creating index...")
             self.indexer.create_index()
-            self.index_path = self.indexer.index
+            self.index_path = self.indexer.index_path
         else:
             print(f"Index already exists at {self.index_path}")
         
