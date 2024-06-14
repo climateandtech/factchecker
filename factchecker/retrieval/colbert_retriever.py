@@ -9,7 +9,7 @@ class ColBERTRetriever(BaseRetriever):
         self.retriever = None
 
     def create_retriever(self):
-        if not os.path.exists(self.index_path):
+        if not self.indexer.check_index_exists():
             print(f"Index not found at {self.index_path}. Creating index...")
             self.indexer.create_index()
             self.index_path = self.indexer.index_path

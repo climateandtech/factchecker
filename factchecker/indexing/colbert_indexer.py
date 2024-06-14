@@ -12,7 +12,7 @@ class ColBERTIndexer(BaseIndexer):
         self.split_documents = self.options.pop('split_documents', True)
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
         self.index_path = f".ragatouille/colbert/indexes/{self.index_name}" # Default path to the indexes created by RAGatouille
-        self.index_exists = os.path.exists(self.index_path)
+        self.index_exists = self.check_index_exists()
 
     def load_and_transform_files(self):
         # Load files from the source directory if no files are provided in the options
@@ -35,6 +35,14 @@ class ColBERTIndexer(BaseIndexer):
                 print(f"Unsupported file format: {file}")
         
         return documents
+    
+    def check_index_exists(self):
+        if not os.path.exists(self.index_path):
+            return False
+
+        # TODO: check if more checks are needed to ensure the index is valid
+
+        return True
 
     def create_index(self):
         if self.index_exists:
