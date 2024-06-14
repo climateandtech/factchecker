@@ -4,10 +4,10 @@ from factchecker.retrieval.colbert_retriever import ColBERTRetriever
 def main():
     indexer_options = {
         'source_directory': 'data',
-        'index_name': 'colbert_index',
-        'max_document_length': 180,
-        'split_documents': True,
-        'checkpoint': 'colbert-ir/colbertv2.0'
+        'index_name': 'colbert_test_index', # Name of the index which will be stored in .ragatouille/colbert/indexes
+        'max_document_length': 180, # Longer documents will be split into chunks
+        'split_documents': True, # Split documents into chunks
+        'checkpoint': 'colbert-ir/colbertv2.0'  # Pretrained model checkpoint
     }
     retriever_options = {
     }
@@ -24,3 +24,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
