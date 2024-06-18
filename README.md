@@ -65,6 +65,9 @@ To use the `sources_downloader.py` script to download PDFs listed in the `source
 Note: The `/data` folder is specified in the `.gitignore` file, so the downloaded PDFs will not be tracked by Git.
 
 
+## Run Example
+
+| python3 -m factchecker.experiments.evidence_evaluation_1
 
 
 
