@@ -14,27 +14,6 @@ class ColBERTIndexer(BaseIndexer):
         self.index_path = f".ragatouille/colbert/indexes/{self.index_name}" # Default path to the indexes created by RAGatouille
         self.index_exists = self.check_index_exists()
 
-    def load_and_transform_files(self):
-        # Load files from the source directory if no files are provided in the options
-        if not self.files:
-            self.files = SimpleDirectoryReader(self.source_directory).load_data()
-
-        documents = []
-        for file in self.files:
-            # Transform PDF files to text
-            if isinstance(file, str) and file.endswith('.pdf'):
-                documents.append(transform_pdf_to_txt(file))
-            # Load text files
-            elif isinstance(file, str) and file.endswith('.txt'):
-                with open(file, 'r') as f:
-                    documents.append(f.read())
-            # Load text from attribute "text" if it exists (e.g. from object returned by SimpleDirectoryReader)
-            elif hasattr(file, 'text'):
-                documents.append(file.text)
-            else:
-                print(f"Unsupported file format: {file}")
-        
-        return documents
     
     def check_index_exists(self):
         if not os.path.exists(self.index_path):
@@ -49,10 +28,13 @@ class ColBERTIndexer(BaseIndexer):
             print(f"Index already exists at {self.index_path}")
             return
 
-        documents = self.load_and_transform_files()
         rag = RAGPretrainedModel.from_pretrained(self.checkpoint)
+
+        # Assuming `documents` is a list of llamaindex documents
+        texts = [document.text for document in self.documents if hasattr(document, 'text')]
+
         rag.index(
-            collection=documents,
+            collection=texts,
             index_name=self.index_name,
             max_document_length=self.max_document_length,
             split_documents=self.split_documents
