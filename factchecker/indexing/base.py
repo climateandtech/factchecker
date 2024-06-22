@@ -13,11 +13,11 @@ class BaseIndexer:
         self.transformations = self.options.pop('transformations', [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)])
 
     def load_documents(self):
-        # Load files from the source directory if no files are provided in the options
         if not self.files:
+            # Load files from the source directory if no files are provided in the options
             return SimpleDirectoryReader(self.source_directory).load_data()
         else:
-            # return [SimpleDirectoryReader(file).load_data() for file in self.files if SimpleDirectoryReader(file).load_data()]
+            # Load files from the provided list of files
             return SimpleDirectoryReader(input_files=self.files).load_data() 
 
     def create_index(self):
