@@ -30,7 +30,7 @@ class ColBERTIndexer(BaseIndexer):
 
         rag = RAGPretrainedModel.from_pretrained(self.checkpoint)
 
-        # Assuming `documents` is a list of llamaindex documents
+        # Extract text from Document objects – Assuming `documents` is a list of llamaindex documents
         texts = [document.text for document in self.documents if hasattr(document, 'text')]
 
         rag.index(
