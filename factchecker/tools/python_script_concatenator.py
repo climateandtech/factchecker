@@ -1,5 +1,8 @@
 import os
 
+# Concatenate all Python files in a directory and its subdirectories into a single file
+# To use this script: python -m factchecker.tools.python_script_concatenator
+
 def concatenate_python_files(source_dir, output_file):
     '''
     Concatenate all Python files in a directory and its subdirectories into a single file.
