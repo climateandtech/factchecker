@@ -5,7 +5,7 @@ from llama_index.core import SimpleDirectoryReader
 class AbstractIndexer(ABC):
     def __init__(self, options=None):
         self.options = options if options is not None else {}
-        self.index_name = self.options.get('index_name', 'default_index')
+        self.index_name = self.options.pop('index_name', 'default_index')
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
         self.documents = self.load_documents()
@@ -27,13 +27,9 @@ class AbstractIndexer(ABC):
         pass
 
     @abstractmethod
-    def add_document_to_index(self, document):
+    def insert_document_to_index(self, document):
         pass
 
     @abstractmethod
-    def remove_document_from_index(self, document_id):
-        pass
-
-    @abstractmethod
-    def update_document_in_index(self, document):
+    def delete_document_from_index(self, document_id):
         pass
