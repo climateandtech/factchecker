@@ -34,3 +34,8 @@ class AbstractIndexer(ABC):
     @abstractmethod
     def delete_document_from_index(self, document_id):
         pass
+
+    # # method to save index. for future implementation?
+    # @abstractmethod
+    # def persist_index(self):
+    #     pass

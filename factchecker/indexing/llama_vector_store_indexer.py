@@ -23,7 +23,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             embed_model=self.embedding_model,
             transformations=self.transformations
         )
-        print(f"Index created: {self.index_name}")
+        print(f"Index created: {self.index}")
 
     def insert_document_to_index(self, document):
         print(f"Adding document to Llama Vector Store index: {self.index_name}")
