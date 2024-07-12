@@ -1,5 +1,5 @@
 # vector_store_indexer.py
-from abstract_indexer import AbstractIndexer
+from .abstract_indexer import AbstractIndexer
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.node_parser import SentenceSplitter
 
@@ -15,7 +15,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         return self.index is not None
 
     def create_index(self):
-        # Now self.options will only contain relevant options for StorageContext.from_defaults
+        # Now self.options should only contain relevant options for StorageContext.from_defaults
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
         self.index = VectorStoreIndex.from_documents(
             self.documents,
@@ -23,7 +23,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             embed_model=self.embedding_model,
             transformations=self.transformations
         )
-        print(f"Index created: {self.index}")
+        print(f"Index created: {self.index_name}")
 
     def insert_document_to_index(self, document):
         print(f"Adding document to Llama Vector Store index: {self.index_name}")
@@ -34,14 +34,16 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         self.index.delete(document_id)
 
 
-# ---- quick testing in notebook mode
+# # ---- quick testing
 
 # indexer_options = {
-#     'source_directory': '../../data',
-#     'index_name': 'vector_store_test_index',
-#     'show_progress': True
+#     'index_name': 'quick_test_vector_store_index',
+#     'source_directory': 'data',
+#     'show_progress': True,
 # }
+
 # indexer = LlamaVectorStoreIndexer(indexer_options)
 # indexer.create_index()
 # retriever = indexer.index.as_retriever()
-# retriever.retrieve("carbon emissions")
+# response = retriever.retrieve('climate change is real and caused by humans')
+# print(f'Retrieved documents: {response}')
