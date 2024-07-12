@@ -10,7 +10,6 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         self.vector_store = self.options.pop('vector_store', None)
         self.transformations = self.options.pop('transformations', [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)])
         self.show_progress = self.options.pop('show_progress', False)
-        self.index = None
 
     def check_index_exists(self):
         return self.index is not None
@@ -35,7 +34,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         self.index.delete(document_id)
 
 
-# ---- testing
+# ---- quick testing in notebook mode
 
 # indexer_options = {
 #     'source_directory': '../../data',
