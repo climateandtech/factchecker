@@ -20,6 +20,8 @@ class BaseIndexer:
             # Load files from the provided list of files
             return SimpleDirectoryReader(input_files=self.files).load_data() 
 
+    def store():
+
     def create_index(self):
         # Now self.options will only contain relevant options for StorageContext.from_defaults
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)

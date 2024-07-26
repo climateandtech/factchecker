@@ -44,8 +44,6 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         # rag.remove(document_id, index_name=self.index_name)
         pass # TODO: implement
 
-
-
 # ---- quick testing in notebook mode
 
 
