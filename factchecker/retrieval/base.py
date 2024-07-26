@@ -18,7 +18,6 @@ class BaseRetriever:
             self.create_retriever()
         # Merge options with any additional keyword arguments
         retrieve_options = {**self.options, **kwargs}
-        import pdb; pdb.set_trace()
         return self.retriever.retrieve(query)
 
 # Example usage:
