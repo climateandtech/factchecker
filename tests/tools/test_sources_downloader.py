@@ -1,14 +1,14 @@
 import os
 import pytest
 from unittest.mock import mock_open, patch
-from tools.sources_downloader import download_pdf
+from factchecker.tools.sources_downloader import download_pdf
 from unittest.mock import patch, mock_open
-from tools.sources_downloader import main
+from factchecker.tools.sources_downloader import main
 
 # Test for download_pdf function
 def test_download_pdf_success():
     # Mock the requests.get call to return a response with status_code 200
-    with patch('tools.sources_downloader.requests.get') as mock_get:
+    with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
         mock_get.return_value.status_code = 200
         mock_get.return_value.content = b'PDF content'
 
@@ -24,7 +24,7 @@ def test_download_pdf_success():
 
 
 def test_download_pdf_failure(capfd):
-    with patch('tools.sources_downloader.requests.get') as mock_get:
+    with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
         mock_get.return_value.status_code = 404
         download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
         out, _ = capfd.readouterr()
@@ -51,11 +51,11 @@ def test_output_folder_exists():
         mock_file.assert_called()  
 
 
-
 # Test the CLI argument parsing
 def test_cli_arguments():
     testargs = ["prog", "--sourcefile", "test.csv", "--rows", "1", "2", "--url_column", "test_url", "--output_folder", "test_data"]
     with patch('sys.argv', testargs):
-        with patch('tools.sources_downloader.download_from_csv') as mock_download:
+        with patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
             main()
             mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'test_data')
+
