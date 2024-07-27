@@ -1,4 +1,4 @@
-from factchecker.indexing.colbert_indexer import ColBERTIndexer
+from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
 from factchecker.retrieval.colbert_retriever import ColBERTRetriever
 
 def main():
@@ -12,7 +12,7 @@ def main():
     retriever_options = {
     }
 
-    indexer = ColBERTIndexer(indexer_options)
+    indexer = RagatouilleColBERTIndexer(indexer_options)
     retriever = ColBERTRetriever(indexer, retriever_options)
 
     query = "Climate change would have happened without humans"
