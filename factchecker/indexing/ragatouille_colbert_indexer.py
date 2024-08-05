@@ -8,6 +8,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         super().__init__(options)
         self.max_document_length = self.options.pop('max_document_length', 256)
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
+        # TODO: check if this class needs the self.index property for storing the index or if self.index could also store the path to the index
         self.index_path = f".ragatouille/colbert/indexes/{self.index_name}" # Default path to the indexes created by RAGatouille
 
     def check_index_exists(self):

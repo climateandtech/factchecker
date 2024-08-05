@@ -18,13 +18,13 @@ class AbstractIndexer(ABC):
         else:
             # Load files from the provided list of files
             return SimpleDirectoryReader(input_files=self.files).load_data()
-
+        
     @abstractmethod
-    def create_index(self, documents):
+    def check_index_exists(self):
         pass
 
     @abstractmethod
-    def check_index_exists(self):
+    def create_index(self, documents):
         pass
 
     @abstractmethod

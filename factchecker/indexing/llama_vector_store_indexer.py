@@ -1,4 +1,4 @@
-# vector_store_indexer.py
+
 from .abstract_indexer import AbstractIndexer
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.node_parser import SentenceSplitter
