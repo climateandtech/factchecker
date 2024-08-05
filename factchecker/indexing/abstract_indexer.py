@@ -1,4 +1,3 @@
-# abstract_indexer.py
 from abc import ABC, abstractmethod
 from llama_index.core import SimpleDirectoryReader
 
@@ -12,6 +11,7 @@ class AbstractIndexer(ABC):
         self.index_path = None
         self.index = None
 
+    # TODO: move this method to the beginning of create_index to avoid loading the documents multiple times if the index has already been created and stored
     def load_documents(self):
         if not self.files:
             # Load files from the source directory if no files are provided in the options

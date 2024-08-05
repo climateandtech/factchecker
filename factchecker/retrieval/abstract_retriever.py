@@ -4,10 +4,9 @@ from factchecker.indexing.abstract_indexer import AbstractIndexer
 class AbstractRetriever(ABC):
     def __init__(self, indexer: AbstractIndexer, options=None):
         self.indexer = indexer
-
         self.options = options if options is not None else {}
+        # FIXME if we have to pass options to retrieve, we need to separate the options dictionary
         self.top_k = self.options.pop('top_k', 5)
-            # FIXME if we have to pass options to retrieve, we need to separate it
         # Ensure the index is created during initialization
         self.create_index()
         self.retriever = None
