@@ -9,6 +9,7 @@ class AbstractIndexer(ABC):
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
         self.documents = self.load_documents()
+        self.index_path = None
         self.index = None
 
     def load_documents(self):
