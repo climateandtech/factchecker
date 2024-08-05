@@ -12,7 +12,7 @@ class AbstractRetriever(ABC):
         self.retriever = None
 
     def create_index(self):
-        if not hasattr(self.indexer, 'index'):
+        if self.indexer.index is None:
             self.indexer.create_index()
 
     @abstractmethod
