@@ -1,5 +1,3 @@
-# colbert_indexer.py
-import os
 from .abstract_indexer import AbstractIndexer
 from llama_index.indices.managed.colbert import ColbertIndex
 
@@ -23,7 +21,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
             self.documents,
             gpus=self.gpus,
             show_progress=self.show_progress,
-            index_name=self.index_name,
+            # index_name=self.index_name,
             )
      
         print(f"Index created at {self.index.index_path}")

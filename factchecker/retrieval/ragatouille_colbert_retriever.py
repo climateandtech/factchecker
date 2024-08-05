@@ -12,6 +12,8 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
         if not self.indexer.check_index_exists():
             print(f"Index not found at {self.indexer.index_path}. Creating index...")
             self.indexer.create_index()
+        else:
+            print(f"Index found at {self.indexer.index_path}. Using existing index for retrieval.")
         
         self.retriever = RAGPretrainedModel.from_index(self.indexer.index_path, **self.options)
 
