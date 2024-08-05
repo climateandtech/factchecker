@@ -6,7 +6,7 @@ def main():
     indexer_options = {
     }
     retriever_options = {
-        'similarity_top_k': 4,
+        'top_k': 4,
     }
 
     indexer = LlamaVectorStoreIndexer(indexer_options)

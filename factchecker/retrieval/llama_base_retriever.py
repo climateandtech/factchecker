@@ -6,7 +6,7 @@ class LlamaBaseRetriever(AbstractRetriever):
         super().__init__(indexer, options)
 
     def create_retriever(self):
-        self.retriever = self.indexer.index.as_retriever(**self.options)
+        self.retriever = self.indexer.index.as_retriever(similarity_top_k = self.top_k, **self.options)
 
     def retrieve(self, query):
         super().retrieve(query)
