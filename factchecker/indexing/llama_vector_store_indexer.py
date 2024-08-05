@@ -16,34 +16,23 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
     def create_index(self):
         # Now self.options should only contain relevant options for StorageContext.from_defaults
+        # TODO: check if StorageContext should really take all the remaining options as it will block them from being passed to the VectorStoreIndex.from_documents method. The parameters extracted from options in the init function are not exhaustive for VectorStoreIndex, see: https://docs.llamaindex.ai/en/stable/api_reference/indices/vector/
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
         self.index = VectorStoreIndex.from_documents(
             self.documents,
             storage_context=storage_context,
             embed_model=self.embedding_model,
-            transformations=self.transformations
+            transformations=self.transformations,
+            # TODO: check if any additional parameters should be passed here instead of the default values
         )
         print(f"Index created: {self.index_name}")
 
     def insert_document_to_index(self, document):
         print(f"Adding document to Llama Vector Store index: {self.index_name}")
         self.index.insert(document)
+        # TODO: check that any retriever created from this index will be able to retrieve this document
 
     def delete_document_from_index(self, document_id):
         print(f"Removing document from Llama Vector Store index: {self.index_name}")
         self.index.delete(document_id)
-
-
-# # ---- quick testing
-
-# indexer_options = {
-#     'index_name': 'quick_test_vector_store_index',
-#     'source_directory': 'data',
-#     'show_progress': True,
-# }
-
-# indexer = LlamaVectorStoreIndexer(indexer_options)
-# indexer.create_index()
-# retriever = indexer.index.as_retriever()
-# response = retriever.retrieve('climate change is real and caused by humans')
-# print(f'Retrieved documents: {response}')
+        # TODO: check that any retriever created from this index will not be able to retrieve this document
