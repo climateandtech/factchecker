@@ -8,8 +8,8 @@ class AbstractIndexer(ABC):
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
         self.documents = self.load_documents()
-        self.index_path = None
-        self.index = None
+        self.index_path = None  # Path to the directory where the index is stored on disk
+        self.index = None  # The in-memory index object
 
     # TODO: move this method to the beginning of create_index to avoid loading the documents multiple times if the index has already been created and stored
     def load_documents(self):
