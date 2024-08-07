@@ -9,13 +9,13 @@ class LlamaColBERTIndexer(AbstractIndexer):
         self.show_progress = self.options.pop('show_progress', False)
         # TODO: check LlamaIndex documentation for more relevant parameters to pass to the constructor instead of the default values
 
-    def check_index_exists(self):
-        return self.index is not None
+    def check_persisted_index_exists(self):
+        # TODO: first implement the methods to save and load this type of index
+        # TODO: then implement this method to check if the index exists on disk
+        pass
 
     def create_index(self):
-        if self.check_index_exists():
-            print(f"Index already exists at {self.index_path}")
-            return
+        # TODO: check if a saved index exists and load it instead of creating a new one
 
         self.index = ColbertIndex.from_documents(
             self.documents,
@@ -23,16 +23,16 @@ class LlamaColBERTIndexer(AbstractIndexer):
             show_progress=self.show_progress,
             # index_name=self.index_name,
             )
-     
-        print(f"Index created at {self.index.index_path}")
 
-    def insert_document_to_index(self, document):
-        #print(f"Adding document to Llama ColBERT index: {self.index_name}")
-        self.index.add(document)
+        # TODO: save index to disk
 
-    def delete_document_from_index(self, document_id):
-        #print(f"Removing document from Llama ColBERT index: {self.index_name}")
-        self.index.remove(document_id)
+    def add_to_index(self, documents):
+        # TODO: implement
+        pass
+
+    def delete_from_index(self, document_ids):
+        # TODO: implement
+        pass
 
 
 # # ---- quick testing 

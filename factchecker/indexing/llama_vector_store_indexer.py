@@ -11,8 +11,10 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         self.transformations = self.options.pop('transformations', [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)])
         self.show_progress = self.options.pop('show_progress', False)
 
-    def check_index_exists(self):
-        return self.index is not None
+    def check_persisted_index_exists(self):
+        # TODO: first implement the methods to save and load this type of index
+        # TODO: then implement this method to check if the index exists on disk
+        pass
 
     def create_index(self):
         # Now self.options should only contain relevant options for StorageContext.from_defaults
@@ -25,14 +27,11 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             transformations=self.transformations,
             # TODO: check if any additional parameters should be passed here
         )
-        print(f"Index created: {self.index_name}")
 
-    def insert_document_to_index(self, document):
-        print(f"Adding document to Llama Vector Store index: {self.index_name}")
-        self.index.insert(document)
-        # TODO: check that any retriever created from this index will be able to retrieve this document
+    def add_to_index(self, documents):
+        # TODO: implement
+        pass
 
-    def delete_document_from_index(self, document_id):
-        print(f"Removing document from Llama Vector Store index: {self.index_name}")
-        self.index.delete(document_id)
-        # TODO: check that any retriever created from this index will not be able to retrieve this document
+    def delete_from_index(self, document_ids):
+        # TODO: implement
+        pass
