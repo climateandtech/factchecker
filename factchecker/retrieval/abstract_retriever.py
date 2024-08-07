@@ -6,9 +6,8 @@ class AbstractRetriever(ABC):
         self.indexer = indexer
         self.options = options if options is not None else {}
         # FIXME if we have to pass options to retrieve, we need to separate the options dictionary
-        self.top_k = self.options.pop('top_k', 5)
-        # Ensure the index is created during initialization
-        self.create_index()
+        self.top_k = self.options.pop('top_k', 5) # Number of chunks to retrieve
+        self.create_index() # Ensure the index is created during initialization
         self.retriever = None
 
     def create_index(self):

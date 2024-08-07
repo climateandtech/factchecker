@@ -18,6 +18,7 @@ def main():
     indexer.create_index()
     print(indexer.index_path)
     print(indexer.index)
+    indexer.index.search(query)
 
     query = "Climate change would have happened without humans"
 
