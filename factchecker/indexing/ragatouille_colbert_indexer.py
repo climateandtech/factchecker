@@ -8,7 +8,6 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         super().__init__(options)
         self.max_document_length = self.options.pop('max_document_length', 256)
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
-        self.index_path = f".ragatouille/colbert/indexes/{self.index_name}" # Default path to the indexes created by RAGatouille
 
     def check_index_exists(self):
         return os.path.exists(self.index_path)
@@ -23,7 +22,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         # Extract text from Document objects
         texts = [document.text for document in self.documents if hasattr(document, 'text')]
 
-        self.index = rag.index(
+        self.index_path = rag.index(
             collection=texts,
             index_name=self.index_name,
             max_document_length=self.max_document_length,

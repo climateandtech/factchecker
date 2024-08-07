@@ -4,7 +4,7 @@ from factchecker.retrieval.ragatouille_colbert_retriever import RagatouilleColBE
 def main():
     indexer_options = {
         # 'source_directory': 'data',
-        # 'index_name': 'colbert_test_index', # Name of the index which will be stored in .ragatouille/colbert/indexes
+        'index_name': 'ragatouille_colbert_experiment_index', # Name of the index which will be stored in .ragatouille/colbert/indexes
         # 'max_document_length': 180, # Longer documents will be split into chunks
         # 'split_documents': True, # Split documents into chunks
         # 'checkpoint': 'colbert-ir/colbertv2.0'  # Pretrained model checkpoint
@@ -14,6 +14,10 @@ def main():
 
     indexer = RagatouilleColBERTIndexer(indexer_options)
     retriever = RagatouilleColBERTRetriever(indexer, retriever_options)
+
+    indexer.create_index()
+    print(indexer.index_path)
+    print(indexer.index)
 
     query = "Climate change would have happened without humans"
 
