@@ -25,6 +25,16 @@ class AbstractIndexer(ABC):
 
     @abstractmethod
     def create_index(self, documents):
+        # Load index if it exists on disk
+        if self.index is not None:
+            print("Index object already exists. Skipping index creation.")
+            return
+        if self.check_persisted_index_exists():
+            print(f"Saved index found at {self.index_path}. Loading index...")
+            self.load_index()
+            return
+        
+        self.documents = self.load_documents()
         pass
 
     # method to load index. for future implementation
