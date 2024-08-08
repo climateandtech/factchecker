@@ -2,9 +2,13 @@ from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTI
 from factchecker.retrieval.ragatouille_colbert_retriever import RagatouilleColBERTRetriever
 
 def main():
+
+    index_name = 'ragatouille_colbert_experiment_index'
+
     indexer_options = {
         # 'source_directory': 'data',
-        'index_name': 'ragatouille_colbert_experiment_index', # Name of the index which will be stored in .ragatouille/colbert/indexes
+        'index_name': index_name, # Name of the index which will be stored in .ragatouille/colbert/indexes
+        'index_path': f'.ragatouille/colbert/indexes/{index_name}', # Path to the directory where the index is stored on disk
         # 'max_document_length': 180, # Longer documents will be split into chunks
         # 'split_documents': True, # Split documents into chunks
         # 'checkpoint': 'colbert-ir/colbertv2.0'  # Pretrained model checkpoint

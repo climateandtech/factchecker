@@ -8,10 +8,12 @@ class AbstractIndexer(ABC):
         self.index_path = self.options.pop('index_path', None) # Path to the directory where the index is stored on disk
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
-        self.documents = None
+        self.documents = self.options.pop('documents', None) # List of LLamaIndex Documents as returned by SimpleDirectoryReader
         self.index = None  # The in-memory index object
 
     def load_documents(self):
+        if self.documents:
+            return self.documents
         if not self.files:
             # Load files from the source directory if no files are provided in the options
             return SimpleDirectoryReader(self.source_directory).load_data()
@@ -24,18 +26,20 @@ class AbstractIndexer(ABC):
         pass
 
     @abstractmethod
-    def create_index(self, documents):
-        # Load index if it exists on disk
+    def create_index(self):
+        self.documents = self.load_documents()
+
         if self.index is not None:
             print("Index object already exists. Skipping index creation.")
-            return
+            return True  # Indicate that the index already exists
+        
+        # Load index if it exists on disk
         if self.check_persisted_index_exists():
             print(f"Saved index found at {self.index_path}. Loading index...")
             self.load_index()
-            return
-        
-        self.documents = self.load_documents()
-        pass
+            return True  # Indicate that the index was loaded
+
+        return False  # Indicate that the index needs to be created
 
     # method to load index. for future implementation
     @abstractmethod
