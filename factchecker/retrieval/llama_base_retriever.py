@@ -11,6 +11,3 @@ class LlamaBaseRetriever(AbstractRetriever):
     def retrieve(self, query):
         super().retrieve(query)
         return self.retriever.retrieve(query)
-
-# Example usage:
-# TODO: Add example usage

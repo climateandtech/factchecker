@@ -8,10 +8,9 @@ class AbstractIndexer(ABC):
         self.index_path = self.options.pop('index_path', None) # Path to the directory where the index is stored on disk
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
-        self.documents = self.load_documents()
+        self.documents = None
         self.index = None  # The in-memory index object
 
-    # TODO: move this method to the beginning of create_index to avoid loading the documents multiple times if the index has already been created and stored
     def load_documents(self):
         if not self.files:
             # Load files from the source directory if no files are provided in the options
@@ -28,12 +27,9 @@ class AbstractIndexer(ABC):
     def create_index(self, documents):
         pass
 
+    # method to load index. for future implementation
     @abstractmethod
-    def add_to_index(self, documents):
-        pass
-
-    @abstractmethod
-    def delete_from_index(self, document_ids):
+    def load_index(self):
         pass
 
     # # method to save index. for future implementation
@@ -41,7 +37,10 @@ class AbstractIndexer(ABC):
     # def persist_index(self):
     #     pass
 
-    # method to load index. for future implementation
     @abstractmethod
-    def load_index(self):
+    def add_to_index(self, documents):
+        pass
+
+    @abstractmethod
+    def delete_from_index(self, document_ids):
         pass

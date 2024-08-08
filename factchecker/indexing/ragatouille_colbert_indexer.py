@@ -14,15 +14,20 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         return self.index_path and os.path.exists(self.index_path)
 
     def create_index(self):
+        # Load index if it exists on disk
+        # TODO: think about making this part of the abstract indexer and call super.create_index() to avoid duplicate code across indexing implementations
         if self.check_persisted_index_exists():
             self.load_index()
             return
+        
+        self.documents = self.load_documents()
 
         self.index = RAGPretrainedModel.from_pretrained(self.checkpoint)
 
         # Extract text from Document objects
         texts = [document.text for document in self.documents if hasattr(document, 'text')]
 
+        # RAGatouille automatically saves the created index to disc
         self.index_path = self.index.index(
             collection=texts,
             index_name=self.index_name,

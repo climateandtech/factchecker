@@ -17,6 +17,8 @@ class LlamaColBERTIndexer(AbstractIndexer):
     def create_index(self):
         # TODO: check if a saved index exists and load it instead of creating a new one
 
+        self.documents = self.load_documents()
+
         self.index = ColbertIndex.from_documents(
             self.documents,
             gpus=self.gpus,
@@ -25,6 +27,10 @@ class LlamaColBERTIndexer(AbstractIndexer):
             )
 
         # TODO: save index to disk
+
+    def load_index(self):
+        # TODO: implement
+        pass
 
     def add_to_index(self, documents):
         # TODO: implement
