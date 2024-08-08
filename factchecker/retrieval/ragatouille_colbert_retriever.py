@@ -17,6 +17,10 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
         
         self.retriever = RAGPretrainedModel.from_index(self.indexer.index_path, **self.options)
 
+        if self.indexer.index is not None:
+            self.retriever = self.indexer.index 
+        else if self.indexer.
+
     def retrieve(self, query):
         super().retrieve(query)
         return self.retriever.search(query, k=self.top_k)
