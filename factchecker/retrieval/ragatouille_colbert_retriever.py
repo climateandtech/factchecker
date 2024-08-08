@@ -9,18 +9,25 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
         super().__init__(indexer, options)
 
     def create_retriever(self):
-        if not self.indexer.check_index_exists():
-            print(f"Index not found at {self.indexer.index_path}. Creating index...")
-            self.indexer.create_index()
-        else:
-            print(f"Index found at {self.indexer.index_path}. Using existing index for retrieval.")
-        
-        self.retriever = RAGPretrainedModel.from_index(self.indexer.index_path, **self.options)
+
+        # Call the abstract parent class create_retriever method
+        super.create_retriever()
 
         if self.indexer.index is not None:
-            self.retriever = self.indexer.index 
-        else if self.indexer.
+            if isinstance(self.indexer.index, RAGPretrainedModel):
+                # For RAGatouille the retriever is indexing and retrieving is done by the same RAGPretrainedModel instance
+                self.retriever = self.indexer.index
+            else:
+                raise TypeError("The index is not a valid RAGPretrainedModel instance.")
+        else:
+            raise ValueError("The index is not loaded or does not exist.")
+            
 
-    def retrieve(self, query):
+    def retrieve(self, query, top_k=5, **kwargs):
+        # Call the abstract parent class retrieve method
         super().retrieve(query)
-        return self.retriever.search(query, k=self.top_k)
+        
+        # Merge options with any additional keyword arguments
+        retrieve_options = {**self.options, **kwargs}
+        
+        return self.retriever.search(query, k=top_k, **retrieve_options)

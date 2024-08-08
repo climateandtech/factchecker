@@ -11,10 +11,13 @@ class AbstractRetriever(ABC):
 
     @abstractmethod
     def create_retriever(self):
+        # Ensure the index is created before creating the retriever
+        if self.indexer.index is None:
+            self.indexer.create_index()
         pass
 
     @abstractmethod
     def retrieve(self, query):
-        # Ensure the internal retriever is created
+        # Ensure the retriever is created before retrieving
         if self.retriever is None:
             self.create_retriever()
