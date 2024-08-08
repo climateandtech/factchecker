@@ -15,9 +15,8 @@ class LlamaColBERTIndexer(AbstractIndexer):
         pass
 
     def create_index(self):
-        # TODO: check if a saved index exists and load it instead of creating a new one
-
-        self.documents = self.load_documents()
+        
+        super().create_index()
 
         self.index = ColbertIndex.from_documents(
             self.documents,
