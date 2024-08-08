@@ -1,6 +1,5 @@
-# ragatouille_colbert_indexer.py
 import os
-from .abstract_indexer import AbstractIndexer
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 from ragatouille import RAGPretrainedModel
 
 class RagatouilleColBERTIndexer(AbstractIndexer):
