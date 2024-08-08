@@ -1,4 +1,4 @@
-from .abstract_indexer import AbstractIndexer
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 from llama_index.indices.managed.colbert import ColbertIndex
 
 
@@ -16,7 +16,8 @@ class LlamaColBERTIndexer(AbstractIndexer):
 
     def create_index(self):
         
-        super().create_index()
+        if super().create_index():
+            return  # Stop further execution if the index already exists or was loaded
 
         self.index = ColbertIndex.from_documents(
             self.documents,

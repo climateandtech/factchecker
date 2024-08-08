@@ -18,7 +18,8 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
     def create_index(self):
 
-        super().create_index()
+        if super().create_index():
+            return  # Stop further execution if the index already exists or was loaded
 
         # Now self.options should only contain relevant options for StorageContext.from_defaults
         # TODO: check if StorageContext should really take all the remaining options as it will block them from being passed to the VectorStoreIndex.from_documents method which may need to receive additional parameters - The parameters extracted from options in the init function are not exhaustive for VectorStoreIndex, see: https://docs.llamaindex.ai/en/stable/api_reference/indices/vector/
