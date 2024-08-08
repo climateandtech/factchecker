@@ -10,6 +10,8 @@ def main():
     }
 
     indexer = LlamaVectorStoreIndexer(indexer_options)
+    indexer.create_index()
+
     retriever = LlamaBaseRetriever(indexer, retriever_options)
 
     query = "Climate change would have happened without humans"

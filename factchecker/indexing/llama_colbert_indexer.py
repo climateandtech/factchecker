@@ -39,17 +39,3 @@ class LlamaColBERTIndexer(AbstractIndexer):
     def delete_from_index(self, document_ids):
         # TODO: implement
         pass
-
-
-# # ---- quick testing 
-
-indexer_options = {
-    'index_name': 'quick_test_llama_colbert_index',
-    'source_directory': 'data',
-    'show_progress': True,
-}
-indexer = LlamaColBERTIndexer()
-indexer.create_index()
-retriever = indexer.index.as_query_engine(similarity_top_k=3)
-response = retriever.retrieve('climate change is real and caused by humans')
-print(f'Retrieved documents: {response}')
