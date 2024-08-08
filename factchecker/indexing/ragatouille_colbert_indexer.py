@@ -16,8 +16,11 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
     def create_index(self):
         # Load index if it exists on disk
         # TODO: think about making this part of the abstract indexer and call super.create_index() to avoid duplicate code across indexing implementations
+        if self.index is not None:
+            print("Index object already exists. Skipping index creation.")
+            return
         if self.check_persisted_index_exists():
-            print(f"Index found at {self.indexer.index_path}. Loading index...")
+            print(f"Saved index found at {self.index_path}. Loading index...")
             self.load_index()
             return
         

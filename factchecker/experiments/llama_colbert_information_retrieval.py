@@ -4,13 +4,20 @@ from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 def main():
 
     indexer_options = {
+        # 'top_k': 4,
+        # 'index_name': 'test_llama_colbert_index',
+        # 'source_directory': 'data',
+        # 'show_progress': True,
     }
     retriever_options = {
-        'top_k': 4,
     }
 
     indexer = LlamaColBERTIndexer(indexer_options)
+    indexer.create_index()
+
     retriever = LlamaBaseRetriever(indexer, retriever_options)
+
+    # retriever = indexer.index.as_query_engine(similarity_top_k=3) # test for debugging
 
     query = "Climate change would have happened without humans"
 

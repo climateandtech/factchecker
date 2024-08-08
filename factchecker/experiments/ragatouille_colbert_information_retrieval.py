@@ -13,12 +13,9 @@ def main():
     }
 
     indexer = RagatouilleColBERTIndexer(indexer_options)
-    retriever = RagatouilleColBERTRetriever(indexer, retriever_options)
-
     indexer.create_index()
-    print(indexer.index_path)
-    print(indexer.index)
-    indexer.index.search(query)
+
+    retriever = RagatouilleColBERTRetriever(indexer, retriever_options)
 
     query = "Climate change would have happened without humans"
 
