@@ -11,7 +11,7 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
     def create_retriever(self):
 
         # Call the abstract parent class create_retriever method
-        super.create_retriever()
+        super().create_retriever()
 
         if self.indexer.index is not None:
             if isinstance(self.indexer.index, RAGPretrainedModel):
@@ -23,11 +23,11 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
             raise ValueError("The index is not loaded or does not exist.")
             
 
-    def retrieve(self, query, top_k=5, **kwargs):
+    def retrieve(self, query):
         # Call the abstract parent class retrieve method
         super().retrieve(query)
         
         # Merge options with any additional keyword arguments
-        retrieve_options = {**self.options, **kwargs}
+        retrieve_options = {**self.options}
         
-        return self.retriever.search(query, k=top_k, **retrieve_options)
+        return self.retriever.search(query, k=self.top_k, **retrieve_options)
