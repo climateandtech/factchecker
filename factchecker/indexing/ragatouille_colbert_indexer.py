@@ -15,7 +15,8 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
     def create_index(self):
         
-        super().create_index()
+        if super().create_index():
+            return  # Stop further execution if the index already exists or was loaded
 
         self.index = RAGPretrainedModel.from_pretrained(self.checkpoint)
 
