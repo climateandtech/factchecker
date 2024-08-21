@@ -1,13 +1,9 @@
 import pytest
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 
-def test_create_index_with_documents():
-    # Prepare test documents
-    documents = [
-        "This is the first test document.",
-        "This is the second test document.",
-        "This is the third test document."
-    ]
+def test_create_index_with_documents(prepare_documents):
+
+    documents = prepare_documents
 
     indexer_options = {
         'documents': documents,
@@ -37,11 +33,10 @@ def test_create_index_from_directory(prepare_test_data_directory):
     assert indexer.documents is not None, "Documents should be loaded from the directory"
     assert len(indexer.documents) == 5, "There should be 5 documents indexed"
 
-def test_create_index_when_index_already_exists():
-    documents = [
-        "This is a test document for the existing index."
-    ]
-    
+def test_create_index_when_index_already_exists(prepare_documents):
+
+    documents = prepare_documents
+
     indexer_options = {
         'documents': documents,
         'index_name': 'test_existing_index',
