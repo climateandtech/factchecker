@@ -1,4 +1,5 @@
 import pytest
+from llama_index.core import Document
 
 @pytest.fixture
 def prepare_test_data_directory(tmp_path):
@@ -14,3 +15,16 @@ def prepare_test_data_directory(tmp_path):
     
     # Return the path to the test directory
     return str(data_dir)
+
+
+@pytest.fixture
+def prepare_documents():
+    """Fixture to create a sequence of LlamaIndex Document objects from text strings."""
+    texts = [
+        "This is the first test document.",
+        "This is the second test document.",
+        "This is the third test document."
+    ]
+    # Convert texts to Document objects
+    documents = [Document(text=txt) for txt in texts]
+    return documents
