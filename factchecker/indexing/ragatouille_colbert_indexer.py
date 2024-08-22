@@ -7,6 +7,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         super().__init__(options)
         self.max_document_length = self.options.pop('max_document_length', 256)
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
+        self.overwrite_index = self.options.pop('overwrite_index', True) # Whether to overwrite an existing index with the same name.
 
     def check_persisted_index_exists(self):
         # Check for on-disk index
@@ -17,7 +18,10 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         if super().create_index():
             return  # Stop further execution if the index already exists or was loaded
 
-        self.index = RAGPretrainedModel.from_pretrained(self.checkpoint)
+        self.index = RAGPretrainedModel.from_pretrained(
+            self.checkpoint,
+            index_root='indices/ragatouille/colbert/'
+        )
 
         # Extract text from Document objects
         texts = [document.text for document in self.documents if hasattr(document, 'text')]
