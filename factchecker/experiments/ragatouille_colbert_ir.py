@@ -8,10 +8,10 @@ def main():
     indexer_options = {
         # 'source_directory': 'data',
         'index_name': index_name, # Name of the index which will be stored in .ragatouille/colbert/indexes
-        'index_path': f'.ragatouille/colbert/indexes/{index_name}', # Path to the directory where the index is stored on disk
         # 'max_document_length': 180, # Longer documents will be split into chunks
         # 'split_documents': True, # Split documents into chunks
-        # 'checkpoint': 'colbert-ir/colbertv2.0'  # Pretrained model checkpoint
+        # 'checkpoint': 'colbert-ir/colbertv2.0',  # Pretrained model checkpoint
+        'overwrite_index': False, # Whether to overwrite an existing index with the same name
     }
     retriever_options = {
     }
