@@ -8,7 +8,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         self.max_document_length = self.options.pop('max_document_length', 256)
         self.checkpoint = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
         self.overwrite_index = self.options.pop('overwrite_index', True) # Whether to overwrite an existing index with the same name.
-        self.index_root = 'indexes/ragatouille/' # Root directory where the index is stored on disk
+        self.index_root = self.options.pop('index_root', 'indexes/ragatouille/') # Root directory where the index is stored on disk
 
     def check_persisted_index_exists(self):
         # Check for on-disk index
