@@ -29,6 +29,7 @@ class AbstractIndexer(ABC):
     def create_index(self):
         self.documents = self.load_documents()
 
+        # Check if the index already exists
         if self.index is not None:
             print("Index object already exists. Skipping index creation.")
             return True  # Indicate that the index already exists

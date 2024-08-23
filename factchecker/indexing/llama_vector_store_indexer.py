@@ -1,5 +1,5 @@
 
-from .abstract_indexer import AbstractIndexer
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.node_parser import SentenceSplitter
 
@@ -22,7 +22,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             return  # Stop further execution if the index already exists or was loaded
 
         # Now self.options should only contain relevant options for StorageContext.from_defaults
-        # TODO: check if StorageContext should really take all the remaining options as it will block them from being passed to the VectorStoreIndex.from_documents method which may need to receive additional parameters - The parameters extracted from options in the init function are not exhaustive for VectorStoreIndex, see: https://docs.llamaindex.ai/en/stable/api_reference/indices/vector/
+        # TODO: check if StorageContext should really take all the remaining options?
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
         self.index = VectorStoreIndex.from_documents(
             self.documents,
