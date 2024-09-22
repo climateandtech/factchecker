@@ -10,13 +10,19 @@ class MediatorStep:
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 
-    def synthesize_verdicts(self, verdicts, claim):
+    def synthesize_verdicts(self, verdicts_and_reasonings, claim):
         system_prompt_with_claim = self.prompt.format(claim=claim)
-        combined_verdicts = "\n".join(verdicts)
+        
+        # Format the verdicts and reasonings with <> tags
+        formatted_verdicts_and_reasonings = "\n".join(
+            [f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>" for verdict, reasoning in verdicts_and_reasonings]
+        )
+        
         messages = [
             ChatMessage(role="system", content=system_prompt_with_claim),
-            ChatMessage(role="user", content=f"Here are the verdicts of the different advocates:\n{combined_verdicts}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information))")
+            ChatMessage(role="user", content=f"Here are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information))")
         ]
+        
         valid_options = {key: value for key, value in self.additional_options.items() if key in ["response_format", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"]}
 
         for attempt in range(self.max_retries):

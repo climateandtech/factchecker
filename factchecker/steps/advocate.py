@@ -1,9 +1,12 @@
 from llama_index.llms.openai import OpenAI
 from llama_index.core.llms import ChatMessage
 import logging
+from factchecker.steps.evidence import EvidenceStep
+from factchecker.retrieval.base import BaseRetriever
+from factchecker.indexing.base import BaseIndexer
 
 class AdvocateStep:
-    def __init__(self, llm=None, options=None):
+    def __init__(self, llm=None, options=None, evidence_options=None):
         self.llm = llm if llm is not None else OpenAI()
         self.options = options if options is not None else {}
         self.evidence_prompt_template = self.options.pop('evidence_prompt_template', "Evidence: {evidence}")
@@ -13,9 +16,18 @@ class AdvocateStep:
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 
-    def evaluate_evidence(self, claim, evidences):
+        # Initialize EvidenceStep for each advocate
+        indexer_options = evidence_options.pop('indexer_options', {})
+        evidence_retriever_options = {key: evidence_options.pop(key) for key in list(evidence_options.keys()) if key != 'retrieval_options'}
+        self.evidence_step = EvidenceStep(retriever=BaseRetriever(BaseIndexer(indexer_options)), options=evidence_options)
+
+    # ... existing code ...
+    # ... existing code ...
+    def evaluate_evidence(self, claim):
+        # Retrieve evidence for the claim
+        evidences = self.evidence_step.gather_evidence(claim)
         system_prompt_with_claim = self.system_prompt_template.format(claim=claim)
-        evidence_text = "\n".join([self.evidence_prompt_template.format(evidence=evidence) for evidence in evidences])
+        evidence_text = "\n".join([self.evidence_prompt_template.format(evidence=evidence.text) for evidence in evidences])
         format_prompt = self.format_prompt
         combined_prompt = f"Factcheck the following claim:\n\nClaim: {claim}\nGiven the following evidence:\n{evidence_text}\n{format_prompt}"
         messages = [
@@ -26,13 +38,12 @@ class AdvocateStep:
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.additional_options)
             response_content = response.message.content.strip()
-            
             # Extract the verdict from the response
             start = response_content.find("((")
             end = response_content.find("))")
             if start != -1 and end != -1:
                 label = response_content[start+2:end].strip().upper().replace(" ", "_")
-                reasoning = response_content[end+2:].strip()  # Extract reasoning after the verdict
+                reasoning = response_content.strip()  # Return the whole response_content as reasoning
                 return label, reasoning
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")

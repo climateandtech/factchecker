@@ -2,13 +2,15 @@ from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
 from factchecker.prompts.advocate_mediator_prompts import advocate_primer, arbitrator_primer
 import pandas as pd
 from sklearn.metrics import classification_report
+from llama_index.core import Settings
+
+Settings.chunk_size=150
+Settings.chunk_overlap=20
 
 from datetime import datetime
 import os
 
 def main():
-
-
     def map_verdict(verdict, level=2):
         verdict = verdict.strip().lower().replace(" ", "_")
 
@@ -62,17 +64,18 @@ def main():
             print(f"Unmapped verdict: {verdict}")  # Add this line to identify unmapped verdicts
         return mapped_verdict
 
+    indexer_options_list = [
+        {'source_directory': 'data'},  # Indexer options for advocate 1
+        # {'source_directory': 'data/source2'},  # Indexer options for advocate 2
+        # {'source_directory': 'data/source3'}   # Indexer options for advocate 3
+    ]
 
+    retriever_options_list = [
+        {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[0]},  # Options for advocate 1
+        # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[1]},  # Options for advocate 2
+        # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[2]}   # Options for advocate 3
+    ]
 
-    # Define the options for each component
-    indexer_options = {
-        'source_directory': 'data',
-        # Add other indexer options here
-    }
-    retriever_options = {
-        'similarity_top_k': 8,
-        # Add other retriever options here
-    }
     advocate_options = {
         'max_evidences': 10,
         # Add other advocate step options here
@@ -82,16 +85,23 @@ def main():
     }
 
     # Initialize the advocate-mediator strategy with the options and prompts
-    strategy = AdvocateMediatorStrategy(indexer_options, retriever_options, advocate_options, mediator_options, advocate_primer, arbitrator_primer)
+    strategy = AdvocateMediatorStrategy(indexer_options_list, retriever_options_list, advocate_options, mediator_options, advocate_primer, arbitrator_primer)
 
     # Load the claims from the CSV file
+    # Load the claims from the CSV file
     claims_df = pd.read_csv('datasets/Combined_Overview_Climate_Feedback_Claims.csv')
+
+    # Debug: Print the number of rows in the dataset
+    print(f"Total number of claims: {len(claims_df)}")
 
     # Filter to include only correct claims
     correct_claims_df = claims_df[claims_df['Climate Feedback'].str.lower().isin(['correct', 'mostly correct', 'accurate', 'mostly accurate', 'correct but'])]
 
+    # Debug: Print the number of correct claims
+    print(f"Number of correct claims: {len(correct_claims_df)}")
+
     # Calculate the number of correct claims needed
-    num_claims_to_test = 4  # Example value, can be changed as needed
+    num_claims_to_test = 100  # Example value, can be changed as needed
     num_correct_claims_needed = int(num_claims_to_test * 0.3)
 
     # Ensure we have enough correct claims
@@ -104,11 +114,18 @@ def main():
     # Sample the remaining claims from the original dataset
     remaining_claims_needed = num_claims_to_test - num_correct_claims_needed
     remaining_claims_df = claims_df.drop(sampled_correct_claims_df.index)
+
+    # Debug: Print the number of remaining claims
+    print(f"Number of remaining claims: {len(remaining_claims_df)}")
+
+    # Ensure we do not sample more than available in remaining_claims_df
+    if len(remaining_claims_df) < remaining_claims_needed:
+        remaining_claims_needed = len(remaining_claims_df)
+
     sampled_remaining_claims_df = remaining_claims_df.sample(n=remaining_claims_needed, random_state=42)
 
     # Combine the sampled correct claims with the remaining sampled claims
     sampled_claims_df = pd.concat([sampled_correct_claims_df, sampled_remaining_claims_df]).reset_index(drop=True)
-
 
     # Prepare lists to store true labels, predicted results, and mediator reasoning
     true_labels = []
@@ -196,8 +213,6 @@ def main():
     predicted_results_lower = [result.lower() for result in predicted_results]
     report = classification_report(mapped_true_labels_lower, predicted_results_lower)
     print(report)
-
-
 
 if __name__ == "__main__":
     main()
