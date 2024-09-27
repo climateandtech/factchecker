@@ -17,8 +17,6 @@ def main():
 
     retriever = LlamaBaseRetriever(indexer, retriever_options)
 
-    # retriever = indexer.index.as_query_engine(similarity_top_k=3) # test for debugging
-
     query = "Climate change would have happened without humans"
 
     nodes = retriever.retrieve(query)

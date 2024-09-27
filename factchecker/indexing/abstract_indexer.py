@@ -42,15 +42,9 @@ class AbstractIndexer(ABC):
 
         return False  # Indicate that the index needs to be created
 
-    # method to load index. for future implementation
     @abstractmethod
     def load_index(self):
         pass
-
-    # # method to save index. for future implementation
-    # @abstractmethod
-    # def persist_index(self):
-    #     pass
 
     @abstractmethod
     def add_to_index(self, documents):
