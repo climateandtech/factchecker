@@ -26,8 +26,6 @@ class LlamaColBERTIndexer(AbstractIndexer):
             # index_name=self.index_name,
             )
 
-        # TODO: save index to disk
-
     def load_index(self):
         # TODO: implement
         pass
