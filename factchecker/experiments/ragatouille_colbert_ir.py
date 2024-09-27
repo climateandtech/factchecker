@@ -32,7 +32,6 @@ def main():
 
     for node in nodes:
         print(node)
-        print("\n")
 
 if __name__ == "__main__":
     main()
