@@ -25,17 +25,33 @@ class AbstractIndexer(ABC):
         self.index = None
 
     def load_documents(self):
-        if self.documents:
-            return self.documents
-        if not self.files:
-            # Load files from the source directory if no files are provided in the options
-            return SimpleDirectoryReader(self.source_directory).load_data()
-        else:
-            # Load files from the provided list of files
-            return SimpleDirectoryReader(input_files=self.files).load_data()
+        """
+        Load documents either from preloaded data or from the specified source.
+
+        Returns:
+            List[Any]: A list of documents loaded for indexing.
+        """
+        try:
+            if self.documents:
+                return self.documents
+            if not self.files:
+                # Load files from the source directory if no files are provided in the options
+                return SimpleDirectoryReader(self.source_directory).load_data()
+            else:
+                # Load files from the provided list of files
+                return SimpleDirectoryReader(input_files=self.files).load_data()
+        except Exception as e:
+            print(f"An error occurred while loading documents: {e}")
+            raise
         
     @abstractmethod
-    def check_persisted_index_exists(self):
+    def check_persisted_index_exists(self) -> bool:
+        """
+        Determine if a persisted index exists at the specified path.
+
+        Returns:
+            bool: True if the persisted index exists, False otherwise.
+        """
         pass
 
     @abstractmethod
