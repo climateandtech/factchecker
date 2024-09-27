@@ -2,6 +2,11 @@ from factchecker.indexing.abstract_indexer import AbstractIndexer
 from llama_index.indices.managed.colbert import ColbertIndex
 
 
+# There is a bug with the LlamaIndex ColBERT Indexing resulting in:
+# TypeError: ColbertIndex._build_index_from_nodes() got an unexpected keyword argument 'index_name'
+# See: https://github.com/run-llama/llama_index/issues/14398 
+
+
 class LlamaColBERTIndexer(AbstractIndexer):
     def __init__(self, options=None):
         super().__init__(options)
@@ -23,7 +28,6 @@ class LlamaColBERTIndexer(AbstractIndexer):
             self.documents,
             gpus=self.gpus,
             show_progress=self.show_progress,
-            # index_name=self.index_name,
             )
 
     def load_index(self):
