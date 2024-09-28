@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional
 from llama_index.core import SimpleDirectoryReader
-import logging
 
 class AbstractIndexer(ABC):
     """
@@ -15,14 +15,28 @@ class AbstractIndexer(ABC):
         documents (Optional[List[Any]]): Preloaded LlamaIndex documents for indexing.
         index (Optional[Any]): In-memory index object.
     """
-    def __init__(self, options=None):
+    def __init__(
+        self,
+        options: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Initialize the AbstractIndexer with specified parameters.
+
+        Args:
+            options (Optional[Dict[str, Any]]): Configuration options which may include:
+                - index_name (str): Name of the index. Defaults to 'default_index'.
+                - index_path (Optional[str]): Path to the directory where the index is stored on disk.
+                - source_directory (str): Directory containing source data files. Defaults to 'data'.
+                - files (Optional[List[str]]): Specific files to include in the index.
+                - documents (Optional[List[Any]]): Preloaded documents for indexing.
+        """
         self.options = options if options is not None else {}
         self.index_name = self.options.pop('index_name', 'default_index')
         self.index_path = self.options.pop('index_path', None)
         self.source_directory = self.options.pop('source_directory', 'data')
         self.files = self.options.pop('files', None)
         self.documents = self.options.pop('documents', None)
-        self.index = None
+        self.index = None 
 
     def load_documents(self):
         """

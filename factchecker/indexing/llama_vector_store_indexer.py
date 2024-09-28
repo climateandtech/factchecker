@@ -18,11 +18,11 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
     def create_index(self):
 
+        # Stop further execution if the index already exists or was loaded
         if super().create_index():
-            return  # Stop further execution if the index already exists or was loaded
+            return  
 
         # Now self.options should only contain relevant options for StorageContext.from_defaults
-        # TODO: check if StorageContext should really take all the remaining options?
         storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
         self.index = VectorStoreIndex.from_documents(
             self.documents,
@@ -33,13 +33,13 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         )
 
     def load_index(self):
-        # TODO: implement
+        raise NotImplementedError("load_index of LlamaVectorStoreIndexer is not yet implemented")
         pass
 
     def add_to_index(self, documents):
-        # TODO: implement
+        raise NotImplementedError("add_to_index of LlamaVectorStoreIndexer is not yet implemented")
         pass
 
     def delete_from_index(self, document_ids):
-        # TODO: implement
+        raise NotImplementedError("delete_from_index of LlamaVectorStoreIndexer is not yet implemented")
         pass
