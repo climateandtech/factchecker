@@ -13,21 +13,17 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         self.overwrite_index = self.options.pop('overwrite_index', True)
         self.index_root = self.options.pop('index_root', 'indexes/ragatouille/') # The root directory where indexes will be stored. If None, will use the default directory, '.ragatouille/'.
 
-    def check_persisted_index_exists(self):
+    def check_persisted_index_exists(self) -> bool:
         return self.index_path and os.path.exists(self.index_path)
 
-    def create_index(self):
-        
-        if super().create_index():
-            return  # Stop further execution if the index already exists or was loaded
-
+    def build_index(self):
         try:
             self.index = RAGPretrainedModel.from_pretrained(
                 self.checkpoint,
                 index_root=self.index_root, 
             )
 
-            # Extract text from Document objects
+            # RAGatouille requires a list of texts to create the index
             texts = [document.text for document in self.documents if hasattr(document, 'text')]
 
             # RAGatouille automatically saves the created index to disc
@@ -38,9 +34,14 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
             )
             
             logger.info(f"Index created and stored at {self.index_path}")
+
         except Exception as e:
             logger.exception(f"Failed to create RagatouilleColBERT index: {e}")
             raise
+
+    def save_index(self):
+        logger.error("save_index() of RagatouilleColBERTIndexer is not yet implemented")
+        raise NotImplementedError("save_index() of RagatouilleColBERTIndexer is not yet implemented")
 
     def load_index(self):
         try:

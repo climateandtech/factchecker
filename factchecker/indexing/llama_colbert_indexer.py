@@ -14,12 +14,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
         # TODO: Implement the method to check if the index exists on disk
         pass
 
-    def create_index(self):
-        
-        # Stop further execution if the index already exists or was loaded
-        if super().create_index():
-            return  
-
+    def build_index(self):
         try:
             # There is currently (28.9.2024) a bug with the LlamaIndex ColBERT Indexing using the from_documents function resulting in:
             # TypeError: ColbertIndex._build_index_from_nodes() got an unexpected keyword argument 'index_name'
@@ -35,6 +30,10 @@ class LlamaColBERTIndexer(AbstractIndexer):
         except Exception as e:
             logger.exception(f"Failed to create LlamaColBERT index: {e}")
             raise
+
+    def save_index(self):
+        logger.error("save_index() of LlamaColBERTIndexer is not yet implemented")
+        raise NotImplementedError("save_index() of LlamaColBERTIndexer is not yet implemented")
  
     def load_index(self):
         logger.error("load_index() of LlamaColBERTIndexer is not yet implemented")
