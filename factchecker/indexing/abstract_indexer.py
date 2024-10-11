@@ -1,8 +1,10 @@
+"""Abstract base class for creating and managing indexes."""
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 import logging
 import os
-from llama_index.core import SimpleDirectoryReader
+from llama_index.core import SimpleDirectoryReader, Document
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +82,6 @@ class AbstractIndexer(ABC):
         """
         Determine if a persisted index exists at the specified path.
 
-        If certain subclasses have different mechanisms for checking index existence, they can override this method.
-
         Returns:
             bool: True if the persisted index exists, False otherwise.
         """
@@ -92,11 +92,12 @@ class AbstractIndexer(ABC):
         return False
 
     @abstractmethod
-    def initialize_index(self):
+    def initialize_index(self) -> None:
         """
-        Create the index by checking for existing indexes, loading, or building a new one.
-        All indexers follow the same initialization process.
-        Subclasses can override initialize_index if they have special requirements.
+        Initializes the index by loading an existing index or building a new one.
+
+        Raises:
+            Exception: If an error occurs during index initialization.
         """
 
         try:
@@ -118,20 +119,26 @@ class AbstractIndexer(ABC):
             raise
 
     @abstractmethod
-    def build_index(self, documents):
+    def build_index(self, documents: List[Document]) -> None:
         """
-        Build the index from documents.
+        Builds the index from the provided documents.
+
+        Args:
+            documents (List[Any]): The documents to index.
         """
         pass
 
-    def save_index(self):
+    def save_index(self, index_path: Optional[str] = None) -> None:
         """
         Save the index to persistent storage.
         """
         pass
 
     @abstractmethod
-    def load_index(self):
+    def load_index(self) -> None:
+        """
+        Loads the index from persistent storage.
+        """
         pass
 
     @abstractmethod
