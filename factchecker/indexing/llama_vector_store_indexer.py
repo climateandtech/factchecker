@@ -17,9 +17,6 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         )
         self.show_progress = self.options.pop('show_progress', False)
 
-    def check_persisted_index_exists(self):
-        # TODO: Implement the method to check if the index exists on disk
-        pass
 
     def build_index(self, documents):
         try:

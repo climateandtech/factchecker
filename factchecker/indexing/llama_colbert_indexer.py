@@ -10,10 +10,6 @@ class LlamaColBERTIndexer(AbstractIndexer):
         self.gpus = self.options.pop('gpus', '0')
         self.show_progress = self.options.pop('show_progress', False)
 
-    def check_persisted_index_exists(self):
-        # TODO: Implement the method to check if the index exists on disk
-        pass
-
     def build_index(self, documents):
         try:
             # There is currently (28.9.2024) a bug with the LlamaIndex ColBERT Indexing using the from_documents function resulting in:

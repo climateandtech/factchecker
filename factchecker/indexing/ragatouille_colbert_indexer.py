@@ -13,8 +13,6 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         self.overwrite_index = self.options.pop('overwrite_index', True)
         self.index_root = self.options.pop('index_root', 'indexes/ragatouille/') # The root directory where indexes will be stored. If None, will use the default directory, '.ragatouille/'.
 
-    def check_persisted_index_exists(self) -> bool:
-        return self.index_path and os.path.exists(self.index_path)
 
     def build_index(self, documents):
         try:
