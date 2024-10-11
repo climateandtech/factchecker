@@ -15,8 +15,6 @@ class AbstractIndexer(ABC):
         index_name (str): Name of the index.
         index_path (Optional[str]): Path to the directory where the index is stored on disk.
         source_directory (str): Directory containing source data files.
-        files (Optional[List[str]]): Specific files to include in the index.
-        documents (Optional[List[Any]]): Preloaded LlamaIndex documents for indexing.
         index (Optional[Any]): In-memory index object.
     """
     def __init__(
@@ -31,18 +29,14 @@ class AbstractIndexer(ABC):
                 - index_name (str): Name of the index. Defaults to 'default_index'.
                 - index_path (Optional[str]): Path to the directory where the index is stored on disk.
                 - source_directory (str): Directory containing source data files. Defaults to 'data'.
-                - files (Optional[List[str]]): Specific files to include in the index.
-                - documents (Optional[List[Any]]): Preloaded documents for indexing.
         """
         self.options = options if options is not None else {}
         self.index_name = self.options.pop('index_name', 'default_index')
         self.index_path = self.options.pop('index_path', None)
         self.source_directory = self.options.pop('source_directory', 'data')
-        self.files = self.options.pop('files', None)
-        self.documents = self.options.pop('documents', None)
         self.index = None 
 
-    def load_documents(self) -> List[Any]:
+    def load_initial_documents(self) -> List[Any]:
         """
         Load documents either from preloaded data or from the specified source.
 
@@ -54,25 +48,33 @@ class AbstractIndexer(ABC):
             Exception: For other issues encountered during document loading.
         """
         try:
-            if self.documents:
-                logger.info("Using preloaded documents.")
-                return self.documents
-            if not self.files:
-                logger.info(f"Loading documents from source directory: {self.source_directory}")
-                documents = SimpleDirectoryReader(self.source_directory).load_data()
-                logger.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+            # Use preloaded documents if provided
+            documents = self.options.get('documents')
+            if documents:
+                logger.info("Using preloaded documents provided in options.")
                 return documents
-            else:
-                logger.info(f"Loading documents from specified files: {self.files}")
-                documents = SimpleDirectoryReader(input_files=self.files).load_data()
+
+            # Use specified files if provided
+            files = self.options.get('files')
+            if files:
+                logger.info(f"Loading documents from specified files: {files}")
+                documents = SimpleDirectoryReader(input_files=files).load_data()
                 logger.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
+
+            # Load from source directory as default
+            logger.info(f"Loading documents from source directory: {self.source_directory}")
+            documents = SimpleDirectoryReader(self.source_directory).load_data()
+            logger.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+            return documents
+
         except FileNotFoundError as e:
             logger.error(f"File not found during document loading: {e}")
             raise
         except Exception as e:
             logger.exception(f"An error occurred while loading documents: {e}")
             raise
+
         
     @abstractmethod
     def check_persisted_index_exists(self) -> bool:
@@ -85,7 +87,7 @@ class AbstractIndexer(ABC):
         pass
 
     @abstractmethod
-    def create_index(self):
+    def initialize_index(self):
         """
         Create the index by checking for existing indexes, loading, or building a new one.
         """
@@ -101,15 +103,15 @@ class AbstractIndexer(ABC):
                 return
 
             logger.info("No existing index found. Building a new index...")
-            self.documents = self.load_documents()
-            self.build_index()
+            documents = self.load_initial_documents()
+            self.build_index(documents)
 
         except Exception as e:
             logger.exception(f"An error occurred during index creation: {e}")
             raise
 
     @abstractmethod
-    def build_index(self):
+    def build_index(self, documents):
         """
         Build the index from documents.
         """
