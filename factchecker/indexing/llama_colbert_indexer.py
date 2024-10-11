@@ -14,7 +14,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
         # TODO: Implement the method to check if the index exists on disk
         pass
 
-    def build_index(self):
+    def build_index(self, documents):
         try:
             # There is currently (28.9.2024) a bug with the LlamaIndex ColBERT Indexing using the from_documents function resulting in:
             # TypeError: ColbertIndex._build_index_from_nodes() got an unexpected keyword argument 'index_name'
@@ -22,7 +22,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
             logger.warning("LlamaIndex ColBERT indexing has a known bug. Proceeding may result in errors.")
 
             self.index = ColbertIndex.from_documents(
-                self.documents,
+                documents,
                 gpus=self.gpus,
                 show_progress=self.show_progress,
             )

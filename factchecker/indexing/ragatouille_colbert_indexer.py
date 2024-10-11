@@ -16,7 +16,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
     def check_persisted_index_exists(self) -> bool:
         return self.index_path and os.path.exists(self.index_path)
 
-    def build_index(self):
+    def build_index(self, documents):
         try:
             self.index = RAGPretrainedModel.from_pretrained(
                 self.checkpoint,
@@ -24,7 +24,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
             )
 
             # RAGatouille requires a list of texts to create the index
-            texts = [document.text for document in self.documents if hasattr(document, 'text')]
+            texts = [document.text for document in documents if hasattr(document, 'text')]
 
             # RAGatouille automatically saves the created index to disc
             self.index_path = self.index.index(

@@ -21,14 +21,14 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         # TODO: Implement the method to check if the index exists on disk
         pass
 
-    def build_index(self):
+    def build_index(self, documents):
         try:
 
             # Now self.options should only contain relevant options for StorageContext.from_defaults
             storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
             
             self.index = VectorStoreIndex.from_documents(
-                self.documents,
+                documents,
                 storage_context=storage_context,
                 embed_model=self.embedding_model,
                 transformations=self.transformations,
