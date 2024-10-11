@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 import logging
+from pathlib import Path
 from llama_index.core import SimpleDirectoryReader
 
 logger = logging.getLogger(__name__)
@@ -85,22 +86,40 @@ class AbstractIndexer(ABC):
 
     @abstractmethod
     def create_index(self):
-        
-        # Check if the index already exists
-        if self.index is not None:
-            logger.info("In-memory index already exists. Skipping creation.")
-            return True  # Indicate that the index already exists
-        
-        # Load index if it exists on disk
-        if self.check_persisted_index_exists():
-            logger.info(f"Persisted index found at {self.index_path}. Loading index...")
-            self.load_index()
-            return True  # Indicate that the index was loaded
+        """
+        Create the index by checking for existing indexes, loading, or building a new one.
+        """
 
-        logger.info("No existing index found. Creating a new index...")
-        self.documents = self.load_documents()
+        try:
+            if self.index is not None:
+                logger.info("In-memory index already exists. Skipping creation.")
+                return
 
-        return False  # Indicate that the index needs to be created
+            if self.check_persisted_index_exists():
+                logger.info(f"Persisted index found at {self.index_path}. Loading index...")
+                self.load_index()
+                return
+
+            logger.info("No existing index found. Building a new index...")
+            self.documents = self.load_documents()
+            self.build_index()
+
+        except Exception as e:
+            logger.exception(f"An error occurred during index creation: {e}")
+            raise
+
+    @abstractmethod
+    def build_index(self):
+        """
+        Build the index from documents.
+        """
+        pass
+
+    def save_index(self):
+        """
+        Save the index to persistent storage.
+        """
+        pass
 
     @abstractmethod
     def load_index(self):
