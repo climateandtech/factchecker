@@ -1,24 +1,40 @@
+"""This module contains the LlamaVectorStoreIndexer class, which is a subclass of AbstractIndexer."""
 
 from factchecker.indexing.abstract_indexer import AbstractIndexer
-from llama_index.core import VectorStoreIndex, StorageContext, Settings
+from llama_index.core import VectorStoreIndex, StorageContext, Settings, Document
 from llama_index.core.node_parser import SentenceSplitter
+from llama_index.core.embeddings.utils import EmbedType
+from typing import Any, Dict, List, Optional, Callable
 import logging
 
 logger = logging.getLogger(__name__)
 
 class LlamaVectorStoreIndexer(AbstractIndexer):
-    def __init__(self, options=None):
+    """
+    LlamaVectorStoreIndexer class for creating and managing indexes using Llama's VectorStoreIndex.
+
+    Attributes:
+        options (Dict[str, Any]): Configuration options for the indexer.
+        index_name (str): Name of the index.
+        index_path (Optional[str]): Path to the directory where the index is stored on disk.
+        index (Optional[Any]): In-memory index object.
+        embed_model (Optional[EmbedType]): The name of the embedding model to use.
+        vector_store (Optional[str]): The name of the vector store to use.
+        transformations (List[Callable]): A list of transformations to apply to the documents.
+        show_progress (bool): Whether to show progress during indexing.
+    """
+    def __init__(self, options: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(options)
-        self.embedding_model = self.options.pop('embedding_model', None)
-        self.vector_store = self.options.pop('vector_store', None)
-        self.transformations = self.options.pop(
+        self.embed_model: Optional[EmbedType] = self.options.pop('embed_model', None)
+        self.vector_store: Optional[str] = self.options.pop('vector_store', None)
+        self.transformations: List[Callable] = self.options.pop(
             'transformations', 
             [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)]
         )
-        self.show_progress = self.options.pop('show_progress', False)
+        self.show_progress: bool = self.options.pop('show_progress', False)
 
 
-    def build_index(self, documents):
+    def build_index(self, documents: List[Document]) -> None:
         try:
 
             # Now self.options should only contain relevant options for StorageContext.from_defaults
@@ -27,7 +43,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             self.index = VectorStoreIndex.from_documents(
                 documents,
                 storage_context=storage_context,
-                embed_model=self.embedding_model,
+                embed_model=self.embed_model,
                 transformations=self.transformations,
             )
             logger.info("VectorStoreIndex successfully built")
