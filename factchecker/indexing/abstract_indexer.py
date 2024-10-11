@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 import logging
-from pathlib import Path
+import os
 from llama_index.core import SimpleDirectoryReader
 
 logger = logging.getLogger(__name__)
@@ -76,20 +76,27 @@ class AbstractIndexer(ABC):
             raise
 
         
-    @abstractmethod
     def check_persisted_index_exists(self) -> bool:
         """
         Determine if a persisted index exists at the specified path.
 
+        If certain subclasses have different mechanisms for checking index existence, they can override this method.
+
         Returns:
             bool: True if the persisted index exists, False otherwise.
         """
-        pass
+        if self.index_path and os.path.exists(self.index_path):
+            logger.debug(f"Index exists at {self.index_path}")
+            return True
+        logger.debug("No persisted index found.")
+        return False
 
     @abstractmethod
     def initialize_index(self):
         """
         Create the index by checking for existing indexes, loading, or building a new one.
+        All indexers follow the same initialization process.
+        Subclasses can override initialize_index if they have special requirements.
         """
 
         try:
