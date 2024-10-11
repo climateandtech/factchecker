@@ -2,6 +2,9 @@
 from factchecker.indexing.abstract_indexer import AbstractIndexer
 from llama_index.core import VectorStoreIndex, StorageContext, Settings
 from llama_index.core.node_parser import SentenceSplitter
+import logging
+
+logger = logging.getLogger(__name__)
 
 class LlamaVectorStoreIndexer(AbstractIndexer):
     def __init__(self, options=None):
@@ -12,8 +15,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         self.show_progress = self.options.pop('show_progress', False)
 
     def check_persisted_index_exists(self):
-        # TODO: first implement the methods to save and load this type of index
-        # TODO: then implement this method to check if the index exists on disk
+        # TODO: Implement the method to check if the index exists on disk
         pass
 
     def create_index(self):
@@ -22,24 +24,29 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         if super().create_index():
             return  
 
-        # Now self.options should only contain relevant options for StorageContext.from_defaults
-        storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
-        self.index = VectorStoreIndex.from_documents(
-            self.documents,
-            storage_context=storage_context,
-            embed_model=self.embedding_model,
-            transformations=self.transformations,
-            # TODO: check if any additional parameters should be passed here
-        )
+        try:
+
+            # Now self.options should only contain relevant options for StorageContext.from_defaults
+            storage_context = StorageContext.from_defaults(vector_store=self.vector_store, **self.options)
+            self.index = VectorStoreIndex.from_documents(
+                self.documents,
+                storage_context=storage_context,
+                embed_model=self.embedding_model,
+                transformations=self.transformations,
+            )
+        
+        except Exception as e:
+            logger.exception(f"Failed to create LlamaVectorStore index: {e}")
+            raise
 
     def load_index(self):
+        logger.error("load_index of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("load_index of LlamaVectorStoreIndexer is not yet implemented")
-        pass
 
     def add_to_index(self, documents):
+        logger.error("add_to_index of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("add_to_index of LlamaVectorStoreIndexer is not yet implemented")
-        pass
 
     def delete_from_index(self, document_ids):
+        logger.error("delete_from_index of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index of LlamaVectorStoreIndexer is not yet implemented")
-        pass
