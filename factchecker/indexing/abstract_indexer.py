@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
+import logging
 from llama_index.core import SimpleDirectoryReader
+
+logger = logging.getLogger(__name__)
 
 class AbstractIndexer(ABC):
     """
@@ -38,24 +41,36 @@ class AbstractIndexer(ABC):
         self.documents = self.options.pop('documents', None)
         self.index = None 
 
-    def load_documents(self):
+    def load_documents(self) -> List[Any]:
         """
         Load documents either from preloaded data or from the specified source.
 
         Returns:
             List[Any]: A list of documents loaded for indexing.
+
+        Raises:
+            FileNotFoundError: If the source directory or specified files do not exist.
+            Exception: For other issues encountered during document loading.
         """
         try:
             if self.documents:
+                logger.info("Using preloaded documents.")
                 return self.documents
             if not self.files:
-                # Load files from the source directory if no files are provided in the options
-                return SimpleDirectoryReader(self.source_directory).load_data()
+                logger.info(f"Loading documents from source directory: {self.source_directory}")
+                documents = SimpleDirectoryReader(self.source_directory).load_data()
+                logger.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+                return documents
             else:
-                # Load files from the provided list of files
-                return SimpleDirectoryReader(input_files=self.files).load_data()
+                logger.info(f"Loading documents from specified files: {self.files}")
+                documents = SimpleDirectoryReader(input_files=self.files).load_data()
+                logger.debug(f"Loaded {len(documents)} documents from specified files")
+                return documents
+        except FileNotFoundError as e:
+            logger.error(f"File not found during document loading: {e}")
+            raise
         except Exception as e:
-            print(f"An error occurred while loading documents: {e}")
+            logger.exception(f"An error occurred while loading documents: {e}")
             raise
         
     @abstractmethod
@@ -70,18 +85,20 @@ class AbstractIndexer(ABC):
 
     @abstractmethod
     def create_index(self):
-        self.documents = self.load_documents()
-
+        
         # Check if the index already exists
         if self.index is not None:
-            print("Index object already exists. Skipping index creation.")
+            logger.info("In-memory index already exists. Skipping creation.")
             return True  # Indicate that the index already exists
         
         # Load index if it exists on disk
         if self.check_persisted_index_exists():
-            print(f"Saved index found at {self.index_path}. Loading index...")
+            logger.info(f"Persisted index found at {self.index_path}. Loading index...")
             self.load_index()
             return True  # Indicate that the index was loaded
+
+        logger.info("No existing index found. Creating a new index...")
+        self.documents = self.load_documents()
 
         return False  # Indicate that the index needs to be created
 
@@ -90,9 +107,21 @@ class AbstractIndexer(ABC):
         pass
 
     @abstractmethod
-    def add_to_index(self, documents):
+    def add_to_index(self, documents: List[Any]) -> None:
+        """
+        Add documents to the index.
+
+        Args:
+            documents (List[Any]): Documents to be added to the index.
+        """
         pass
 
     @abstractmethod
-    def delete_from_index(self, document_ids):
+    def delete_from_index(self, document_ids: List[Any]) -> None:
+        """
+        Delete documents from the index based on their IDs.
+
+        Args:
+            document_ids (List[Any]): IDs of documents to be removed from the index.
+        """
         pass
