@@ -9,7 +9,7 @@ class AdvocateMediatorStrategy:
         self.advocate_steps = [
             AdvocateStep(
                 options={**advocate_options, 'system_prompt_template': advocate_prompt},
-                evidence_options={**retriever_options, 'indexer': indexer}
+                evidence_options={**retriever_options, 'indexer': indexer, 'top_k': advocate_options.get('top_k', 5), 'min_score': advocate_options.get('min_score', 0.75)}
             ) for retriever_options, indexer in zip(retriever_options_list, self.indexers)
         ]
         self.mediator_step = MediatorStep(options={**mediator_options, 'arbitrator_primer': mediator_prompt})

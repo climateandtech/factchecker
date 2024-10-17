@@ -1,10 +1,12 @@
-from llama_index.llms.openai import OpenAI
 from llama_index.core.llms import ChatMessage
 import logging
+import os
+from factchecker.core.llm import load_llm
 
 class MediatorStep:
     def __init__(self, llm=None, options=None):
-        self.llm = llm if llm is not None else OpenAI()
+        self.llm = llm if llm is not None else load_llm()
+
         self.options = options if options is not None else {}
         self.prompt = self.options.get('arbitrator_primer', '')
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
