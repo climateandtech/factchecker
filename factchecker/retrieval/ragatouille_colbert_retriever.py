@@ -2,7 +2,6 @@
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
 from ragatouille import RAGPretrainedModel
-import os
 
 class RagatouilleColBERTRetriever(AbstractRetriever):
     def __init__(self, indexer: RagatouilleColBERTIndexer, options=None):
