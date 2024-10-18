@@ -35,6 +35,13 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
 
     def build_index(self, documents: List[Document]) -> None:
+        """
+        Build the LlamaVectorStore index from the provided documents.
+
+        Args:
+            documents (List[Document]): List of LlamaIndex Documents to index.
+
+        """
         try:
 
             # Now self.options should only contain relevant options for StorageContext.from_defaults

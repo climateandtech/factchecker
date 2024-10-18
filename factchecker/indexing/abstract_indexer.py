@@ -19,10 +19,11 @@ class AbstractIndexer(ABC):
         source_directory (str): Directory containing source data files.
         index (Optional[Any]): In-memory index object.
     """
+
     def __init__(
         self,
         options: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """
         Initialize the AbstractIndexer with specified parameters.
 
@@ -31,14 +32,15 @@ class AbstractIndexer(ABC):
                 - index_name (str): Name of the index. Defaults to 'default_index'.
                 - index_path (Optional[str]): Path to the directory where the index is stored on disk.
                 - source_directory (str): Directory containing source data files. Defaults to 'data'.
-        """
-        self.options = options if options is not None else {}
-        self.index_name = self.options.pop('index_name', 'default_index')
-        self.index_path = self.options.pop('index_path', None)
-        self.source_directory = self.options.pop('source_directory', 'data')
-        self.index = None 
 
-    def load_initial_documents(self) -> List[Any]:
+        """
+        self.options: Dict[str, Any] = options if options is not None else {}
+        self.index_name: str = self.options.pop('index_name', 'default_index')
+        self.index_path: Optional[str] = self.options.pop('index_path', None)
+        self.source_directory: str = self.options.pop('source_directory', 'data')
+        self.index: Optional[Any] = None
+
+    def load_initial_documents(self) -> List[Document]:
         """
         Load documents either from preloaded data or from the specified source.
 
@@ -91,7 +93,7 @@ class AbstractIndexer(ABC):
         logger.debug("No persisted index found.")
         return False
 
-    @abstractmethod
+
     def initialize_index(self) -> None:
         """
         Initializes the index by loading an existing index or building a new one.
@@ -125,20 +127,17 @@ class AbstractIndexer(ABC):
 
         Args:
             documents (List[Any]): The documents to index.
+
         """
         pass
 
     def save_index(self, index_path: Optional[str] = None) -> None:
-        """
-        Save the index to persistent storage.
-        """
+        """Save the index to persistent storage."""
         pass
 
     @abstractmethod
     def load_index(self) -> None:
-        """
-        Loads the index from persistent storage.
-        """
+        """Loads the index from persistent storage."""
         pass
 
     @abstractmethod
@@ -148,6 +147,7 @@ class AbstractIndexer(ABC):
 
         Args:
             documents (List[Any]): Documents to be added to the index.
+
         """
         pass
 
@@ -158,5 +158,6 @@ class AbstractIndexer(ABC):
 
         Args:
             document_ids (List[Any]): IDs of documents to be removed from the index.
+
         """
         pass
