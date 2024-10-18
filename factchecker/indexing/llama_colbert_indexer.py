@@ -3,14 +3,14 @@
 from factchecker.indexing.abstract_indexer import AbstractIndexer
 from llama_index.indices.managed.colbert import ColbertIndex
 from llama_index.core import Document
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import logging
 
 logger = logging.getLogger(__name__)
 
 class LlamaColBERTIndexer(AbstractIndexer):
     """ 
-    LlamaIndex ColBERT Indexer
+    LlamaIndex ColBERT Indexer for creating and managing ColBERT indexes.
 
     Attributes:
         options (Dict[str, Any]): Configuration options for the indexer.
@@ -18,35 +18,36 @@ class LlamaColBERTIndexer(AbstractIndexer):
         index_path (Optional[str]): Path to the directory where the index is stored on disk.
         source_directory (str): Directory containing source data files.
         index (Optional[Any]): In-memory index object.
+        ---
         gpus (int): number of GPUs to use for indexing.
         show_progress (bool): Whether to show progress during indexing.
     """
     def __init__(
         self,
         options: Optional[Dict[str, Any]] = None
-    ):
+    ) -> None:
         """
         Initialize the LlamaColBERTIndexer with specified parameters.
 
         Args:
             options (Optional[Dict[str, Any]]): Configuration options which may include:
                 - index_name (str): Name of the index. Defaults to 'default_index'.
-                - index_path (Optional[str]): Path to the directory where the index is stored on disk.
+                - index_path (Optional[str]): Path where the index is stored on disk.
                 - source_directory (str): Directory containing source data files. Defaults to 'data'.
-                - gpus (int): number of GPUs to use for indexing. Defaults to 0.
-                - show_progress (bool): Whether to show progress during indexing. Defaults
+                - gpus (int): Number of GPUs to use for indexing.
+                - show_progress (bool): Whether to show progress during indexing. 
 
         """
         super().__init__(options)
         self.gpus = self.options.pop('gpus', 0)
         self.show_progress = self.options.pop('show_progress', False)
 
-    def build_index(self, documents: list[Document]) -> None:
+    def build_index(self, documents: List[Document]) -> None:
         """
-        Build the LlamaIndex ColBERT index from the provided documents.
+        Builds the LlamaIndex ColBERT index from the provided documents.
 
         Args:
-            documents (list[Document]): List of LlamaIndex Documents to index.
+            documents (List[Document]): List of LlamaIndex Documents to index.
 
         """
         try:
@@ -65,8 +66,13 @@ class LlamaColBERTIndexer(AbstractIndexer):
             logger.exception(f"Failed to create LlamaColBERT index: {e}")
             raise
 
-    def save_index(self) -> None:
-        """Save the LlamaIndex ColBERT index to disk."""
+    def save_index(self, index_path: Optional[str] = None) -> None:
+        """
+        Saves the LlamaIndex ColBERT index to disk.
+
+        Args:
+            index_path (Optional[str]): The path where the index should be saved.
+        """
         logger.error("save_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("save_index() of LlamaColBERTIndexer is not yet implemented")
  
@@ -76,19 +82,25 @@ class LlamaColBERTIndexer(AbstractIndexer):
         raise NotImplementedError("load_index() of LlamaColBERTIndexer is not yet implemented")
 
 
-    def add_to_index(self, documents) -> None:
-        """Add documents to the index."""
+    def add_to_index(self, documents: List[Document]) -> None:
+        """
+        Adds documents to the index.
+
+        Args:
+            documents (List[Document]): Documents to be added to the index.
+
+        """
         logger.error("add_to_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of LlamaColBERTIndexer is not yet implemented")
 
 
-    def delete_from_index(self, document_ids) -> None:
+    def delete_from_index(self, document_ids: List[str]) -> None:
         """
-        Delete documents from the index.
+        Deletes documents from the index.
 
         Args:
-            document_ids (List[str]): List of document IDs to delete from the index 
-            
+            document_ids (List[str]): List of document IDs to delete from the index.
+
         """
         logger.error("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
