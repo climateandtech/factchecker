@@ -15,6 +15,15 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
 
     def build_index(self, documents):
+        """ 
+        Build the RagatouilleColBERT index from the provided documents.
+
+        Side effect: The index is stored on disk at self.index_path.
+
+        Args:
+            documents (list[Document]): List of LLamaIndex Documents to index.
+
+        """
         try:
             self.index = RAGPretrainedModel.from_pretrained(
                 self.checkpoint,
@@ -37,11 +46,12 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
             logger.exception(f"Failed to create RagatouilleColBERT index: {e}")
             raise
 
-    def save_index(self):
+    def save_index(self) -> None:
         logger.error("save_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("save_index() of RagatouilleColBERTIndexer is not yet implemented")
 
-    def load_index(self):
+    def load_index(self) -> None:
+        """ Load the RagatouilleColBERT index from disk into memory."""
         try:
             if self.check_persisted_index_exists():
                 self.index = RAGPretrainedModel.from_index(self.index_path)
@@ -52,11 +62,11 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
             logger.exception(f"Failed to load index from {self.index_path}: {e}")
             raise
 
-    def add_to_index(self, documents):
+    def add_to_index(self, documents) -> None:
         logger.error("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
 
-    def delete_from_index(self, document_ids):
+    def delete_from_index(self, document_ids) -> None:
         logger.error("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
 

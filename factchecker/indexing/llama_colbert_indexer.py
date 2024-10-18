@@ -35,6 +35,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
                 - source_directory (str): Directory containing source data files. Defaults to 'data'.
                 - gpus (int): number of GPUs to use for indexing. Defaults to 0.
                 - show_progress (bool): Whether to show progress during indexing. Defaults
+
         """
         super().__init__(options)
         self.gpus = self.options.pop('gpus', 0)
@@ -87,6 +88,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
 
         Args:
             document_ids (List[str]): List of document IDs to delete from the index 
+            
         """
         logger.error("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
