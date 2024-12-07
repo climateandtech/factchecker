@@ -1,12 +1,14 @@
 """Ragatouille ColBERT Indexer."""
 
+import os
+import logging
 from typing import Any, Dict, List, Optional
-from factchecker.indexing.abstract_indexer import AbstractIndexer
+
 from ragatouille import RAGPretrainedModel
 from llama_index.core import Document
-import logging
 
-logger = logging.getLogger(__name__)
+from factchecker.indexing.abstract_indexer import AbstractIndexer
+
 
 class RagatouilleColBERTIndexer(AbstractIndexer):
     """
@@ -45,6 +47,9 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         self.checkpoint: str = self.options.pop('checkpoint', 'colbert-ir/colbertv2.0')
         self.overwrite_index: bool = self.options.pop('overwrite_index', True)
         self.index_root: str = self.options.pop('index_root', 'indexes/ragatouille/')
+        if not os.path.isdir(self.index_root):
+            logging.warning(f"Index root {self.index_root} does not exist. Creating it.")
+            os.makedirs(self.index_root, exist_ok=True)
 
 
     def build_index(self, documents: List[Document]) -> None:
@@ -76,10 +81,10 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
                 overwrite=self.overwrite_index,
             )
             
-            logger.info(f"Index created and stored at {self.index_path}")
+            logging.info(f"Index created and stored at {self.index_path}")
 
         except Exception as e:
-            logger.exception(f"Failed to create RagatouilleColBERT index: {e}")
+            logging.exception(f"Failed to create RagatouilleColBERT index: {e}")
             raise
 
     def save_index(self, index_path: Optional[str] = None) -> None:
@@ -89,7 +94,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         Args:
             index_path (Optional[str]): The path where the index should be saved.
         """
-        logger.error("save_index() of RagatouilleColBERTIndexer is not implemented because indexing saves automatically.")
+        logging.error("save_index() of RagatouilleColBERTIndexer is not implemented because indexing saves automatically.")
         raise NotImplementedError("save_index() of RagatouilleColBERTIndexer is not implemented")
 
     def load_index(self) -> None:
@@ -102,12 +107,12 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         try:
             if self.check_persisted_index_exists():
                 self.index = RAGPretrainedModel.from_index(self.index_path)
-                logger.info(f"Index loaded from {self.index_path}")
+                logging.info(f"Index loaded from {self.index_path}")
             else:
-                logger.error(f"No index found at {self.index_path}")
+                logging.error(f"No index found at {self.index_path}")
                 raise FileNotFoundError(f"No index found at {self.index_path}")
         except Exception as e:
-            logger.exception(f"Failed to load index from {self.index_path}: {e}")
+            logging.exception(f"Failed to load index from {self.index_path}: {e}")
             raise
 
     def add_to_index(self, documents: List[Document]) -> None:
@@ -117,7 +122,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         Args:
             documents (List[Document]): Documents to be added to the index.
         """
-        logger.error("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
+        logging.error("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
 
     def delete_from_index(self, document_ids: List[str]) -> None:
@@ -127,6 +132,6 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         Args:
             document_ids (List[str]): List of document IDs to delete from the index.
         """
-        logger.error("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
+        logging.error("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
 

@@ -1,13 +1,13 @@
 """This module contains the LlamaVectorStoreIndexer class."""
 
 from typing import Any, Dict, List, Optional, Callable
-from factchecker.indexing.abstract_indexer import AbstractIndexer
+import logging
+
 from llama_index.core import VectorStoreIndex, StorageContext, Settings, Document
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.embeddings.utils import EmbedType
-import logging
 
-logger = logging.getLogger(__name__)
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 
 class LlamaVectorStoreIndexer(AbstractIndexer):
     """
@@ -72,10 +72,10 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
                 transformations=self.transformations,
                 show_progress=self.show_progress,
             )
-            logger.info("VectorStoreIndex successfully built")
+            logging.info("VectorStoreIndex successfully built")
         
         except Exception as e:
-            logger.exception(f"Failed to create LlamaVectorStore index: {e}")
+            logging.exception(f"Failed to create LlamaVectorStore index: {e}")
             raise
 
     def save_index(self) -> None:
@@ -86,7 +86,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logger.error("save_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logging.error("save_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("save_index() of LlamaVectorStoreIndexer is not yet implemented")
 
     def load_index(self) -> None:
@@ -97,7 +97,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logger.error("load_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logging.error("load_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("load_index() of LlamaVectorStoreIndexer is not yet implemented")
 
     def add_to_index(self, documents: List[Document]) -> None:
@@ -111,7 +111,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logger.error("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logging.error("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
 
     def delete_from_index(self, document_ids: List[str]) -> None:
@@ -125,5 +125,5 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logger.error("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logging.error("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")
