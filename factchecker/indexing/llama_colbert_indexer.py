@@ -1,12 +1,12 @@
 """LlamaIndex ColBERT Indexer """
 
-from factchecker.indexing.abstract_indexer import AbstractIndexer
-from llama_index.indices.managed.colbert import ColbertIndex
-from llama_index.core import Document
 from typing import Any, Dict, List, Optional
 import logging
 
-logger = logging.getLogger(__name__)
+from llama_index.core import Document
+from llama_index.indices.managed.colbert import ColbertIndex
+
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 
 class LlamaColBERTIndexer(AbstractIndexer):
     """ 
@@ -54,7 +54,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
             # There is currently (28.9.2024) a bug with the LlamaIndex ColBERT Indexing using the from_documents function resulting in:
             # TypeError: ColbertIndex._build_index_from_nodes() got an unexpected keyword argument 'index_name'
             # See: https://github.com/run-llama/llama_index/issues/14398 
-            logger.warning("LlamaIndex ColBERT indexing has a known bug. Proceeding may result in errors.")
+            logging.warning("LlamaIndex ColBERT indexing has a known bug. Proceeding may result in errors.")
 
             self.index = ColbertIndex.from_documents(
                 documents,
@@ -63,7 +63,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
             )
 
         except Exception as e:
-            logger.exception(f"Failed to create LlamaColBERT index: {e}")
+            logging.exception(f"Failed to create LlamaColBERT index: {e}")
             raise
 
     def save_index(self, index_path: Optional[str] = None) -> None:
@@ -73,12 +73,12 @@ class LlamaColBERTIndexer(AbstractIndexer):
         Args:
             index_path (Optional[str]): The path where the index should be saved.
         """
-        logger.error("save_index() of LlamaColBERTIndexer is not yet implemented")
+        logging.error("save_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("save_index() of LlamaColBERTIndexer is not yet implemented")
  
     def load_index(self) -> None:
         """Load the LlamaIndex ColBERT index from disk."""
-        logger.error("load_index() of LlamaColBERTIndexer is not yet implemented")
+        logging.error("load_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("load_index() of LlamaColBERTIndexer is not yet implemented")
 
 
@@ -90,7 +90,7 @@ class LlamaColBERTIndexer(AbstractIndexer):
             documents (List[Document]): Documents to be added to the index.
 
         """
-        logger.error("add_to_index() of LlamaColBERTIndexer is not yet implemented")
+        logging.error("add_to_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of LlamaColBERTIndexer is not yet implemented")
 
 
@@ -102,5 +102,5 @@ class LlamaColBERTIndexer(AbstractIndexer):
             document_ids (List[str]): List of document IDs to delete from the index.
 
         """
-        logger.error("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
+        logging.error("delete_from_index() of LlamaColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of LlamaColBERTIndexer is not yet implemented")

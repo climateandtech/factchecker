@@ -1,12 +1,11 @@
 """Abstract base class for creating and managing indexes."""
 
+import os
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 import logging
-import os
-from llama_index.core import SimpleDirectoryReader, Document
 
-logger = logging.getLogger(__name__)
+from llama_index.core import SimpleDirectoryReader, Document
 
 class AbstractIndexer(ABC):
     """
@@ -25,14 +24,11 @@ class AbstractIndexer(ABC):
         options: Optional[Dict[str, Any]] = None
     ) -> None:
         """
-        Initialize the AbstractIndexer with specified parameters.
+        Initialize the AbstractIndexer with configuration options.
 
         Args:
-            options (Optional[Dict[str, Any]]): Configuration options which may include:
-                - index_name (str): Name of the index. Defaults to 'default_index'.
-                - index_path (Optional[str]): Path to the directory where the index is stored on disk.
-                - source_directory (str): Directory containing source data files. Defaults to 'data'.
-
+            options (Optional[Dict[str, Any]]): Dictionary containing configuration options. 
+                If not provided, defaults will be used.
         """
         self.options: Dict[str, Any] = options if options is not None else {}
         self.index_name: str = self.options.pop('index_name', 'default_index')
@@ -55,28 +51,28 @@ class AbstractIndexer(ABC):
             # Use preloaded documents if provided
             documents = self.options.get('documents')
             if documents:
-                logger.info("Using preloaded documents provided in options.")
+                logging.info("Using preloaded documents provided in options.")
                 return documents
 
             # Use specified files if provided
             files = self.options.get('files')
             if files:
-                logger.info(f"Loading documents from specified files: {files}")
+                logging.info(f"Loading documents from specified files: {files}")
                 documents = SimpleDirectoryReader(input_files=files).load_data()
-                logger.debug(f"Loaded {len(documents)} documents from specified files")
+                logging.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
 
             # Load from source directory as default
-            logger.info(f"Loading documents from source directory: {self.source_directory}")
+            logging.info(f"Loading documents from source directory: {self.source_directory}")
             documents = SimpleDirectoryReader(self.source_directory).load_data()
-            logger.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+            logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
             return documents
 
         except FileNotFoundError as e:
-            logger.error(f"File not found during document loading: {e}")
+            logging.error(f"File not found during document loading: {e}")
             raise
         except Exception as e:
-            logger.exception(f"An error occurred while loading documents: {e}")
+            logging.exception(f"An error occurred while loading documents: {e}")
             raise
 
         
@@ -88,9 +84,9 @@ class AbstractIndexer(ABC):
             bool: True if the persisted index exists, False otherwise.
         """
         if self.index_path and os.path.exists(self.index_path):
-            logger.debug(f"Index exists at {self.index_path}")
+            logging.debug(f"Index exists at {self.index_path}")
             return True
-        logger.debug("No persisted index found.")
+        logging.debug("No persisted index found.")
         return False
 
 
@@ -104,21 +100,27 @@ class AbstractIndexer(ABC):
 
         try:
             if self.index is not None:
-                logger.info("In-memory index already exists. Skipping creation.")
+                logging.info("In-memory index already exists. Skipping creation.")
                 return
 
             if self.check_persisted_index_exists():
-                logger.info(f"Persisted index found at {self.index_path}. Loading index...")
+                logging.info(f"Persisted index found at {self.index_path}. Loading index...")
                 self.load_index()
                 return
 
-            logger.info("No existing index found. Building a new index...")
+            logging.info("No existing index found. Building a new index...")
             documents = self.load_initial_documents()
             self.build_index(documents)
 
+        except FileNotFoundError as e:
+            logging.error(f"File not found during initialization: {e}")
+            raise FileNotFoundError(f"Could not initialize index due to missing file: {e}")
+        except ValueError as e:
+            logging.error(f"Invalid data provided: {e}")
+            raise ValueError(f"Initialization failed due to invalid input: {e}")
         except Exception as e:
-            logger.exception(f"An error occurred during index creation: {e}")
-            raise
+            logging.exception(f"Unexpected error during index creation: {e}")
+            raise RuntimeError(f"An unexpected error occurred: {e}")
 
     @abstractmethod
     def build_index(self, documents: List[Document]) -> None:
@@ -131,8 +133,14 @@ class AbstractIndexer(ABC):
         """
         pass
 
+    @abstractmethod
     def save_index(self, index_path: Optional[str] = None) -> None:
-        """Save the index to persistent storage."""
+        """
+        Save the index to persistent storage.
+                
+        Args:
+            index_path (Optional[str]): Path where the index will be saved.
+        """
         pass
 
     @abstractmethod
