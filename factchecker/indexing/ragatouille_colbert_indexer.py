@@ -78,7 +78,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
                 collection=texts,
                 index_name=self.index_name,
                 max_document_length=self.max_document_length,
-                overwrite=self.overwrite_index,
+                overwrite_index=self.overwrite_index,
             )
             
             logging.info(f"Index created and stored at {self.index_path}")
