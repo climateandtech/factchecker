@@ -32,34 +32,33 @@ def get_test_documents():
     return documents
 
 
-# @pytest.fixture
-# def prepare_llama_vector_store_indexer(prepare_documents):
-#     """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
+@pytest.fixture
+def prepare_llama_vector_store_indexer(prepare_documents):
+    """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
 
-#     indexer_options = {
-#         'documents': prepare_documents,
-#         'index_name': 'test_index_with_docs',
-#     }
+    indexer_options = {
+        'documents': prepare_documents,
+        'index_name': 'test_index_with_docs',
+    }
     
-#     indexer = LlamaVectorStoreIndexer(indexer_options)
-#     indexer.create_index()
+    indexer = LlamaVectorStoreIndexer(indexer_options)
+    indexer.initialize_index()
     
-#     return indexer
+    return indexer
 
-# @pytest.fixture
-# def prepare_ragatouille_colbert_indexer(prepare_documents, tmp_path):
+@pytest.fixture
+def get_ragatouille_colbert_indexer(get_test_documents, tmp_path):
 
-#     # Use the tmp_path fixture to create a temporary directory for the index
-#     index_root = tmp_path / "indexes"
+    # Use the tmp_path fixture to create a temporary directory for the index
+    index_root = tmp_path / "indexes/ragatouille"
 
-#     indexer_options = {
-#         'documents': prepare_documents,
-#         'index_name': 'test_index_with_docs',
-#         'checkpoint': 'colbert-ir/colbertv2.0',
-#         'index_root': str(index_root) 
-#     }
+    indexer_options = {
+        'documents': get_test_documents,
+        'index_name': 'test_index_from_docs',
+        'index_root': str(index_root) 
+    }
     
-#     indexer = RagatouilleColBERTIndexer(indexer_options)
-#     indexer.create_index()
+    indexer = RagatouilleColBERTIndexer(indexer_options)
+    indexer.initialize_index()
 
-#     return indexer
+    return indexer

@@ -24,6 +24,5 @@ def test_initialize_index_from_directory(get_test_data_directory):
     indexer = LlamaVectorStoreIndexer(indexer_options)
     indexer.initialize_index()
     
-    # Assertions
     assert indexer.index is not None
     assert indexer.index_name == 'test_index_from_dir'
