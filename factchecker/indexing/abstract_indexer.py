@@ -33,7 +33,7 @@ class AbstractIndexer(ABC):
         self.options: Dict[str, Any] = options if options is not None else {}
         self.index_name: str = self.options.pop('index_name', 'default_index')
         self.index_path: Optional[str] = self.options.pop('index_path', None)
-        self.source_directory: str = self.options.pop('source_directory', 'data')
+        self.source_directory: str = self.options.pop('source_directory', None)
         self.index: Optional[Any] = None
 
     def load_initial_documents(self) -> List[Document]:
@@ -62,11 +62,14 @@ class AbstractIndexer(ABC):
                 logging.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
 
-            # Load from source directory as default
-            logging.info(f"Loading documents from source directory: {self.source_directory}")
-            documents = SimpleDirectoryReader(self.source_directory).load_data()
-            logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
-            return documents
+            # Load from source directory
+            if self.source_directory:
+                logging.info(f"Loading documents from source directory: {self.source_directory}")
+                documents = SimpleDirectoryReader(self.source_directory).load_data()
+                logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+                return documents
+            
+            raise ValueError("No documents, files or source directory provided for indexing.")
 
         except FileNotFoundError as e:
             logging.error(f"File not found during document loading: {e}")
