@@ -1,24 +1,23 @@
-import pytest
+
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 
-def test_retrieve_with_llama_base_retriever(prepare_llama_vector_store_indexer):
+def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer):
     """Test the LlamaBaseRetriever's ability to retrieve documents from the index."""
 
+    indexer = get_llama_vector_store_indexer
+
     top_k = 2
-    
-    # Setup retriever with the indexer
     retriever_options = {
-        'top_k': top_k,  # Retrieve top 2 documents
+        'top_k': top_k,
     }
     
-    retriever = LlamaBaseRetriever(prepare_llama_vector_store_indexer, retriever_options)
+    retriever = LlamaBaseRetriever(indexer, retriever_options)
     
     query = "first test document"
     
     # Perform retrieval
     results = retriever.retrieve(query)
     
-    # Assertions
-    assert results is not None, "Results should not be None"
-    assert len(results) == top_k, "Two documents should be retrieved"
+    assert results is not None
+    assert len(results) == top_k
     assert any("first test document" in result.get_text() for result in results), "The results should include the correct document"

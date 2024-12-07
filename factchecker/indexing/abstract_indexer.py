@@ -106,11 +106,6 @@ class AbstractIndexer(ABC):
                 logging.info("In-memory index already exists. Skipping creation.")
                 return
 
-            if self.check_persisted_index_exists():
-                logging.info(f"Persisted index found at {self.index_path}. Loading index...")
-                self.load_index()
-                return
-
             logging.info("No existing index found. Building a new index...")
             documents = self.load_initial_documents()
             self.build_index(documents)

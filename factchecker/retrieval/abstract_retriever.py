@@ -5,7 +5,6 @@ class AbstractRetriever(ABC):
     def __init__(self, indexer: AbstractIndexer, options=None):
         self.indexer = indexer
         self.options = options if options is not None else {}
-        # FIXME if we have to pass options to retrieve, we need to separate the options dictionary
         self.top_k = self.options.pop('top_k', 5) # Number of chunks to retrieve
         self.retriever = None
 
@@ -13,7 +12,7 @@ class AbstractRetriever(ABC):
     def create_retriever(self):
         # Ensure the index is created before creating the retriever
         if self.indexer.index is None:
-            self.indexer.create_index()
+            self.indexer.initialize_index()
         pass
 
     @abstractmethod

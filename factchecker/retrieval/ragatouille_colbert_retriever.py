@@ -29,4 +29,8 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
         # Merge options with any additional keyword arguments
         retrieve_options = {**self.options}
         
-        return self.retriever.search(query, k=self.top_k, **retrieve_options)
+        return self.retriever.search(
+            query, 
+            k=self.top_k, 
+            **retrieve_options
+            )

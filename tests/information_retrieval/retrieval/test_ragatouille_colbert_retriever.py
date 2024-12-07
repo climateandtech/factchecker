@@ -1,10 +1,10 @@
-import pytest
+
 from factchecker.retrieval.ragatouille_colbert_retriever import RagatouilleColBERTRetriever
 
-def test_retrieve_with_ragatouille_colbert_retriever(prepare_ragatouille_colbert_indexer):
+def test_retrieve_with_ragatouille_colbert_retriever(get_ragatouille_colbert_indexer):
     """Test the LlamaBaseRetriever's ability to retrieve documents from the index."""
 
-    indexer = prepare_ragatouille_colbert_indexer
+    indexer = get_ragatouille_colbert_indexer
 
     top_k = 2
     
@@ -21,6 +21,6 @@ def test_retrieve_with_ragatouille_colbert_retriever(prepare_ragatouille_colbert
     results = retriever.retrieve(query)
     
     # Assertions
-    assert results is not None, "Results should not be None"
-    assert len(results) == top_k, "Two documents should be retrieved"
+    assert results is not None
+    assert len(results) == top_k
     assert any("first test document" in result["content"] for result in results), "The results should include the correct document"
