@@ -33,11 +33,11 @@ def get_test_documents():
 
 
 @pytest.fixture
-def prepare_llama_vector_store_indexer(prepare_documents):
+def get_llama_vector_store_indexer(get_test_documents):
     """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
 
     indexer_options = {
-        'documents': prepare_documents,
+        'documents': get_test_documents,
         'index_name': 'test_index_with_docs',
     }
     
