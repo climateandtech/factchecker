@@ -4,7 +4,7 @@ from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreInde
 from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
 
 @pytest.fixture
-def prepare_test_data_directory(tmp_path):
+def get_test_data_directory(tmp_path):
     """Creates a temporary directory with dummy text files for indexing tests."""
     # Create a temporary directory to act as the data source
     data_dir = tmp_path / "data"
@@ -20,7 +20,7 @@ def prepare_test_data_directory(tmp_path):
 
 
 @pytest.fixture
-def prepare_documents():
+def get_test_documents():
     """Fixture to create a sequence of LlamaIndex Document objects from text strings."""
     texts = [
         "This is the first test document.",
@@ -32,35 +32,34 @@ def prepare_documents():
     return documents
 
 
+# @pytest.fixture
+# def prepare_llama_vector_store_indexer(prepare_documents):
+#     """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
 
-@pytest.fixture
-def prepare_llama_vector_store_indexer(prepare_documents):
-    """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
-
-    indexer_options = {
-        'documents': prepare_documents,
-        'index_name': 'test_index_with_docs',
-    }
+#     indexer_options = {
+#         'documents': prepare_documents,
+#         'index_name': 'test_index_with_docs',
+#     }
     
-    indexer = LlamaVectorStoreIndexer(indexer_options)
-    indexer.create_index()
+#     indexer = LlamaVectorStoreIndexer(indexer_options)
+#     indexer.create_index()
     
-    return indexer
+#     return indexer
 
-@pytest.fixture
-def prepare_ragatouille_colbert_indexer(prepare_documents, tmp_path):
+# @pytest.fixture
+# def prepare_ragatouille_colbert_indexer(prepare_documents, tmp_path):
 
-    # Use the tmp_path fixture to create a temporary directory for the index
-    index_root = tmp_path / "indexes"
+#     # Use the tmp_path fixture to create a temporary directory for the index
+#     index_root = tmp_path / "indexes"
 
-    indexer_options = {
-        'documents': prepare_documents,
-        'index_name': 'test_index_with_docs',
-        'checkpoint': 'colbert-ir/colbertv2.0',
-        'index_root': str(index_root) 
-    }
+#     indexer_options = {
+#         'documents': prepare_documents,
+#         'index_name': 'test_index_with_docs',
+#         'checkpoint': 'colbert-ir/colbertv2.0',
+#         'index_root': str(index_root) 
+#     }
     
-    indexer = RagatouilleColBERTIndexer(indexer_options)
-    indexer.create_index()
+#     indexer = RagatouilleColBERTIndexer(indexer_options)
+#     indexer.create_index()
 
-    return indexer
+#     return indexer
