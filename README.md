@@ -22,7 +22,7 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
 ## Contribution
 
-You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
+You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing. 
 
 
 
