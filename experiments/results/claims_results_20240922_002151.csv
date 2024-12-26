@@ -1,0 +1,31 @@
+Claim,True Label,Mapped True Label,Predicted Verdict,Mediator Reasoning,Advocate 1 Evidence,Advocate 1 Verdict,Advocate 1 Reasoning
+"90 percent of the world’s coral reefs will disappear in the next 35 years due to coral bleaching induced by global warming, pollution, and overdevelopment.",mostly correct,correct,NOT_ENOUGH_INFORMATION,to assess the accuracy of the claim.,NOT_ENOUGH_INFORMATION,NOT_ENOUGH_INFORMATION,to assess the accuracy of the claim.
+Unprecedented climate change has caused sea level at Sydney Harbour to rise approximately 0.0 cm over the past 140 years.,inaccurate,incorrect,NOT_ENOUGH_INFORMATION,".
+
+The evidence indicates that global mean sea level change has been observed and projected to increase over time due to climate change and emissions. The rate and magnitude of sea level rise are influenced by emissions, with higher emissions leading to greater and faster rates of sea level rise. Therefore, it is unlikely that the sea level at Sydney Harbour has remained unchanged over the past 140 years, as global sea levels have been rising due to climate change.
+
+Given the information from the sources, it is evident that sea levels have been rising globally, which would include Sydney Harbour, and not remaining static as claimed.
+
+Therefore, the claim is incorrect based on the provided evidence.",INCORRECT,INCORRECT,".
+
+The evidence indicates that global mean sea level change has been observed and projected to increase over time due to climate change and emissions. The rate and magnitude of sea level rise are influenced by emissions, with higher emissions leading to greater and faster rates of sea level rise. Therefore, it is unlikely that the sea level at Sydney Harbour has remained unchanged over the past 140 years, as global sea levels have been rising due to climate change.
+
+Given the information from the sources, it is evident that sea levels have been rising globally, which would include Sydney Harbour, and not remaining static as claimed.
+
+Therefore, the claim is incorrect based on the provided evidence."
+"Peer-reviewed studies, geologic records, and all the studies have shown that we have actually cooled since the Roman Warming Period, and likely since the Medieval Warming Period.",incorrect,incorrect,NOT_ENOUGH_INFORMATION,"based on the provided evidence. The evidence indicates that the global surface temperature has increased by around 1.1°C since 1850-1900, showing a warming trend rather than cooling. The data from the peer-reviewed studies and geologic records do not support the assertion of a cooling trend since those historical warming periods. 
+
+Evidence and Agreement: 
+- High evidence from multiple sources indicating a warming trend since 1850-1900.
+- High agreement among the studies that show an increase in global surface temperature.
+- The claim contradicts the established warming trend, making it incorrect. 
+
+Therefore, the overall assessment of the claim is that it is ((incorrect)).",INCORRECT,INCORRECT,"based on the provided evidence. The evidence indicates that the global surface temperature has increased by around 1.1°C since 1850-1900, showing a warming trend rather than cooling. The data from the peer-reviewed studies and geologic records do not support the assertion of a cooling trend since those historical warming periods. 
+
+Evidence and Agreement: 
+- High evidence from multiple sources indicating a warming trend since 1850-1900.
+- High agreement among the studies that show an increase in global surface temperature.
+- The claim contradicts the established warming trend, making it incorrect. 
+
+Therefore, the overall assessment of the claim is that it is ((incorrect))."
+"Climate changed naturally in prehistoric eras, modern climate change is a naturally occurring phenomenon",flawed reasoning,incorrect,NOT_ENOUGH_INFORMATION,,INCORRECT,INCORRECT,
