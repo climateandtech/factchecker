@@ -71,14 +71,13 @@ def main():
     ]
 
     retriever_options_list = [
-        {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[0]},  # Options for advocate 1
+        {'retrieval_options': {'similarity_top_k': 8, 'min_score': 0.5}, 'indexer_options': indexer_options_list[0]},  # Options for advocate 1
         # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[1]},  # Options for advocate 2
         # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[2]}   # Options for advocate 3
     ]
 
     advocate_options = {
-        'max_evidences': 10,
-        # Add other advocate step options here
+        'max_evidences': 10,        # Add other advocate step options here
     }
     mediator_options = {
         # Add other mediator step options here

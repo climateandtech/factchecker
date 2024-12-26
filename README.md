@@ -2,8 +2,6 @@
 
 Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for both experimentation and production environments, focusing on the verification of claims. It offers a robust suite of tools and methodologies to assist researchers, developers, and practitioners in the field of claim verification, enabling them to efficiently test hypotheses, validate data, and deploy reliable fact-checking solutions.
 
-
-
 ## Installation
 
      python3 -m venv venv
@@ -19,22 +17,42 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
      pip freeze > requirements.txt
 
+## Configuration
+
+### Setting Up Environment Variables
+
+Before running the Climate+Tech FactChecker, you need to configure your environment variables. This is done using the `.env.example` file provided in the repository.
+
+1. **Copy the `.env.example` file to a new file named `.env`:**
+
+   ```
+   cp .env.example .env
+   ```
+
+2. **Edit the `.env` file to include your specific configuration:**
+
+   - Replace `your_openai_api_key_here` with your actual OpenAI API key.
+   - Update `OPENAI_ORGANIZATION` with your OpenAI organization ID if applicable.
+   - Adjust other variables like `LLM_TYPE`, `OLLAMA_API_BASE_URL`, and `OLLAMA_MODEL` as needed for your setup.
+
+### Configuring the LLM
+
+The `llm.py` file in the `factchecker/core` directory is responsible for loading the language model (LLM) based on your configuration.
+
+- **LLM Type:** The `LLM_TYPE` environment variable determines which LLM to use. It can be set to either `ollama` or `openai`.
+- **Model and API Settings:** Depending on the `LLM_TYPE`, ensure that the corresponding model and API settings are correctly configured in your `.env` file. For example, if using OpenAI, ensure `OPENAI_API_KEY` and `OPENAI_API_BASE` are set.
 
 ## Contribution
 
 You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
 
-
-
 ## Dealing with sources
 
-# Annotate sources
+### Annotate sources
 
 Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoUGOQyRI6HuUisTf-4wTsWY/edit#gid=0
 
-
-# Download sources
-
+### Download sources
 
 To use the `sources_downloader.py` script to download PDFs listed in the `sources.csv` file into the `/data` folder (which is gitignored), follow these steps:
 
@@ -64,15 +82,9 @@ To use the `sources_downloader.py` script to download PDFs listed in the `source
 
 Note: The `/data` folder is specified in the `.gitignore` file, so the downloaded PDFs will not be tracked by Git.
 
-
 ## Run Example
 
 | python3 -m factchecker.experiments.evidence_evaluation_1
-
-
-
-
-
 
 ## Testing
 

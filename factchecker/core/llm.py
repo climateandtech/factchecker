@@ -10,7 +10,7 @@ def load_llm(
     api_key=None,
     organization=None,
     api_base=None,
-    context_window=3900,
+    context_window=100000,
     embedding_model=None,
     **kwargs
 ):
