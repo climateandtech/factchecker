@@ -1,5 +1,6 @@
 from factchecker.retrieval.base import BaseRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
+from factchecker.core.llm import load_llm
 
 class EvidenceStep:
     def __init__(self, retriever: BaseRetriever, options=None):
@@ -15,7 +16,7 @@ class EvidenceStep:
 
     def gather_evidence(self, claim):
         query = self.build_query(claim)
-        evidence = self.retriever.retrieve(query, **self.options)
+        evidence = self.retriever.retrieve(query, top_k=self.top_k, min_score=self.min_score, **self.options)
         return evidence
 
     def classify_evidence(self, evidence):
