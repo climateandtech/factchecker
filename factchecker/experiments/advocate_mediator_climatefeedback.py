@@ -11,6 +11,12 @@ from datetime import datetime
 import os
 
 def main():
+    # Add these debug lines
+    import os
+    print("Debug: Environment variables:")
+    print(f"OPENAI_API_MODEL = {os.getenv('OPENAI_API_MODEL')}")
+    print(f"LLM_TYPE = {os.getenv('LLM_TYPE')}")
+
     def map_verdict(verdict, level=2):
         verdict = verdict.strip().lower().replace(" ", "_")
 
@@ -65,20 +71,23 @@ def main():
         return mapped_verdict
 
     indexer_options_list = [
-        {'source_directory': 'data'},  # Indexer options for advocate 1
-        # {'source_directory': 'data/source2'},  # Indexer options for advocate 2
-        # {'source_directory': 'data/source3'}   # Indexer options for advocate 3
+        {
+            'source_directory': 'data',
+            'index_name': 'advocate1_index'
+        }
     ]
 
     retriever_options_list = [
-        {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[0]},  # Options for advocate 1
-        # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[1]},  # Options for advocate 2
-        # {'retrieval_options': {'similarity_top_k': 8}, 'indexer_options': indexer_options_list[2]}   # Options for advocate 3
+        {
+            'similarity_top_k': 8,
+            'indexer_options': indexer_options_list[0]
+        }
     ]
 
     advocate_options = {
         'max_evidences': 10,
-        # Add other advocate step options here
+        'top_k': 8,
+        'min_score': 0.75
     }
     mediator_options = {
         # Add other mediator step options here
