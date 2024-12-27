@@ -68,8 +68,8 @@ class AdvocateStep:
             if start != -1 and end != -1:
                 label = response_content[start+2:end].strip().upper().replace(" ", "_")
                 reasoning = response_content.strip()  # Return the whole response_content as reasoning
-                return label, reasoning
+                return label, reasoning, [e.text for e in evidences]  # Return evidence chunks too
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
         
-        return "ERROR_PARSING_RESPONSE", "No reasoning available"
+        return "ERROR_PARSING_RESPONSE", "No reasoning available", []

@@ -33,13 +33,17 @@ class AdvocateMediatorStrategy:
 
     def evaluate_claim(self, claim):
         # Each advocate evaluates the claim based on their own evidence
-        verdicts_and_reasonings = [advocate.evaluate_evidence(claim) for advocate in self.advocate_steps]
-
-        # Separate verdicts and reasonings
-        verdicts = [verdict for verdict, reasoning in verdicts_and_reasonings]
-        reasonings = [reasoning for verdict, reasoning in verdicts_and_reasonings]
-
+        results = [advocate.evaluate_evidence(claim) for advocate in self.advocate_steps]
+        
+        # Separate verdicts, reasonings, and evidences
+        verdicts = [verdict for verdict, reasoning, evidence in results]
+        reasonings = [reasoning for verdict, reasoning, evidence in results]
+        evidences = [evidence for verdict, reasoning, evidence in results]
+        
         # The mediator synthesizes the verdicts
-        final_verdict = self.mediator_step.synthesize_verdicts(verdicts_and_reasonings, claim)
-
-        return final_verdict, verdicts, reasonings
+        final_verdict, mediator_reasoning = self.mediator_step.synthesize_verdicts(list(zip(verdicts, reasonings)), claim)
+        
+        # Add mediator's reasoning to the list
+        reasonings.append(mediator_reasoning)
+        
+        return final_verdict, verdicts, reasonings, evidences

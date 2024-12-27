@@ -35,8 +35,8 @@ class MediatorStep:
             end = response_content.find("))")
             if start != -1 and end != -1:
                 final_verdict = response_content[start+2:end].strip().upper().replace(" ", "_")
-                return final_verdict
+                return final_verdict, response_content
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
         
-        return "ERROR_PARSING_RESPONSE"
+        return "ERROR_PARSING_RESPONSE", "No reasoning available"

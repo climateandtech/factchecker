@@ -3,6 +3,16 @@
 Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for both experimentation and production environments, focusing on the verification of claims. It offers a robust suite of tools and methodologies to assist researchers, developers, and practitioners in the field of claim verification, enabling them to efficiently test hypotheses, validate data, and deploy reliable fact-checking solutions.
 
 
+## License
+
+This project is dual-licensed:
+
+- For researchers, academic institutions, universities, and fact-checking organizations: This project is available under the GNU Affero General Public License (AGPL), with the requirement that any results and improvements are shared back with the community.
+
+- For other organizations: A license can be requested and can be granted free if the project's use is not purely commercial, under similar sharing conditions. Please contact the maintainers for licensing details.
+
+See the LICENSE file for the complete terms.
+
 
 ## Installation
 
@@ -31,6 +41,9 @@ You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
 # Annotate sources
 
 Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoUGOQyRI6HuUisTf-4wTsWY/edit#gid=0
+
+
+
 
 
 # Download sources
