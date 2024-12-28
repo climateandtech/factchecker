@@ -2,6 +2,10 @@ import pytest
 from llama_index.core import Document
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
+from unittest.mock import patch
+import numpy as np
+from typing import List
+from llama_index.core.embeddings import BaseEmbedding
 
 @pytest.fixture
 def get_test_data_directory(tmp_path):
@@ -32,10 +36,16 @@ def get_test_documents():
     return documents
 
 
-@pytest.fixture
-def get_llama_vector_store_indexer(get_test_documents):
-    """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
+class MockEmbedding(BaseEmbedding):
+    def _get_text_embedding(self, text: str) -> List[float]:
+        return [0.1] * 384
+        
+    def _get_query_embedding(self, query: str) -> List[float]:
+        return [0.1] * 384
 
+@pytest.fixture
+@patch('llama_index.core.embeddings.openai.OpenAIEmbedding', MockEmbedding)
+def get_llama_vector_store_indexer(get_test_documents):
     indexer_options = {
         'documents': get_test_documents,
         'index_name': 'test_index_with_docs',
