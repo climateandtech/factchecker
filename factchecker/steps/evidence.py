@@ -1,4 +1,4 @@
-from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
+from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from factchecker.core.llm import load_llm
 
@@ -10,12 +10,12 @@ class EvidenceStep:
     using similarity-based search and post-processing to ensure quality results.
     """
 
-    def __init__(self, retriever: LlamaBaseRetriever, options=None):
+    def __init__(self, retriever: AbstractRetriever, options=None):
         """
         Initialize an EvidenceStep instance.
 
         Args:
-            retriever (LlamaBaseRetriever): The retriever instance for finding relevant documents
+            retriever (AbstractRetriever): The retriever instance for finding relevant documents
             options (dict, optional): Configuration options including:
                 - query_template: Template for formatting the search query
                 - top_k: Number of top results to retrieve
