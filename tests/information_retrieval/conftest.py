@@ -39,6 +39,7 @@ def get_llama_vector_store_indexer(get_test_documents):
     indexer_options = {
         'documents': get_test_documents,
         'index_name': 'test_index_with_docs',
+        'transformations': [],  # Disable transformations to keep documents intact
     }
     
     indexer = LlamaVectorStoreIndexer(indexer_options)

@@ -10,6 +10,10 @@ __pycache__/
 /indexes/*
 .env
 
+# Experiment results
+experiments/results/
+experiments/results/*.csv
+
 # Distribution / packaging
 .Python
 build/

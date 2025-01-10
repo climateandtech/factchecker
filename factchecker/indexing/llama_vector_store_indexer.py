@@ -43,10 +43,9 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         super().__init__(options)
         self.embed_model: Optional[EmbedType] = self.options.pop('embed_model', None)
         self.storage_context_options: Dict[str, Any] = self.options.pop('storage_context_options', {})
-        self.transformations: List[Callable] = self.options.pop(
-            'transformations', 
-            [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)]
-        )
+        # Only use default transformations if none are provided
+        if 'transformations' not in self.options:
+            self.options['transformations'] = [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)]
         self.show_progress: bool = self.options.pop('show_progress', False)
 
 
@@ -69,7 +68,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
                 documents,
                 storage_context=storage_context,
                 embed_model=self.embed_model,
-                transformations=self.transformations,
+                transformations=self.options.get('transformations'),
                 show_progress=self.show_progress,
             )
             logging.info("VectorStoreIndex successfully built")
