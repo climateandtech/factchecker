@@ -1,6 +1,7 @@
 import os
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
+import logging
 
 def load_llm(
     llm_type=None,
@@ -14,6 +15,7 @@ def load_llm(
     embedding_model=None,
     **kwargs
 ):
+    logger = logging.getLogger('factchecker.api')
     llm_type = llm_type or os.getenv("LLM_TYPE", "openai").lower()
     
     if llm_type == "ollama":
@@ -38,6 +40,8 @@ def load_llm(
             context_window=context_window,
             **openai_kwargs
         )
+    
+    logger.api(f"Loading LLM model: {model}")
     
     return llm
 

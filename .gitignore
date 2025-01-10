@@ -172,5 +172,11 @@ cython_debug/
 concatenated_python_code.py
 
 # Ignore macOS system files
-.DS_Store
+**/.DS_Store
+# Experiment files
+experiments/.DS_Store
 
+.vscode/
+
+# Storage folder
+storage/

@@ -2,9 +2,18 @@ from factchecker.steps.advocate import AdvocateStep
 from factchecker.steps.mediator import MediatorStep
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
+from factchecker.utils.logging_config import setup_logging
+import logging
+import debugpy
+
+logger = logging.getLogger('factchecker.strategies')
 
 class AdvocateMediatorStrategy:
     def __init__(self, indexer_options_list, retriever_options_list, advocate_options, mediator_options, advocate_prompt, mediator_prompt):
+        logger.info("Initializing AdvocateMediatorStrategy")
+        logger.debug("Creating indexers with options:")
+        for i, options in enumerate(indexer_options_list):
+            logger.debug(f"Indexer {i}: {options}")
         # Initialize indexers with their options
         self.indexers = [LlamaVectorStoreIndexer(options) for options in indexer_options_list]
         

@@ -1,3 +1,15 @@
+import os
+
+# Only enable debugpy if DEBUG environment variable is set
+if os.getenv("DEBUG"):
+    import debugpy
+    debugpy.listen(("localhost", 5678))
+    print("Waiting for debugger attach...")
+    debugpy.wait_for_client()
+
+from factchecker.utils.logging_config import setup_logging
+logger = setup_logging()
+
 import gradio as gr
 from gradio.themes.base import Base
 from gradio.themes.utils import colors, fonts, sizes
@@ -9,8 +21,8 @@ from datetime import datetime
 import os
 import json
 from llama_index.core import Settings
-from functools import lru_cache
-import logging
+from pathlib import Path
+from factchecker.tools.sources_downloader import download_pdf
 
 # Brand colors from the image
 COLORS = {
@@ -76,33 +88,57 @@ class ClimateTheme(Base):
             block_label_text_color_dark="white"
         )
 
-#@lru_cache()
-def get_strategy():
+def get_strategy(
+    chunk_size=150, 
+    chunk_overlap=20, 
+    top_k=8, 
+    min_score=0.75,
+    advocate_sources=None,
+    max_evidences=10,
+    advocate_temperature=0.0,
+    mediator_temperature=0.0
+):
     """
-    Creates and caches an instance of the AdvocateMediatorStrategy.
-    Using lru_cache to ensure we only create one instance.
+    Creates an instance of the AdvocateMediatorStrategy.
     """
+    logger.info("🔧 Creating strategy with settings:")
+    logger.info(f"  - chunk_size: {chunk_size}")
+    logger.info(f"  - chunk_overlap: {chunk_overlap}")
+    logger.info(f"  - advocate_sources: {advocate_sources}")
+    
+    # Default to IPCC if no sources selected
+    advocate_sources = advocate_sources or ["IPCC_AR6"]
+    
+    # Create an indexer option for each selected source
     indexer_options_list = [
         {
             'source_directory': 'data',
-            'index_name': 'advocate1_index'
+            'index_name': f'{source}_index',
+            'chunk_size': chunk_size,
+            'chunk_overlap': chunk_overlap
         }
+        for source in advocate_sources
     ]
 
     retriever_options_list = [
         {
-            'similarity_top_k': 8,
-            'indexer_options': indexer_options_list[0]
+            'similarity_top_k': top_k,
+            'min_score': min_score,
+            'indexer_options': indexer_opt
         }
+        for indexer_opt in indexer_options_list
     ]
 
     advocate_options = {
-        'max_evidences': 10,
-        'top_k': 8,
-        'min_score': 0.75
+        'max_evidences': max_evidences,
+        'top_k': top_k,
+        'min_score': min_score,
+        'temperature': advocate_temperature
     }
     
-    mediator_options = {}
+    mediator_options = {
+        'temperature': mediator_temperature
+    }
 
     return AdvocateMediatorStrategy(
         indexer_options_list=indexer_options_list,
@@ -114,6 +150,7 @@ def get_strategy():
     )
 
 def on_validate(claim: str):
+    logger.info(f"🔍 Processing claim: {claim}")
     try:
         if not claim or not claim.strip():
             raise ValueError("Please enter a claim to validate")
@@ -121,10 +158,10 @@ def on_validate(claim: str):
         strategy = get_strategy()
         final_verdict, verdicts, reasonings, evidences = strategy.evaluate_claim(claim.strip())
         
-        logging.info(f"Verdict received from mediator: {final_verdict}")
-        logging.info(f"Verdicts received: {verdicts}")
-        logging.info(f"Reasonings received: {reasonings}")
-        logging.info(f"Evidence chunks: {evidences}")
+        logger.info(f"Verdict received from mediator: {final_verdict}")
+        logger.info(f"Verdicts received: {verdicts}")
+        logger.info(f"Reasonings received: {reasonings}")
+        logger.info(f"Evidence chunks: {evidences}")
         # Format advocate results for display
         if verdicts and reasonings and len(reasonings) > 1:
             advocate_data = [
@@ -133,10 +170,10 @@ def on_validate(claim: str):
             ]
         else:
             advocate_data = []
-            logging.warning("No advocate verdicts or reasonings available")
+            logger.warning("No advocate verdicts or reasonings available")
         
-        logging.info(f"Formatted advocate data: {advocate_data}")
-        logging.info(f"Final verdict being returned to UI: {final_verdict}")
+        logger.info(f"Formatted advocate data: {advocate_data}")
+        logger.info(f"Final verdict being returned to UI: {final_verdict}")
         
         return (
             final_verdict,
@@ -144,7 +181,7 @@ def on_validate(claim: str):
             advocate_data
         )
     except Exception as e:
-        logging.error(f"Error in on_validate: {str(e)}")
+        logger.error(f"Error in on_validate: {str(e)}")
         return (
             f"Error: {str(e)}",
             "",
@@ -177,6 +214,38 @@ def save_validation(claim: str, verdict: str, reasoning: str, chunks: list):
         return "Validation saved successfully!"
     except Exception as e:
         return f"Error: {str(e)}"
+
+def download_source(url: str) -> tuple[str, list[dict], list[str]]:
+    """
+    Downloads content and returns status, updated sources list, and updated choices
+    """
+    try:
+        if not url:
+            return "Please enter a URL", get_available_sources(), get_source_choices()
+            
+        filename = url.split('/')[-1] or "downloaded_content.txt"
+        os.makedirs("data", exist_ok=True)
+        
+        download_pdf(url, "data", filename)
+        
+        return (
+            f"Successfully downloaded {filename}", 
+            get_available_sources(),  # Update sources table
+            get_source_choices()      # Update advocate choices
+        )
+    except Exception as e:
+        return f"Error downloading source: {str(e)}", get_available_sources(), get_source_choices()
+
+def get_source_choices():
+    """Get list of available source names from data directory"""
+    try:
+        data_dir = Path("data")
+        if data_dir.exists():
+            return [f.stem for f in data_dir.glob("*") if f.is_file()]
+        return ["IPCC_AR6"]  # Default fallback
+    except Exception as e:
+        logger.error(f"Error getting source choices: {e}")
+        return ["IPCC_AR6"]  # Default fallback
 
 def create_interface():
     theme = ClimateTheme()
@@ -219,50 +288,138 @@ def create_interface():
                                 column_widths=["80px", "80px", "250px", "250px"]
                             )
 
-            with gr.Tab("Custom Validation"):
+            with gr.Tab("Settings & Sources"):
                 with gr.Row():
                     with gr.Column():
-                        claim_text = gr.Textbox(
-                            label="Claim",
-                            lines=2,
-                            placeholder="Enter the claim to validate..."
+                        gr.Markdown("### Retrieval Settings")
+                        chunk_size = gr.Slider(
+                            minimum=50,
+                            maximum=1000,
+                            value=150,
+                            step=50,
+                            label="Chunk Size",
+                            info="Size of text chunks for processing"
                         )
+                        chunk_overlap = gr.Slider(
+                            minimum=0,
+                            maximum=100,
+                            value=20,
+                            step=10,
+                            label="Chunk Overlap",
+                            info="Overlap between chunks"
+                        )
+                        top_k = gr.Slider(
+                            minimum=1,
+                            maximum=20,
+                            value=8,
+                            step=1,
+                            label="Top K Results"
+                        )
+                        min_score = gr.Slider(
+                            minimum=0.1,
+                            maximum=1.0,
+                            value=0.75,
+                            step=0.05,
+                            label="Minimum Similarity Score"
+                        )
+
+                    with gr.Column():
+                        gr.Markdown("### Advocate Settings")
+                        advocate_sources = gr.CheckboxGroup(
+                            choices=get_source_choices(),  # Dynamic choices from data directory
+                            label="Select Advocates",
+                            info="Choose which sources to use as advocates",
+                            value=["IPCC_AR6"]
+                        )
+                        max_evidences = gr.Slider(
+                            minimum=1,
+                            maximum=20,
+                            value=10,
+                            step=1,
+                            label="Max Evidence per Advocate",
+                            info="Maximum number of evidence chunks per advocate"
+                        )
+                        advocate_temperature = gr.Slider(
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=0.0,
+                            step=0.1,
+                            label="Advocate Temperature",
+                            info="Temperature for advocate LLM responses"
+                        )
+
+                    with gr.Column():
+                        gr.Markdown("### Mediator Settings")
+                        mediator_temperature = gr.Slider(
+                            minimum=0.0,
+                            maximum=1.0,
+                            value=0.0,
+                            step=0.1,
+                            label="Mediator Temperature",
+                            info="Temperature for mediator LLM responses"
+                        )
+                        
+                apply_settings = gr.Button("Apply Settings")
+
+                with gr.Row():
+                    with gr.Column():
+                        gr.Markdown("### Data Sources")
+                        available_sources = gr.Dataframe(
+                            headers=["Source", "Status", "Last Updated"],
+                            label="Available Sources",
+                            value=get_available_sources(),
+                            interactive=False
+                        )
+                        
+                        source_url = gr.Textbox(
+                            label="Add New Source URL",
+                            placeholder="Enter URL to download new source..."
+                        )
+                        add_source_btn = gr.Button("Add Source")
+                        source_status = gr.Textbox(
+                            label="Status",
+                            interactive=False
+                        )
+
+            with gr.Tab("Review & Validate"):
+                with gr.Row():
+                    with gr.Column():
+                        review_claim = gr.Textbox(
+                            label="Claim to Review",
+                            placeholder="Enter or select a claim to review..."
+                        )
+                        
+                        with gr.Accordion("AI Analysis", open=True):
+                            ai_verdict = gr.Textbox(
+                                label="AI Verdict",
+                                interactive=False
+                            )
+                            ai_reasoning = gr.Textbox(
+                                label="AI Reasoning",
+                                lines=3,
+                                interactive=False
+                            )
+                            
+                        with gr.Accordion("Evidence Review", open=True):
+                            evidence_table = gr.Dataframe(
+                                headers=["Evidence", "Source", "Relevance", "Your Rating"],
+                                interactive=True
+                            )
+                            
+                        with gr.Row():
+                            accept_btn = gr.Button("Accept AI Analysis")
+                            modify_btn = gr.Button("Provide Custom Analysis")
+                            
+                    with gr.Column(visible=False) as custom_analysis:
                         custom_verdict = gr.Radio(
-                            choices=["correct", "incorrect", "misleading", "unsupported", "needs_more_context"],
-                            label="Your Verdict",
-                            value="incorrect"
+                            choices=["correct", "incorrect", "misleading", "unsupported"],
+                            label="Your Verdict"
                         )
                         custom_reasoning = gr.Textbox(
                             label="Your Reasoning",
-                            lines=4,
-                            placeholder="Explain why you chose this verdict..."
+                            lines=3
                         )
-
-                with gr.Row():
-                    chunk_text = gr.Textbox(
-                        label="Evidence Chunk",
-                        lines=3,
-                        placeholder="Enter a relevant text chunk..."
-                    )
-                    chunk_source = gr.Textbox(
-                        label="Source",
-                        placeholder="Where is this chunk from?"
-                    )
-                    chunk_relevance = gr.Slider(
-                        minimum=0,
-                        maximum=1,
-                        value=0.75,
-                        step=0.05,
-                        label="Relevance Score"
-                    )
-                
-                chunks_table = gr.Dataframe(
-                    headers=["Text", "Source", "Relevance"],
-                    label="Evidence Chunks"
-                )
-                
-                save_validation_btn = gr.Button("Save Validation")
-                save_status = gr.Textbox(label="Status", interactive=False)
+                        submit_analysis_btn = gr.Button("Submit Analysis")
 
         # Event handlers
         validate_btn.click(
@@ -271,10 +428,33 @@ def create_interface():
             outputs=[final_verdict, mediator_reasoning, advocate_outputs]
         )
 
-        save_validation_btn.click(
-            fn=save_validation,
-            inputs=[claim_text, custom_verdict, custom_reasoning, chunks_table],
-            outputs=[save_status]
+        add_source_btn.click(
+            fn=download_source,
+            inputs=[source_url],
+            outputs=[
+                source_status,
+                available_sources,  # Update sources table
+                advocate_sources    # Update advocate choices
+            ]
+        )
+        
+        apply_settings.click(
+            fn=lambda cs, co, tk, ms, as_, me, at, mt: get_strategy(
+                chunk_size=cs,
+                chunk_overlap=co,
+                top_k=tk,
+                min_score=ms,
+                advocate_sources=as_,
+                max_evidences=me,
+                advocate_temperature=at,
+                mediator_temperature=mt
+            ),
+            inputs=[
+                chunk_size, chunk_overlap, top_k, min_score,
+                advocate_sources, max_evidences,
+                advocate_temperature, mediator_temperature
+            ],
+            outputs=[]
         )
 
     return demo
@@ -305,6 +485,26 @@ footer {display: none !important;}
     width: 80px !important;
 }
 """
+
+def get_available_sources():
+    """
+    Returns a list of available sources in the data directory
+    """
+    try:
+        sources = []
+        data_dir = Path("data")
+        if data_dir.exists():
+            for file in data_dir.glob("*"):
+                if file.is_file():
+                    sources.append([
+                        file.name,
+                        "Active",
+                        datetime.fromtimestamp(file.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                    ])
+        return sources if sources else [["No sources available", "-", "-"]]
+    except Exception as e:
+        logger.error(f"Error getting available sources: {e}")
+        return [["Error loading sources", "Error", "-"]]
 
 if __name__ == "__main__":
     demo = create_interface()
