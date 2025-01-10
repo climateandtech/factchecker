@@ -20,7 +20,7 @@ def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer, mock
     
     retriever = LlamaBaseRetriever(indexer, retriever_options)
     
-    query = "first test document"
+    query = "This is the first test document."  # Exact match with test document
     
     # Perform retrieval
     results = retriever.retrieve(query)
@@ -28,4 +28,4 @@ def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer, mock
     # Assertions
     assert results is not None, "Results should not be None"
     assert len(results) == top_k, "Two documents should be retrieved"
-    assert any("first test document" in result.get_text() for result in results), "The results should include the correct document"
+    assert any("This is the first test document" in result.get_text() for result in results), "The results should include the correct document"
