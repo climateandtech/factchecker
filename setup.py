@@ -9,6 +9,14 @@ setup(
         "scikit-learn",
         "llama-index",
         "tqdm",
+        "python-dotenv",
     ],
+    extras_require={
+        "test": [
+            "pytest",
+            "pytest-mock",
+            "pytest-cov",
+        ],
+    },
     python_requires=">=3.8",
 ) 
