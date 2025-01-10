@@ -3,6 +3,7 @@ from factchecker.retrieval.abstract_retriever import AbstractRetriever
 class LlamaBaseRetriever(AbstractRetriever):
     def __init__(self, indexer, options=None):
         super().__init__(indexer, options)
+        self.create_retriever()
 
     def create_retriever(self):
         super().create_retriever()

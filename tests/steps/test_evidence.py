@@ -45,7 +45,7 @@ def test_evidence_initialization(mock_retriever):
 def test_default_options(mock_retriever):
     """Test default options when none provided"""
     evidence_step = EvidenceStep(retriever=mock_retriever)
-    assert evidence_step.query_template == "evidence for: {claim}"
+    assert evidence_step.query_template == "{claim}"
     assert evidence_step.top_k == 5
     assert evidence_step.min_score == 0.75
 
@@ -54,7 +54,7 @@ def test_build_query(mock_retriever):
     evidence_step = EvidenceStep(retriever=mock_retriever)
     claim = "The Earth is round"
     query = evidence_step.build_query(claim)
-    assert query == "evidence for: The Earth is round"
+    assert query == "The Earth is round"
 
 def test_gather_evidence(mock_retriever, mock_evidence):
     """Test evidence gathering process"""
