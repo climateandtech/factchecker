@@ -4,7 +4,25 @@ from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreInde
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 
 class AdvocateMediatorStrategy:
+    """
+    A strategy that combines multiple advocates and a mediator for fact-checking claims.
+    
+    This strategy uses multiple advocates, each with their own evidence sources, to evaluate
+    a claim independently. A mediator then synthesizes their verdicts into a final consensus.
+    """
+
     def __init__(self, indexer_options_list, retriever_options_list, advocate_options, mediator_options, advocate_prompt, mediator_prompt):
+        """
+        Initialize an AdvocateMediatorStrategy instance.
+
+        Args:
+            indexer_options_list (list): List of options for initializing document indexers
+            retriever_options_list (list): List of options for configuring retrievers
+            advocate_options (dict): Configuration options for advocates
+            mediator_options (dict): Configuration options for the mediator
+            advocate_prompt (str): Template for advocate system prompts
+            mediator_prompt (str): Template for mediator system prompt
+        """
         # Initialize indexers with their options
         self.indexers = [LlamaVectorStoreIndexer(options) for options in indexer_options_list]
         
@@ -32,6 +50,18 @@ class AdvocateMediatorStrategy:
         self.mediator_step = MediatorStep(options={**mediator_options, 'arbitrator_primer': mediator_prompt})
 
     def evaluate_claim(self, claim):
+        """
+        Evaluate a claim using multiple advocates and a mediator.
+
+        Args:
+            claim (str): The claim to evaluate
+
+        Returns:
+            tuple: A tuple containing:
+                - final_verdict (str): The consensus verdict
+                - verdicts (list): List of individual advocate verdicts
+                - reasonings (list): List of advocate reasonings
+        """
         # Each advocate evaluates the claim based on their own evidence
         verdicts_and_reasonings = [advocate.evaluate_evidence(claim) for advocate in self.advocate_steps]
 

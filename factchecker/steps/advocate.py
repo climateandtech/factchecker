@@ -8,7 +8,29 @@ from factchecker.core.llm import load_llm
 import os
 
 class AdvocateStep:
+    """
+    A step in the fact-checking process that acts as an advocate by evaluating claims based on evidence.
+    
+    This class retrieves relevant evidence for a claim and uses an LLM to evaluate whether the claim
+    is supported by the evidence, producing a verdict and reasoning.
+    """
+
     def __init__(self, llm=None, options=None, evidence_options=None):
+        """
+        Initialize an AdvocateStep instance.
+
+        Args:
+            llm: Language model instance to use for evaluation. If None, loads default model.
+            options (dict, optional): Configuration options for the advocate step including:
+                - evidence_prompt_template: Template for formatting evidence
+                - system_prompt_template: Template for system information
+                - format_prompt: Instructions for response format
+                - max_evidences: Maximum number of evidence pieces to consider
+            evidence_options (dict, optional): Configuration for evidence gathering including:
+                - top_k: Number of top results to retrieve
+                - min_score: Minimum similarity score for evidence
+                - indexer: Instance of document indexer
+        """
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
         self.evidence_prompt_template = self.options.pop('evidence_prompt_template', "Evidence: {evidence}")
@@ -48,6 +70,17 @@ class AdvocateStep:
         )
 
     def evaluate_evidence(self, claim):
+        """
+        Evaluate a claim based on gathered evidence using the language model.
+
+        Args:
+            claim (str): The claim to evaluate.
+
+        Returns:
+            tuple: A tuple containing:
+                - label (str): The verdict (TRUE, FALSE, or NOT_ENOUGH_INFORMATION)
+                - reasoning (str): The detailed reasoning behind the verdict
+        """
         # Retrieve evidence for the claim
         evidences = self.evidence_step.gather_evidence(claim)
         system_prompt_with_claim = self.system_prompt_template.format(claim=claim)

@@ -4,7 +4,22 @@ import os
 from factchecker.core.llm import load_llm
 
 class MediatorStep:
+    """
+    A step in the fact-checking process that mediates between multiple advocate verdicts.
+    
+    This class synthesizes multiple verdicts and their associated reasoning to produce
+    a final consensus verdict on a claim's veracity.
+    """
+
     def __init__(self, llm=None, options=None):
+        """
+        Initialize a MediatorStep instance.
+
+        Args:
+            llm: Language model instance to use for mediation. If None, loads default model.
+            options (dict, optional): Configuration options including:
+                - arbitrator_primer: Template for the system prompt
+        """
         self.llm = llm if llm is not None else load_llm()
 
         self.options = options if options is not None else {}
@@ -13,6 +28,16 @@ class MediatorStep:
         self.max_retries = 3
 
     def synthesize_verdicts(self, verdicts_and_reasonings, claim):
+        """
+        Synthesize multiple verdicts and their reasoning into a final consensus verdict.
+
+        Args:
+            verdicts_and_reasonings (list): List of (verdict, reasoning) tuples from advocates
+            claim (str): The claim being evaluated
+
+        Returns:
+            str: The final consensus verdict (CORRECT, INCORRECT, NOT_ENOUGH_INFORMATION, or ERROR_PARSING_RESPONSE)
+        """
         system_prompt_with_claim = self.prompt.format(claim=claim)
         
         # Format the verdicts and reasonings with <> tags
