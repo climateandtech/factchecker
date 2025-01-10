@@ -17,7 +17,7 @@ setup(
             "pytest>=7.0.0",
             "pytest-mock>=3.10.0",
             "pytest-cov>=4.0.0",
+            "llama-index-llms-ollama>=0.3.6",
         ],
     },
-    python_requires=">=3.8",
 ) 
