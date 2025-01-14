@@ -135,6 +135,16 @@ The project follows Test-Driven Development (TDD) principles:
 
 You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
 
+## Contact
+
+Connect with us through various channels:
+
+- **LinkedIn**: [Climate&Tech](https://www.linkedin.com/company/climateandtech/)
+- **Email**: contact@climateandtech.com
+- **Discord**: [Join our community](https://discord.gg/TQC6qTfV)
+- **Slack**: [Join our workspace](https://climatetechai-uos8147.slack.com/)
+- **Web**: [climateandtech.com](https://climateandtech.com)
+
 ## Dealing with sources
 
 ### Annotate sources
