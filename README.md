@@ -145,6 +145,16 @@ Connect with us through various channels:
 - **Slack**: [Join our workspace](https://climatetechai-uos8147.slack.com/)
 - **Web**: [climateandtech.com](https://climateandtech.com)
 
+## License
+
+This project is dual-licensed:
+
+- For researchers, academic institutions, universities, and fact-checking organizations: This project is available under the GNU Affero General Public License (AGPL), with the requirement that any results and improvements are shared back with the community.
+
+- For other organizations: A license can be requested and can be granted free if the project's use is not purely commercial, under similar sharing conditions. Please contact the maintainers for licensing details.
+
+See the LICENSE file for the complete terms.
+
 ## Dealing with sources
 
 ### Annotate sources
