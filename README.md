@@ -135,6 +135,16 @@ The project follows Test-Driven Development (TDD) principles:
 
 You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
 
+## License
+
+This project is dual-licensed:
+
+- For researchers, academic institutions, universities, and fact-checking organizations: This project is available under the GNU Affero General Public License (AGPL), with the requirement that any results and improvements are shared back with the community.
+
+- For other organizations: A license can be requested and can be granted free if the project's use is not purely commercial, under similar sharing conditions. Please contact the maintainers for licensing details.
+
+See the LICENSE file for the complete terms.
+
 ## Dealing with sources
 
 ### Annotate sources
