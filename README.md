@@ -6,16 +6,19 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
      python3 -m venv venv
      source venv/bin/activate
-
      pip install -r requirements.txt
 
-     # Install a package
+## Project Structure
 
-     pip install some-package
+The project follows a modular structure:
 
-     # Update requirements.txt
-
-     pip freeze > requirements.txt
+- `factchecker/`: Main package directory
+  - `experiments/`: Contains experiment scripts for different fact-checking approaches
+  - `strategies/`: Core fact-checking strategy implementations
+  - `utils/`: Utility functions and helper modules
+- `tests/`: Test suite following the same structure as the main package
+- `storage/`: Data storage for indices and other persistent data
+- `data/`: (gitignored) Directory for storing downloaded source documents
 
 ## Configuration
 
@@ -25,7 +28,7 @@ Before running the Climate+Tech FactChecker, you need to configure your environm
 
 1. **Copy the `.env.example` file to a new file named `.env`:**
 
-   ```
+   ```bash
    cp .env.example .env
    ```
 
@@ -42,6 +45,117 @@ The `llm.py` file in the `factchecker/core` directory is responsible for loading
 - **LLM Type:** The `LLM_TYPE` environment variable determines which LLM to use. It can be set to either `ollama` or `openai`.
 - **Model and API Settings:** Depending on the `LLM_TYPE`, ensure that the corresponding model and API settings are correctly configured in your `.env` file. For example, if using OpenAI, ensure `OPENAI_API_KEY` and `OPENAI_API_BASE` are set.
 
+## Utility Modules
+
+The `factchecker/utils/` directory contains shared functionality used across the project:
+
+- `verdict_mapping.py`: Standardizes the mapping of different verdict labels
+  - Converts between various rating systems (e.g., Climate Feedback ratings)
+  - Provides consistent verdict categories across the project
+  - Includes comprehensive test coverage in `tests/utils/test_verdict_mapping.py`
+
+Additional utilities handle common operations like data processing, API interactions, and shared helper functions. All utility modules follow TDD principles with corresponding test files in the `tests/utils/` directory.
+
+## Running Experiments
+
+The project includes several experiment scripts to evaluate different fact-checking approaches:
+
+1. Climate Feedback Advocate-Mediator Experiment:
+   ```bash
+   python -m factchecker.experiments.advocate_mediator_climatefeedback
+   ```
+   This experiment implements a fact-checking approach using the advocate-mediator pattern with Climate Feedback data. The process:
+   - Uses Climate Feedback's expert-reviewed claims as ground truth
+   - Implements an advocate-mediator pattern where:
+     - Advocates argue for/against the claim's validity
+     - A mediator evaluates the arguments and provides a final verdict
+   - Verdicts are standardized using the utility mapping system
+   - Results are compared against expert ratings for evaluation
+
+   Building Your Own Advocate-Mediator Experiment:
+   ```python
+   # Core components needed:
+   from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
+   from factchecker.utils.verdict_mapping import map_verdict
+
+   # 1. Define your strategy with custom prompts
+   strategy = AdvocateMediatorStrategy(
+       advocate_prompt="Your custom advocate prompt...",
+       mediator_prompt="Your custom mediator prompt..."
+   )
+
+   # 2. Process your claims
+   claim = "Your claim text..."
+   context = "Supporting context/evidence..."
+   result = strategy.evaluate_claim(claim, context)
+
+   # 3. Map the verdict to standardized format
+   standardized_verdict = map_verdict(result.verdict)
+   ```
+
+   The experiment structure consists of:
+   - A strategy class in `strategies/` implementing the core logic
+   - An experiment script in `experiments/` handling data loading and evaluation
+   - Utility functions in `utils/` for standardization and common operations
+
+   LLM Setup Options:
+   1. Using Ollama:
+      ```python
+      from factchecker.llm.ollama import OllamaLLM
+      
+      # Initialize Ollama with your chosen model
+      llm = OllamaLLM(model_name="llama2")  # or any other supported model
+      strategy = AdvocateMediatorStrategy(
+          advocate_prompt="...",
+          mediator_prompt="...",
+          llm=llm
+      )
+      ```
+      - Requires Ollama to be installed and running locally
+      - No API key needed
+      - Supports various open-source models
+      - Full control over model deployment and infrastructure
+      - Can run completely offline
+
+   2. Using OpenAI:
+      - Requires setting up OPENAI_API_KEY environment variable
+      - Uses GPT models
+      - Pay-per-use pricing model
+      - No local infrastructure needed
+
+2. Evidence Evaluation:
+   ```bash
+   python -m factchecker.experiments.evidence_evaluation_1
+   ```
+
+When running experiments:
+- Set up your preferred LLM backend (Ollama recommended for development)
+- Check the experiment's source code for any specific configuration options
+- Results will typically be saved in the experiment's output directory
+
+## Testing
+
+The project follows Test-Driven Development (TDD) principles:
+
+1. Running Tests:
+   ```bash
+   pytest
+   ```
+   This will run all tests in the `tests/` directory.
+
+2. Writing Tests:
+   - Create test files in the `tests/` directory mirroring the main package structure
+   - Name test files with `test_` prefix (e.g., `test_advocate_mediator.py`)
+   - Each test function should start with `test_`
+   - Include both positive and negative test cases
+   - Mock external API calls (e.g., OpenAI) to ensure tests run without actual API usage
+
+3. Test Coverage:
+   ```bash
+   pytest --cov=factchecker
+   ```
+   This command will show test coverage statistics.
+
 ## Contribution
 
 You accept the CONTRIBUTOR_LICENSE_AGREEMENT by contributing.
@@ -57,39 +171,21 @@ Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoU
 To use the `sources_downloader.py` script to download PDFs listed in the `sources.csv` file into the `/data` folder (which is gitignored), follow these steps:
 
 1. Ensure that you have the `requests` library installed in your Python environment. If not, you can install it using pip:
-
-   ```
+   ```bash
    pip install requests
    ```
 
 2. Navigate to the directory containing the `sources_downloader.py` script.
 
-3. Run the script with the following command:
-
-   ```
+3. Run the script:
+   ```bash
    python sources_downloader.py
    ```
+   By default, this uses `sources/sources.csv` as the source file and `data` as the output folder.
 
-   By default, this command will use `sources/sources.csv` as the source file and `data` as the output folder. These parameters are optional and can be customized as needed.
-
-   If you wish to specify a different CSV file or output folder, you can use the `--sourcefile` and `--output_folder` flags, respectively:
-
-   ```
+   For custom paths:
+   ```bash
    python sources_downloader.py --sourcefile your_custom_sources.csv --output_folder your_custom_folder
    ```
 
-4. The script will download each PDF listed in the CSV file and save it to the specified output folder with the title provided in the CSV or a default name if the title is not provided.
-
 Note: The `/data` folder is specified in the `.gitignore` file, so the downloaded PDFs will not be tracked by Git.
-
-## Run Example
-
-| python3 -m factchecker.experiments.evidence_evaluation_1
-
-## Testing
-
-To write tests, follow the convention of creating basic test cases for each function in the corresponding `tests/` directory file. Ensure each test function name starts with `test_`.
-
-To run the tests, execute `pytest` in the project's root directory. This will discover and run all test files named `test_*.py`.
-
-For more information on writing and running tests, refer to the `pytest` documentation.

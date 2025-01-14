@@ -8,9 +8,8 @@ and command-line argument parsing.
 
 import os
 import pytest
-from unittest.mock import mock_open, patch
+from unittest.mock import mock_open, patch, Mock
 from factchecker.tools.sources_downloader import download_pdf, main
-from unittest.mock import Mock
 
 def test_download_pdf_success():
     """

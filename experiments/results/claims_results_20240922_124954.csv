@@ -1,0 +1,41 @@
+Claim,True Label,Mapped True Label,Predicted Verdict,Mediator Reasoning,Advocate 1 Evidence,Advocate 1 Verdict,Advocate 1 Reasoning
+"90 percent of the world’s coral reefs will disappear in the next 35 years due to coral bleaching induced by global warming, pollution, and overdevelopment.",mostly correct,correct,NOT_ENOUGH_INFORMATION,"The claim that 90 percent of the world’s coral reefs will disappear in the next 35 years due to coral bleaching induced by global warming, pollution, and overdevelopment cannot be directly verified based on the provided evidence. The evidence discusses ocean warming being a significant factor in the climate system, but it does not specifically mention coral reefs or the projected disappearance of 90 percent of them due to coral bleaching.
+
+Therefore, based on the evidence provided, it is ((not_enough_information)) to determine the accuracy of the claim.",NOT_ENOUGH_INFORMATION,NOT_ENOUGH_INFORMATION,"The claim that 90 percent of the world’s coral reefs will disappear in the next 35 years due to coral bleaching induced by global warming, pollution, and overdevelopment cannot be directly verified based on the provided evidence. The evidence discusses ocean warming being a significant factor in the climate system, but it does not specifically mention coral reefs or the projected disappearance of 90 percent of them due to coral bleaching.
+
+Therefore, based on the evidence provided, it is ((not_enough_information)) to determine the accuracy of the claim."
+Unprecedented climate change has caused sea level at Sydney Harbour to rise approximately 0.0 cm over the past 140 years.,inaccurate,incorrect,INCORRECT,"The claim that unprecedented climate change has caused sea level at Sydney Harbour to rise approximately 0.0 cm over the past 140 years is ((incorrect)).
+
+Based on the evidence provided, it is clear that global mean sea level change has been observed and projected to increase over time due to climate change and emissions. The evidence indicates that higher emissions lead to greater and faster rates of sea level rise, which contradicts the claim that there has been no rise in sea level at Sydney Harbour over the past 140 years. Therefore, the claim is incorrect.",INCORRECT,INCORRECT,"The claim that unprecedented climate change has caused sea level at Sydney Harbour to rise approximately 0.0 cm over the past 140 years is ((incorrect)).
+
+Based on the evidence provided, it is clear that global mean sea level change has been observed and projected to increase over time due to climate change and emissions. The evidence indicates that higher emissions lead to greater and faster rates of sea level rise, which contradicts the claim that there has been no rise in sea level at Sydney Harbour over the past 140 years. Therefore, the claim is incorrect."
+"Peer-reviewed studies, geologic records, and all the studies have shown that we have actually cooled since the Roman Warming Period, and likely since the Medieval Warming Period.",incorrect,incorrect,INCORRECT,"The claim that we have cooled since the Roman Warming Period and likely since the Medieval Warming Period is ((incorrect)).
+
+The evidence provided indicates that the global surface temperature has increased by around 1.1°C since 1850-1900, as shown in the first piece of evidence (Node ID: e88095a5-2379-44a0-a316-b5015dee96de). Additionally, the second piece of evidence (Node ID: b8b239f3-738d-4c83-a451-b021f18aa4ba) mentions that the last time global surface temperature was sustained at or above 2.5°C was over 3 million years ago, indicating a warming trend rather than cooling.
+
+Therefore, based on the provided evidence, it is clear that the claim of cooling since historical warming periods is incorrect.",INCORRECT,INCORRECT,"The claim that we have cooled since the Roman Warming Period and likely since the Medieval Warming Period is ((incorrect)).
+
+The evidence provided indicates that the global surface temperature has increased by around 1.1°C since 1850-1900, as shown in the first piece of evidence (Node ID: e88095a5-2379-44a0-a316-b5015dee96de). Additionally, the second piece of evidence (Node ID: b8b239f3-738d-4c83-a451-b021f18aa4ba) mentions that the last time global surface temperature was sustained at or above 2.5°C was over 3 million years ago, indicating a warming trend rather than cooling.
+
+Therefore, based on the provided evidence, it is clear that the claim of cooling since historical warming periods is incorrect."
+"Climate changed naturally in prehistoric eras, modern climate change is a naturally occurring phenomenon",flawed reasoning,incorrect,INCORRECT,"The claim that modern climate change is a naturally occurring phenomenon is ((incorrect)).
+
+Based on the evidence provided, it is clear that climate change is primarily driven by human activities. The evidence mentions that the global proportion of major tropical cyclone occurrence has increased over the last four decades, and climate change has caused substantial damages and irreversible losses. Additionally, ocean warming has accounted for 91% of the heating in the climate system, indicating a significant impact of human-induced climate change.
+
+Therefore, the claim that modern climate change is solely a naturally occurring phenomenon is not supported by the evidence provided, which highlights the significant role of human activities in driving climate change.
+
+Evidence and Agreement: 
+- High evidence based on the information provided in the evidence nodes.
+- High agreement as the evidence clearly indicates the impact of human-induced climate change.
+
+((incorrect))",INCORRECT,INCORRECT,"The claim that modern climate change is a naturally occurring phenomenon is ((incorrect)).
+
+Based on the evidence provided, it is clear that climate change is primarily driven by human activities. The evidence mentions that the global proportion of major tropical cyclone occurrence has increased over the last four decades, and climate change has caused substantial damages and irreversible losses. Additionally, ocean warming has accounted for 91% of the heating in the climate system, indicating a significant impact of human-induced climate change.
+
+Therefore, the claim that modern climate change is solely a naturally occurring phenomenon is not supported by the evidence provided, which highlights the significant role of human activities in driving climate change.
+
+Evidence and Agreement: 
+- High evidence based on the information provided in the evidence nodes.
+- High agreement as the evidence clearly indicates the impact of human-induced climate change.
+
+((incorrect))"
