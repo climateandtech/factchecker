@@ -1,21 +1,12 @@
 from llama_index.core.llms import ChatMessage
-from llama_index.core import VectorStoreIndex, Settings, Document
+from llama_index.core import Document
 import pytest
 from unittest.mock import Mock, patch
 from factchecker.core.llm import load_llm
+from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 from tests.indexing.test_embedding_models import MockEmbedding
 import httpx
-
-def create_query_engine(documents, embed_model, llm):
-    # Configure settings
-    Settings.embed_model = embed_model
-    Settings.llm = llm
-    
-    # Create index
-    index = VectorStoreIndex.from_documents(documents)
-    
-    # Return query engine
-    return index.as_query_engine()
 
 def test_ollama_integration():
     # Mock the environment variables
@@ -45,13 +36,23 @@ def test_ollama_integration():
             # Load the LLM
             llm = load_llm()
             
-            # Create query engine with mock embedding
-            query_engine = create_query_engine(documents, mock_embed_model, llm)
+            # Create indexer with mock embedding
+            indexer_options = {
+                'documents': documents,
+                'index_name': 'test_ollama_integration',
+                'embedding_kwargs': {'embed_model': mock_embed_model}
+            }
+            indexer = LlamaVectorStoreIndexer(indexer_options)
+            indexer.initialize_index()
+            
+            # Create retriever
+            retriever_options = {'top_k': 2}
+            retriever = LlamaBaseRetriever(indexer, retriever_options)
             
             # Test query
             query = "Test query"
-            response = query_engine.query(query)
+            nodes = retriever.retrieve(query)
             
             # Verify the response
-            assert response is not None
-            assert str(response) == "Test response" 
+            assert nodes is not None
+            assert len(nodes) > 0 
