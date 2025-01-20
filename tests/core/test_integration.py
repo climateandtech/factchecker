@@ -3,7 +3,7 @@ from llama_index.core import VectorStoreIndex, Settings, Document
 import pytest
 from unittest.mock import Mock, patch
 from factchecker.core.llm import load_llm
-from tests.indexing.test_embeddings import MockEmbedding
+from tests.indexing.test_embedding_models import MockEmbedding
 import httpx
 
 def create_query_engine(documents, embed_model, llm):
