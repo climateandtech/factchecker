@@ -81,5 +81,10 @@ def load_embedding_model(
             **kwargs
         )
         
+    elif embedding_type == "mock":
+        from tests.conftest import MockEmbedding
+        mock_dim = int(os.getenv("MOCK_EMBED_DIM", "384"))
+        return MockEmbedding(dim=mock_dim)
+        
     else:
         raise ValueError(f"Unsupported embedding type: {embedding_type}")

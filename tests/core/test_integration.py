@@ -5,11 +5,11 @@ from unittest.mock import Mock, patch
 from factchecker.core.llm import load_llm
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from tests.indexing.test_embedding_models import MockEmbedding
+from tests.conftest import MockEmbedding
 import httpx
 
 def test_ollama_integration():
-    # Mock the environment variables
+    # Mock only Ollama-specific environment variables
     with patch.dict('os.environ', {
         'LLM_TYPE': 'ollama',
         'OLLAMA_API_BASE_URL': 'http://localhost:11434',

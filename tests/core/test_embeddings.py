@@ -5,6 +5,27 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 from factchecker.core.embeddings import load_embedding_model
 
+class MockEmbedding:
+    """Mock embedding class for testing."""
+    def __init__(self, dim=384):
+        self.dim = dim
+        
+    def get_text_embedding(self, text):
+        """Return a mock embedding of the specified dimension."""
+        return [0.0] * self.dim
+
+    async def aget_text_embedding(self, text):
+        """Return a mock embedding of the specified dimension asynchronously."""
+        return [0.0] * self.dim
+
+    def get_text_embeddings(self, texts):
+        """Return mock embeddings for multiple texts."""
+        return [[0.0] * self.dim for _ in texts]
+
+    async def aget_text_embeddings(self, texts):
+        """Return mock embeddings for multiple texts asynchronously."""
+        return [[0.0] * self.dim for _ in texts]
+
 @pytest.fixture
 def mock_env(monkeypatch):
     """Fixture to set up a clean environment for each test"""
