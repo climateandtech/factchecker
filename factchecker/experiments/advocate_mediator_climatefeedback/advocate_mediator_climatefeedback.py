@@ -1,5 +1,5 @@
 from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
-from factchecker.prompts.advocate_mediator_prompts import advocate_primer, arbitrator_primer
+from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback_prompts import advocate_primer, arbitrator_primer
 from factchecker.utils.climatefeedback_utils import (
     map_verdict,
     sample_climatefeedback_claims,
