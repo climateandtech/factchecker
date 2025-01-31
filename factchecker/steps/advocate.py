@@ -1,11 +1,14 @@
-from llama_index.core.llms import ChatMessage
 import logging
-from factchecker.steps.evidence import EvidenceStep
-from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
-from factchecker.core.llm import load_llm
 
-import os
+from llama_index.core.llms import ChatMessage
+
+from factchecker.core.llm import load_llm
+from factchecker.config.config import DEFAULT_LABEL_OPTIONS
+from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+from factchecker.prompts.advocate_prompts import get_default_system_prompt, get_default_user_prompt
+from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
+from factchecker.steps.evidence import EvidenceStep
+
 
 class AdvocateStep:
     """
@@ -33,10 +36,8 @@ class AdvocateStep:
         """
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
-        self.evidence_prompt_template = self.options.pop('evidence_prompt_template', "Evidence: {evidence}")
-        self.system_prompt_template = self.options.pop('system_prompt_template', "System information:")
-        self.format_prompt = self.options.pop("format_prompt", "Answer with TRUE or FALSE in the format ((correct)), ((incorrect)), or ((not_enough_information))")
-        self.max_evidences = self.options.pop("max_evidences", 1)
+        self.system_prompt = self.options.pop('system_prompt', get_default_system_prompt())
+        self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
         
         # Filter out retriever-specific options
         self.additional_options = {
