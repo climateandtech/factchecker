@@ -94,6 +94,7 @@ class AdvocateStep:
             ChatMessage(role="user", content=user_prompt)
         ]
 
+        # TODO: extract from json response
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.additional_options)
             response_content = response.message.content.strip()
