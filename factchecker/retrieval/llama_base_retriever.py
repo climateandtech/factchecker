@@ -1,13 +1,18 @@
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 
 class LlamaBaseRetriever(AbstractRetriever):
-    def __init__(self, indexer, options=None):
+    def __init__(
+            self, 
+            indexer: AbstractIndexer, 
+            options: dict = None
+        ) -> None:
         super().__init__(indexer, options)
 
     def create_retriever(self):
         super().create_retriever()
         retriever_options = self.options.copy()
-        retriever_options.pop('similarity_top_k', None)
+        retriever_options.pop('top_k', None)
         
         self.retriever = self.indexer.index.as_retriever(
             similarity_top_k=self.top_k,

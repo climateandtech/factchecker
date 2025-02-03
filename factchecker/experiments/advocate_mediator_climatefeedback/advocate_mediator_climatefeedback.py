@@ -33,11 +33,10 @@ EXPERIMENT_PARAMS = {
     'index_name': 'advocate1_index',
     
     # Retrieval parameters
-    'similarity_top_k': 8,  # Number of similar chunks to retrieve
+    'top_k': 8,  # Number of similar chunks to retrieve
     
-    # Advocate parameters
+    # Evidence parameters
     'max_evidences': 10,  # Maximum pieces of evidence to consider
-    'advocate_top_k': 8,  # Top k evidence pieces for advocate
     'min_score': 0.75,  # Minimum similarity score for evidence
 }
 
@@ -55,29 +54,33 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     }]
 
     retriever_options_list = [{
-        'similarity_top_k': EXPERIMENT_PARAMS['similarity_top_k'],
-        'indexer_options': indexer_options_list[0]
+        'top_k': EXPERIMENT_PARAMS['top_k'],
     }]
 
     advocate_options = {
-        'max_evidences': EXPERIMENT_PARAMS['max_evidences'],
-        'top_k': EXPERIMENT_PARAMS['advocate_top_k'],
-        'min_score': EXPERIMENT_PARAMS['min_score'],
         "thinking_llm": True,
         "thinking_token": "think",
+        'system_prompt': advocate_primer,
     }
+
+    evidence_options = {
+        'min_score': EXPERIMENT_PARAMS['min_score'],
+        'max_evidences': EXPERIMENT_PARAMS['max_evidences'],
+        'query_template': "{claim}"
+    },
 
     mediator_options = {
         "thinking_llm": True,
         "thinking_token": "think",
+        'system_prompt': arbitrator_primer
     }
 
     strategy = AdvocateMediatorStrategy(
         indexer_options_list,
         retriever_options_list,
         advocate_options,
+        evidence_options,
         mediator_options,
-        advocate_primer,
         arbitrator_primer
     )
     logger.info("Strategy initialized successfully")

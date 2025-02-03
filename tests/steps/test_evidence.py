@@ -25,7 +25,7 @@ def mock_retriever(mock_indexer, mock_evidence):
     """Fixture for mocked retriever"""
     mock = MagicMock(spec=LlamaBaseRetriever)
     mock.indexer = mock_indexer
-    mock.options = {'similarity_top_k': 5}
+    mock.options = {'top_k': 5}
     mock.retrieve.return_value = mock_evidence
     return mock
 

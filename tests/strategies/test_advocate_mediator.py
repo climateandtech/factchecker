@@ -189,7 +189,7 @@ def test_real_world_configuration(mock_llama_indexer, mock_llama_retriever, mock
     }]
 
     retriever_options_list = [{
-        'similarity_top_k': 8,
+        'top_k': 8,
         'indexer_options': indexer_options_list[0]
     }]
 

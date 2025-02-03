@@ -37,10 +37,10 @@ def get_default_indexer_options(source_directory: str = 'data', index_name: str 
         'index_name': index_name
     }]
 
-def get_default_retriever_options(indexer_options: list, similarity_top_k: int = 8):
+def get_default_retriever_options(indexer_options: list, top_k: int = 8):
     """Get default retriever options."""
     return [{
-        'similarity_top_k': similarity_top_k,
+        'top_k': top_k,
         'indexer_options': indexer_options[0]
     }]
 

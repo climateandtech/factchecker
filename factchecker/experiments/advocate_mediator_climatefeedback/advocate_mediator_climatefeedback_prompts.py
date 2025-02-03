@@ -66,7 +66,7 @@ Information " and stop further analysis .
 2. Offer a detailed explanation for your verdict ,
 including references to the ’Reference ’, ’Page ’,
 and ’URL ’ when citing the provided information .
-3. Specify the level of certainty in your assessmen by
+3. Specify the level of certainty in your assessment by
 stating the level of evidence and agreement . low
 evidence and low agreement correspond to very
 low uncertainty ,
