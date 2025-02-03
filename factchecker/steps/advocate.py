@@ -38,12 +38,13 @@ class AdvocateStep:
             retriever: AbstractRetriever,
             llm = None, # TODO: Add type hint
             options: dict = None,
-            evidence_options: dict = None # TODO: change to EvidenceRetrievalPipeline
+            evidence_options: dict = None
         ) -> None:
         """Initialize an AdvocateStep instance."""
         self.retriever = retriever
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
+        self.evidence_options = evidence_options if evidence_options is not None else {}
         self.system_prompt = self.options.pop('system_prompt', get_default_system_prompt())
         self.label_options: list[LabelOption] = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
         self.max_retries = self.options.pop('max_retries', 3)
