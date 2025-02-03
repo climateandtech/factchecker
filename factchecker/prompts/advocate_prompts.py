@@ -2,7 +2,7 @@ import json
 from textwrap import dedent
 
 def get_default_system_prompt():
-    """Returns the default system prompt for the advocate step"""
+    """Returns the default system prompt for the advocate step."""
     return dedent("""
     You are an AI fact-checking assistant. Your task is to evaluate a given claim based **solely on the provided evidence**. 
                   
@@ -29,12 +29,9 @@ def get_default_system_prompt():
 
     ## Response Format
                   
-    Give your response in the following JSON format:
+    Give your response in the following format:
                   
-    {{
-        "label": "the label you chose based on the provided label options",
-        "reasoning": "your detailed reasoning that justifies your choice",
-    }}
+    "A concise and clear reasoning for your choice. ((your chosen label))"
 
     ## Final Instructions
     - **Label Options**: Choose from the provided label options only.
@@ -42,7 +39,7 @@ def get_default_system_prompt():
     - **Be Objective**: Base your evaluation solely on the evidence provided.
     - **Accuracy Matters**: Strive for accuracy in your evaluation.
     - **Review Your Response**: Double-check your response before submitting.
-    - **Output Format**: Your response should be in in valid JSON format as shown above.
+    - **Output Format**: Your response should be in the specified format to be correctly evaluated.
 
     Now it's your turn to evaluate the following claim based on the evidence provided and select the appropriate label based on the given options:
     """)
@@ -54,6 +51,7 @@ def get_default_user_prompt(
     ) -> str:
     """
     Returns the default user prompt for the advocate step, formatted as a JSON-like structure.
+
     This ensures compatibility with the system prompt's expected input format.
 
     Args:
@@ -63,8 +61,8 @@ def get_default_user_prompt(
 
     Returns:
         str: A JSON-formatted string containing the claim, evidence, and label choices.
-    """
 
+    """
     # Convert label_options to dictionary format if it is a list
     if isinstance(label_options, list):
         label_options = {label: "" for label in label_options}  # Empty descriptions if not provided
