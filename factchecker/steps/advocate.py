@@ -2,14 +2,12 @@ import logging
 
 from llama_index.core.llms import ChatMessage
 
-from factchecker.core.llm import load_llm
 from factchecker.config.config import DEFAULT_LABEL_OPTIONS
-from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+from factchecker.core.llm import load_llm
+from factchecker.datastructures import ClaimFactCheck, LabelOption
 from factchecker.prompts.advocate_prompts import get_default_system_prompt, get_default_user_prompt
-from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from factchecker.steps.evidence import EvidenceStep
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
-from factchecker.datastructures import LabelOption, ClaimFactCheck
+from factchecker.steps.evidence import EvidenceStep
 
 
 class AdvocateStep:
@@ -96,9 +94,9 @@ class AdvocateStep:
             ChatMessage(role="user", content=user_prompt)
         ]
 
-        # TODO: extract from json response
+
         for attempt in range(self.max_retries):
-            response = self.llm.chat(messages, **self.additional_options)
+            response = self.llm.chat(messages, **self.chat_completion_options)
             response_content = response.message.content.strip()
             if self.thinking_llm:
                 start_thought = response_content.find(f"<{self.thinking_token}>")
