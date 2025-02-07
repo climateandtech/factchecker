@@ -4,13 +4,14 @@ from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 def main():
 
     indexer_options = {
+        'source_directory': 'data',
     }
     retriever_options = {
         'top_k': 4,
     }
 
     indexer = LlamaVectorStoreIndexer(indexer_options)
-    indexer.create_index()
+    indexer.initialize_index()
 
     retriever = LlamaBaseRetriever(indexer, retriever_options)
 
@@ -23,4 +24,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
