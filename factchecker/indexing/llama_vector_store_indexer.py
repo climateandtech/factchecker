@@ -43,18 +43,10 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
         """
         super().__init__(options)
-        
-        # Load embedding model if specified in options
-        embedding_kwargs = {}
-        if 'embedding_type' in self.options:
-            embedding_kwargs['embedding_type'] = self.options.pop('embedding_type')
-        if 'embedding_model' in self.options:
-            embedding_kwargs['model_name'] = self.options.pop('embedding_model')
-        
-        self.embed_model = load_embedding_model(**embedding_kwargs)
-        self.storage_context_options = self.options.get('storage_context_options', {})
-        self.transformations = self.options.get('transformations', [])
-        self.show_progress = self.options.get('show_progress', True)
+        self.embed_model: Optional[EmbedType] = self.options.pop('embed_model', None)
+        self.storage_context_options: Dict[str, Any] = self.options.pop('storage_context_options', {})
+        self.transformations = self.options.pop('transformations', [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)])
+        self.show_progress: bool = self.options.pop('show_progress', False)
 
 
     def build_index(self, documents: List[Document]) -> None:

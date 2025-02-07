@@ -34,6 +34,8 @@ class AbstractIndexer(ABC):
         self.index_name: str = self.options.pop('index_name', 'default_index')
         self.index_path: Optional[str] = self.options.pop('index_path', None)
         self.source_directory: str = self.options.pop('source_directory', None)
+        self.initial_documents = self.options.pop('documents', None)
+        self.initial_files = self.options.pop('files', None)
         self.index: Optional[Any] = None
 
     def load_initial_documents(self) -> List[Document]:
@@ -49,16 +51,16 @@ class AbstractIndexer(ABC):
         """
         try:
             # Use preloaded documents if provided
-            documents = self.options.get('documents')
-            if documents:
+            if self.initial_documents:
                 logging.info("Using preloaded documents provided in options.")
-                return documents
+                return self.initial_documents
 
             # Use specified files if provided
-            files = self.options.get('files')
-            if files:
+            if self.initial_files:
+                files = self.initial_files
                 logging.info(f"Loading documents from specified files: {files}")
                 documents = SimpleDirectoryReader(input_files=files).load_data()
+                self.initial_documents = documents
                 logging.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
 
@@ -66,6 +68,7 @@ class AbstractIndexer(ABC):
             if self.source_directory:
                 logging.info(f"Loading documents from source directory: {self.source_directory}")
                 documents = SimpleDirectoryReader(self.source_directory).load_data()
+                self.initial_documents = documents
                 logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
                 return documents
             

@@ -43,6 +43,9 @@ EXPERIMENT_PARAMS = {
     # Evidence parameters
     'max_evidences': 10,  # Maximum pieces of evidence to consider
     'min_score': 0.75,  # Minimum similarity score for evidence
+
+    # Label options
+    'label_options': ['correct', 'incorrect', 'not_enough_information'],
 }
 
 def setup_strategy() -> AdvocateMediatorStrategy:
@@ -66,11 +69,11 @@ def setup_strategy() -> AdvocateMediatorStrategy:
         "thinking_llm": True,
         "thinking_token": "think",
         'system_prompt': advocate_primer,
+        'label_options': EXPERIMENT_PARAMS['label_options'],
     }
 
     evidence_options = {
         'min_score': EXPERIMENT_PARAMS['min_score'],
-        'max_evidences': EXPERIMENT_PARAMS['max_evidences'],
         'query_template': "{claim}"
     }
 
