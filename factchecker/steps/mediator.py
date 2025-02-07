@@ -22,7 +22,7 @@ class MediatorStep:
         """
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
-        self.system_prompt = self.options.get('system_prompt', '')
+        self.system_prompt = self.options.pop('system_prompt', '')
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 
