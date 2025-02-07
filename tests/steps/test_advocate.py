@@ -53,11 +53,11 @@ def test_default_options(mock_llm, mock_indexer):
     assert advocate.system_prompt_template is not None
     assert advocate.format_prompt is not None
 
-def test_evaluate_evidence(mock_llm, mock_indexer):
+def test_evaluate_claim(mock_llm, mock_indexer):
     """Test evidence evaluation process"""
     evidence_options = {'indexer': mock_indexer}
     advocate = AdvocateStep(llm=mock_llm, evidence_options=evidence_options)
-    verdict, reasoning = advocate.evaluate_evidence("Test claim")
+    verdict, reasoning = advocate.evaluate_claim("Test claim")
     
     assert mock_llm.chat.called
     assert verdict == "CORRECT"
@@ -68,7 +68,7 @@ def test_llm_error_handling(mock_llm, mock_indexer):
     mock_llm.chat.return_value = MagicMock(message=MagicMock(content="Invalid response"))
     evidence_options = {'indexer': mock_indexer}
     advocate = AdvocateStep(llm=mock_llm, evidence_options=evidence_options)
-    verdict, reasoning = advocate.evaluate_evidence("Test claim")
+    verdict, reasoning = advocate.evaluate_claim("Test claim")
     
     assert verdict == "ERROR_PARSING_RESPONSE"
     assert reasoning == "No reasoning available"
@@ -84,6 +84,6 @@ def test_retry_mechanism(mock_llm, mock_indexer):
     evidence_options = {'indexer': mock_indexer}
     advocate = AdvocateStep(llm=mock_llm, evidence_options=evidence_options)
     
-    verdict, reasoning = advocate.evaluate_evidence("Test claim")
+    verdict, reasoning = advocate.evaluate_claim("Test claim")
     assert verdict == "CORRECT"
     assert mock_llm.chat.call_count == 3 

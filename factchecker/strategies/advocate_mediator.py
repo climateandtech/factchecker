@@ -11,7 +11,14 @@ class AdvocateMediatorStrategy:
     a claim independently. A mediator then synthesizes their verdicts into a final consensus.
     """
 
-    def __init__(self, indexer_options_list, retriever_options_list, advocate_options, evidence_options, mediator_options):
+    def __init__(
+            self, 
+            indexer_options_list: list[dict], 
+            retriever_options_list: list[dict], 
+            advocate_options: dict, 
+            evidence_options: dict, 
+            mediator_options: dict,
+        ) -> None:
         """
         Initialize an AdvocateMediatorStrategy instance.
 
@@ -63,7 +70,7 @@ class AdvocateMediatorStrategy:
                 - reasonings (list): List of advocate reasonings
         """
         # Each advocate evaluates the claim based on their own evidence
-        verdicts_and_reasonings = [advocate.evaluate_evidence(claim) for advocate in self.advocate_steps]
+        verdicts_and_reasonings = [advocate.evaluate_claim(claim) for advocate in self.advocate_steps]
 
         # Separate verdicts and reasonings
         verdicts = [verdict for verdict, reasoning in verdicts_and_reasonings]

@@ -1,19 +1,24 @@
+import logging
+
+from llama_index.core import Settings
+
+from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback_prompts import (
+    advocate_primer,
+    arbitrator_primer,
+)
 from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
-from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback_prompts import advocate_primer, arbitrator_primer
 from factchecker.utils.climatefeedback_utils import (
+    evaluate_climatefeedback_claims,
     map_verdict,
     sample_climatefeedback_claims,
-    evaluate_climatefeedback_claims
 )
 from factchecker.utils.experiment_utils import (
     configure_logging,
-    verify_environment,
     create_results_dataframe,
-    save_results
+    save_results,
+    verify_environment,
 )
 from factchecker.utils.metrics import calculate_classification_metrics
-from llama_index.core import Settings
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +72,7 @@ def setup_strategy() -> AdvocateMediatorStrategy:
         'min_score': EXPERIMENT_PARAMS['min_score'],
         'max_evidences': EXPERIMENT_PARAMS['max_evidences'],
         'query_template': "{claim}"
-    },
+    }
 
     mediator_options = {
         "thinking_llm": True,
@@ -81,7 +86,6 @@ def setup_strategy() -> AdvocateMediatorStrategy:
         advocate_options,
         evidence_options,
         mediator_options,
-        arbitrator_primer
     )
     logger.info("Strategy initialized successfully")
     return strategy

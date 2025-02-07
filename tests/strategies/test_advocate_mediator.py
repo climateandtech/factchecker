@@ -27,7 +27,7 @@ def mock_llama_indexer():
 def mock_advocate_step():
     with patch('factchecker.strategies.advocate_mediator.AdvocateStep') as mock:
         advocate = Mock()
-        advocate.evaluate_evidence.return_value = ("SUPPORTS", "Based on strong evidence, this claim is supported")
+        advocate.evaluate_claim.return_value = ("SUPPORTS", "Based on strong evidence, this claim is supported")
         mock.return_value = advocate
         yield mock
 
@@ -45,7 +45,7 @@ def test_advocate_evaluation_with_evidence(mock_llama_indexer, mock_llama_retrie
     """
     # Configure mock advocate to return different verdicts based on evidence
     advocate = mock_advocate_step.return_value
-    advocate.evaluate_evidence.side_effect = [
+    advocate.evaluate_claim.side_effect = [
         ("SUPPORTS", "High confidence support"),
         ("PARTIALLY_SUPPORTS", "Medium confidence support"),
         ("REFUTES", "Low confidence support")
@@ -64,7 +64,7 @@ def test_advocate_evaluation_with_evidence(mock_llama_indexer, mock_llama_retrie
     final_verdict, verdicts, reasonings = strategy.evaluate_claim(claim)
 
     # Verify each advocate was called with proper evidence
-    assert advocate.evaluate_evidence.call_count == 3
+    assert advocate.evaluate_claim.call_count == 3
     assert verdicts == ["SUPPORTS", "PARTIALLY_SUPPORTS", "REFUTES"]
     assert reasonings == [
         "High confidence support",
@@ -78,7 +78,7 @@ def test_mediator_synthesis_logic(mock_llama_indexer, mock_llama_retriever, mock
     """
     # Configure advocates to return mixed verdicts
     advocate = mock_advocate_step.return_value
-    advocate.evaluate_evidence.side_effect = [
+    advocate.evaluate_claim.side_effect = [
         ("SUPPORTS", "Support reasoning"),
         ("REFUTES", "Refute reasoning")
     ]
@@ -136,7 +136,7 @@ def test_evidence_threshold_filtering(mock_llama_indexer, mock_llama_retriever, 
 
     # Verify advocate only received evidence above threshold
     advocate = mock_advocate_step.return_value
-    advocate.evaluate_evidence.assert_called_once()
+    advocate.evaluate_claim.assert_called_once()
     
     # Verify the configuration was passed correctly to the advocate step
     mock_advocate_step.assert_called_with(
@@ -155,9 +155,9 @@ def test_error_handling_and_recovery(mock_llama_indexer, mock_llama_retriever, m
     """
     # Configure first advocate to fail, second to succeed
     advocate1 = Mock()
-    advocate1.evaluate_evidence.side_effect = Exception("Evidence evaluation failed")
+    advocate1.evaluate_claim.side_effect = Exception("Evidence evaluation failed")
     advocate2 = Mock()
-    advocate2.evaluate_evidence.return_value = ("SUPPORTS", "Successful evaluation")
+    advocate2.evaluate_claim.return_value = ("SUPPORTS", "Successful evaluation")
     
     mock_advocate_step.side_effect = [advocate1, advocate2]
 
@@ -177,7 +177,7 @@ def test_error_handling_and_recovery(mock_llama_indexer, mock_llama_retriever, m
     assert str(exc_info.value) == "Evidence evaluation failed"
     
     # Verify second advocate was never called due to fail-fast behavior
-    assert not advocate2.evaluate_evidence.called
+    assert not advocate2.evaluate_claim.called
 
 def test_real_world_configuration(mock_llama_indexer, mock_llama_retriever, mock_advocate_step, mock_mediator_step):
     """
@@ -246,7 +246,7 @@ def test_confidence_based_verdict(mock_llama_indexer, mock_llama_retriever, mock
     ]
 
     advocate = mock_advocate_step.return_value
-    advocate.evaluate_evidence.side_effect = [
+    advocate.evaluate_claim.side_effect = [
         ("CORRECT", "High confidence reasoning"),
         ("INCONCLUSIVE", "Medium confidence reasoning"),
         ("INCORRECT", "Low confidence reasoning")
