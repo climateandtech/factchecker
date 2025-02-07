@@ -65,7 +65,8 @@ def get_default_user_prompt(
     """
     # Convert label_options to dictionary format if it is a list
     if isinstance(label_options, list):
-        label_options = {label: "" for label in label_options}  # Empty descriptions if not provided
+        # join the list of label_options by ", " to create a string
+        label_options = ','.join(label_options)
 
     # Construct the input dictionary
     input_data = {

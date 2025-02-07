@@ -6,23 +6,18 @@ def main():
     index_name = 'ragatouille_colbert_experiment_index'
 
     indexer_options = {
-        # 'source_directory': 'data',
-        'index_name': index_name, # Name of the index
-        'index_path': f'indexes/ragatouille/colbert/indexes/{index_name}', # Path to the directory where the index is stored on disk
-        # 'max_document_length': 180, # Longer documents will be split into chunks
-        # 'split_documents': True, # Split documents into chunks
-        # 'checkpoint': 'colbert-ir/colbertv2.0',  # Pretrained model checkpoint
-        'overwrite_index': False, # Whether to overwrite an existing index with the same name
+        'source_directory': 'data',
+        'index_name': index_name,
+        'index_path': f'indexes/ragatouille/colbert/indexes/{index_name}', 
+        'overwrite_index': True,
     }
     retriever_options = {
+        'top_k': 4,
     }
 
 
     indexer = RagatouilleColBERTIndexer(indexer_options)
-    # print(indexer.index)
-    # print(indexer.index_path)
-    # indexer.load_index()
-    indexer.create_index()
+    indexer.initialize_index()
 
     retriever = RagatouilleColBERTRetriever(indexer, retriever_options)
 

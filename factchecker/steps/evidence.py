@@ -1,5 +1,6 @@
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
+from llama_index.core.schema import NodeWithScore
 from factchecker.core.llm import load_llm
 
 class EvidenceStep:
@@ -54,7 +55,32 @@ class EvidenceStep:
         """
         query = self.build_query(claim)
         evidence = self.retriever.retrieve(query)
-        return self.classify_evidence(evidence)
+        filtered_evidence = self.classify_evidence(evidence)
+        evidence_texts = self.extract_text_from_evidence(filtered_evidence)
+        return evidence_texts
+    
+    def extract_text_from_evidence(self, evidence) -> list[str]:
+        """
+        Extract text from evidence nodes.
+
+        Args:
+            evidence (list): List of evidence nodes to extract text from
+
+        Returns:
+            list: List of text strings extracted from evidence nodes
+        """
+        # check if evidence is a list
+        if evidence is not None and isinstance(evidence, list):
+            if evidence and isinstance(evidence[0], NodeWithScore):
+                # For each NodeWithScore, extract the text from its node attribute.
+                evidence_texts = [item.node.text for item in evidence]
+                return evidence_texts
+            else: 
+                raise ValueError("Evidence must be a list of NodeWithScore objects")
+        else: 
+            raise ValueError("Evidence must be a list")
+        
+            
 
     def classify_evidence(self, evidence):
         """
