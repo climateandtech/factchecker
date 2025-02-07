@@ -54,7 +54,7 @@ class AdvocateStep:
         self.evidence_step = EvidenceStep(
             retriever=retriever,
             options={
-                **evidence_options,
+                **self.evidence_options,
             }
         )
 
