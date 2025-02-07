@@ -1,6 +1,7 @@
 import os
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
+from typing import Union
 
 def load_llm(
     llm_type=None,
@@ -13,7 +14,7 @@ def load_llm(
     context_window=3900,
     embedding_model=None,
     **kwargs
-):
+    ) -> Union[OpenAI, Ollama]:
     llm_type = llm_type or os.getenv("LLM_TYPE", "openai").lower()
     
     if llm_type == "ollama":

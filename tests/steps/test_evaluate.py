@@ -33,10 +33,10 @@ def test_default_options(mock_llm):
     assert evaluator.system_prompt_template is not None
     assert evaluator.format_prompt is not None
 
-def test_evaluate_evidence(mock_llm):
+def test_evaluate_claim(mock_llm):
     """Test evidence evaluation process"""
     evaluator = EvaluateStep(llm=mock_llm)
-    result = evaluator.evaluate_evidence("Test claim", "Pro evidence", "Con evidence")
+    result = evaluator.evaluate_claim("Test claim", "Pro evidence", "Con evidence")
     
     assert mock_llm.chat.called
     assert result == "CORRECT"
@@ -45,7 +45,7 @@ def test_llm_error_handling(mock_llm):
     """Test handling of LLM errors"""
     mock_llm.chat.return_value = MagicMock(message=MagicMock(content="Invalid JSON"))
     evaluator = EvaluateStep(llm=mock_llm)
-    result = evaluator.evaluate_evidence("Test claim", "Pro evidence", "Con evidence")
+    result = evaluator.evaluate_claim("Test claim", "Pro evidence", "Con evidence")
     
     assert result == "ERROR_PARSING_RESPONSE"
 
@@ -60,14 +60,14 @@ def test_json_parsing(mock_llm):
     evaluator = EvaluateStep(llm=mock_llm)
     for response in responses:
         mock_llm.chat.return_value = MagicMock(message=MagicMock(content=response))
-        result = evaluator.evaluate_evidence("Test claim", "Pro evidence", "Con evidence")
+        result = evaluator.evaluate_claim("Test claim", "Pro evidence", "Con evidence")
         assert result == "CORRECT"
 
 def test_missing_label(mock_llm):
     """Test handling of JSON response without label"""
     mock_llm.chat.return_value = MagicMock(message=MagicMock(content='{"other": "value"}'))
     evaluator = EvaluateStep(llm=mock_llm)
-    result = evaluator.evaluate_evidence("Test claim", "Pro evidence", "Con evidence")
+    result = evaluator.evaluate_claim("Test claim", "Pro evidence", "Con evidence")
     
     assert result == "ERROR_PARSING_RESPONSE"
 

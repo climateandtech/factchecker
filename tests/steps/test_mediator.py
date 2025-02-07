@@ -10,19 +10,19 @@ def mock_llm():
     mock.chat.return_value = MagicMock(message=MagicMock(content="((correct)): Final verdict based on all evidence."))
     return mock
 
-def test_mediator_initialization(mock_llm):
-    """Test mediator initialization with different options"""
+def test_mediator_initialization(mock_llm: MagicMock) -> None:
+    """Test mediator initialization with different options."""
     options = {
-        'arbitrator_primer': "You are a mediator synthesizing verdicts."
+        'system_prompt': "You are a mediator synthesizing verdicts."
     }
     
     mediator = MediatorStep(llm=mock_llm, options=options.copy())
-    assert mediator.prompt == "You are a mediator synthesizing verdicts."
+    assert mediator.system_prompt == "You are a mediator synthesizing verdicts."
 
 def test_default_options(mock_llm):
     """Test default options when none provided"""
     mediator = MediatorStep(llm=mock_llm)
-    assert mediator.prompt == ""
+    assert mediator.system_prompt == ""
 
 def test_synthesize_verdicts(mock_llm):
     """Test verdict synthesis process"""

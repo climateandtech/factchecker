@@ -13,60 +13,56 @@ def mock_indexer():
     return mock
 
 @pytest.fixture
-def mock_evidence():
-    """Fixture for mock evidence nodes"""
-    def create_node(text, score):
+def mock_evidence() -> list[NodeWithScore]:
+    """Fixture for mock evidence nodes."""
+    def create_node(text: str, score: float) -> NodeWithScore:
         node = NodeWithScore(node=TextNode(text=text), score=score)
         return node
     return [create_node("Evidence 1", 0.9), create_node("Evidence 2", 0.8)]
 
 @pytest.fixture
-def mock_retriever(mock_indexer, mock_evidence):
-    """Fixture for mocked retriever"""
+def mock_retriever(mock_indexer: MagicMock, mock_evidence: list[NodeWithScore]) -> MagicMock:
+    """Fixture for mocked retriever."""
     mock = MagicMock(spec=LlamaBaseRetriever)
     mock.indexer = mock_indexer
-    mock.options = {'similarity_top_k': 5}
+    mock.options = {'top_k': 5}
     mock.retrieve.return_value = mock_evidence
     return mock
 
-def test_evidence_initialization(mock_retriever):
-    """Test evidence initialization with different options"""
+def test_evidence_initialization(mock_retriever: MagicMock) -> None:
+    """Test evidence initialization with different options."""
     options = {
         'query_template': "evidence for: {claim}",
-        'top_k': 5,
         'min_score': 0.75
     }
     
     evidence_step = EvidenceStep(retriever=mock_retriever, options=options.copy())
     assert evidence_step.query_template == "evidence for: {claim}"
-    assert evidence_step.top_k == 5
     assert evidence_step.min_score == 0.75
 
-def test_default_options(mock_retriever):
-    """Test default options when none provided"""
+def test_default_options(mock_retriever: MagicMock) -> None:
+    """Test default options when none provided."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     assert evidence_step.query_template == "{claim}"
-    assert evidence_step.top_k == 5
     assert evidence_step.min_score == 0.75
 
-def test_build_query(mock_retriever):
-    """Test query building from template"""
+def test_build_query(mock_retriever: MagicMock) -> None:
+    """Test query building from template."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     claim = "The Earth is round"
     query = evidence_step.build_query(claim)
     assert query == "The Earth is round"
 
-def test_gather_evidence(mock_retriever, mock_evidence):
-    """Test evidence gathering process"""
+def test_gather_evidence(mock_retriever: MagicMock, mock_evidence: list[NodeWithScore]) -> None:
+    """Test evidence gathering process."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     evidence = evidence_step.gather_evidence("Test claim")
     assert mock_retriever.retrieve.called
     assert len(evidence) == 2
-    assert all(isinstance(e, NodeWithScore) for e in evidence)
-    assert all(e.score >= 0.75 for e in evidence)
+    assert all(isinstance(e, str) for e in evidence)
 
-def test_classify_evidence(mock_retriever):
-    """Test evidence classification and filtering"""
+def test_classify_evidence(mock_retriever: MagicMock) -> None:
+    """Test evidence classification and filtering."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     mock_evidence = [
         NodeWithScore(node=TextNode(text="High confidence"), score=0.9),
@@ -78,16 +74,16 @@ def test_classify_evidence(mock_retriever):
     assert len(filtered) == 2
     assert all(node.score >= 0.75 for node in filtered)
 
-def test_retriever_error_handling(mock_retriever):
-    """Test handling of retriever errors"""
+def test_retriever_error_handling(mock_retriever: MagicMock) -> None:
+    """Test handling of retriever errors."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     mock_retriever.retrieve.side_effect = Exception("Retriever error")
     
     with pytest.raises(Exception):
         evidence_step.gather_evidence("Test claim")
 
-def test_custom_query_template(mock_retriever):
-    """Test custom query template"""
+def test_custom_query_template(mock_retriever: MagicMock) -> None:
+    """Test custom query template."""
     options = {
         'query_template': "Find evidence about {claim} in scientific papers"
     }
