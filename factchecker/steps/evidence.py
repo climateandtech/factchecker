@@ -22,6 +22,7 @@ class EvidenceStep:
                 - top_k: Number of top results to retrieve
                 - min_score: Minimum similarity score threshold
         """
+        self.retriever = retriever
         self.options = options if options is not None else {}
         # Extract specific options and remove them from the options hash
         # The query_template can be customized to target specific types of evidence,
@@ -29,7 +30,6 @@ class EvidenceStep:
         # for contradicting evidence
         self.query_template = self.options.pop('query_template', "{claim}")
         self.min_score = self.options.pop('min_score', 0.75)
-        self.retriever = retriever
 
     def build_query(self, claim: str) -> str:
         """

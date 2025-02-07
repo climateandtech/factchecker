@@ -39,7 +39,6 @@ class MediatorStep:
         Returns:
             str: The final consensus verdict (CORRECT, INCORRECT, NOT_ENOUGH_INFORMATION, or ERROR_PARSING_RESPONSE)
         """
-        
         # Format the verdicts and reasonings with <> tags
         formatted_verdicts_and_reasonings = "\n".join(
             [f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>" for verdict, reasoning in verdicts_and_reasonings]
