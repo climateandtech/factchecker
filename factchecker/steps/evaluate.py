@@ -36,7 +36,7 @@ class EvaluateStep:
         if "response_format" not in self.additional_options:
             self.additional_options["response_format"] = {"type": "json_object"}
 
-    def evaluate_evidence(self, claim, pro_evidence, con_evidence):
+    def evaluate_claim(self, claim, pro_evidence, con_evidence):
         """
         Evaluate a claim by analyzing both supporting and contradicting evidence.
 

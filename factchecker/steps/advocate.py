@@ -102,7 +102,8 @@ class AdvocateStep:
             end = response_content.find("))")
             if start != -1 and end != -1:
                 label = response_content[start+2:end].strip().upper().replace(" ", "_")
-                reasoning = response_content.strip()  # Return the whole response_content as reasoning
+                # Remove the label inside (( )) from the response content
+                reasoning = response_content[:start].strip() + response_content[end+2:].strip()
                 return label, reasoning
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
