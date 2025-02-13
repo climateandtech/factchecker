@@ -2,6 +2,7 @@ import pytest
 from llama_index.core import Document
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
+from unittest.mock import patch
 
 @pytest.fixture
 def get_test_data_directory(tmp_path):
@@ -36,16 +37,18 @@ def get_test_documents():
 def get_llama_vector_store_indexer(get_test_documents):
     """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
 
-    indexer_options = {
-        'documents': get_test_documents,
-        'index_name': 'test_index_with_docs',
-        'transformations': [],  # Disable transformations to keep documents intact
-    }
-    
-    indexer = LlamaVectorStoreIndexer(indexer_options)
-    indexer.initialize_index()
-    
-    return indexer
+    with patch.dict('os.environ', {
+        'EMBEDDING_TYPE': 'mock',
+        'MOCK_EMBED_DIM': '384'
+    }):
+        indexer_options = {
+            'documents': get_test_documents,
+            'index_name': 'test_index_with_docs',
+            'transformations': [],  # Disable transformations to keep documents intact
+        }
+
+        indexer = LlamaVectorStoreIndexer(indexer_options)
+        return indexer
 
 @pytest.fixture
 def get_ragatouille_colbert_indexer(get_test_documents, tmp_path):
