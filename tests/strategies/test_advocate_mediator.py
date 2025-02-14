@@ -10,20 +10,19 @@ def test_advocate_evaluation_with_evidence(
         mock_advocate_step: Mock
     ) -> None:
     """Test that advocates properly evaluate evidence with different confidence levels."""
-    # Configure mock advocate to return different verdicts based on evidence
-    advocate = mock_advocate_step.return_value
-    advocate.evaluate_claim.side_effect = [
+    # Configure the dummy advocate (returned by the patched AdvocateStep) to return different values.
+    dummy_adv = mock_advocate_step.return_value
+    dummy_adv.evaluate_claim.side_effect = [
         ("SUPPORTS", "High confidence support"),
         ("PARTIALLY_SUPPORTS", "Medium confidence support"),
         ("REFUTES", "Low confidence support")
     ]
 
     claim = "Test claim for evidence evaluation"
-
     final_verdict, verdicts, reasonings = advocate_mediator_strategy.evaluate_claim(claim)
 
-    # Verify each advocate was called with proper evidence
-    assert advocate.evaluate_claim.call_count == 3
+    # Verify that evaluate_claim was called three times (one per advocate).
+    assert dummy_adv.evaluate_claim.call_count == 3
     assert verdicts == ["SUPPORTS", "PARTIALLY_SUPPORTS", "REFUTES"]
     assert reasonings == [
         "High confidence support",
@@ -31,35 +30,32 @@ def test_advocate_evaluation_with_evidence(
         "Low confidence support"
     ]
 
+
 def test_mediator_synthesis_logic(
-        advocate_mediator_strategy: AdvocateMediatorStrategy, 
-        mock_advocate_step: Mock, 
-        mock_mediator_step: Mock,
-    ) -> None:
+    advocate_mediator_strategy_factory: AdvocateMediatorStrategy,
+    mock_advocate_step: Mock,
+    mock_mediator_step: Mock,
+) -> None:
     """Test that mediator properly synthesizes different combinations of verdicts."""
-    # Configure advocates to return mixed verdicts
-    advocate = mock_advocate_step.return_value
-    advocate.evaluate_claim.side_effect = [
+    dummy_adv = mock_advocate_step.return_value
+    dummy_adv.evaluate_claim.side_effect = [
         ("SUPPORTS", "Support reasoning"),
         ("REFUTES", "Refute reasoning")
     ]
 
-    # Configure mediator with different synthesis results
-    mediator = mock_mediator_step.return_value
-    mediator.synthesize_verdicts.return_value = "INCONCLUSIVE"
+    dummy_med = mock_mediator_step.return_value
+    dummy_med.synthesize_verdicts.return_value = "INCONCLUSIVE"
+
+    strategy = advocate_mediator_strategy_factory(2)
 
     claim = "Test claim for mediator synthesis"
-    final_verdict, verdicts, reasonings = advocate_mediator_strategy.evaluate_claim(claim)
+    final_verdict, verdicts, reasonings = strategy.evaluate_claim(claim)
 
-    # Verify mediator was called with correct verdicts
     expected_verdicts = [
         ("SUPPORTS", "Support reasoning"),
         ("REFUTES", "Refute reasoning")
     ]
-    mock_mediator_step.return_value.synthesize_verdicts.assert_called_once_with(
-        expected_verdicts,
-        claim
-    )
+    dummy_med.synthesize_verdicts.assert_called_once_with(expected_verdicts, claim)
     assert final_verdict == "INCONCLUSIVE"
 
 # def test_evidence_threshold_filtering(mock_llama_indexer, mock_llama_retriever, mock_advocate_step, mock_mediator_step):
