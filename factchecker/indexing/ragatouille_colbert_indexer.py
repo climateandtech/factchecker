@@ -80,6 +80,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
                 index_name=self.index_name,
                 max_document_length=self.max_document_length,
                 overwrite_index=self.overwrite_index,
+                # use_faiss=True,
             )
             
             logging.info(f"Index created and stored at {self.index_path}")
@@ -135,7 +136,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
         Args:
             document_ids (List[str]): List of document IDs to delete from the index.
-            
+
         """
         logging.error("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
