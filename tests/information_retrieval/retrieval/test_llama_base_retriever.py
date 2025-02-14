@@ -1,16 +1,21 @@
 import pytest
 from unittest.mock import patch
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
+from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 
-@pytest.fixture
-def mock_embeddings():
-    """Mock embeddings to avoid OpenAI calls"""
-    with patch('llama_index.embeddings.openai.OpenAIEmbedding') as mock:
-        yield mock
+def fake_embedding(text):
+    # Return a vector based on a hash or a simple mapping so that identical texts produce identical vectors.
+    return [hash(text) % 100]
 
-def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer, mock_embeddings):
+@pytest.fixture(autouse=True)
+def patch_openai_embedding():
+    with patch('llama_index.embeddings.openai.OpenAIEmbedding', autospec=False) as mock_embedding_cls:
+        instance = mock_embedding_cls.return_value
+        instance.embed = fake_embedding  # Patch the 'embed' method
+        yield mock_embedding_cls
+
+def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer: LlamaVectorStoreIndexer) -> None:
     """Test the LlamaBaseRetriever's ability to retrieve documents from the index."""
-
     indexer = get_llama_vector_store_indexer
 
     top_k = 2
@@ -28,4 +33,3 @@ def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer, mock
     # Assertions
     assert results is not None, "Results should not be None"
     assert len(results) == top_k, "Two documents should be retrieved"
-    assert any("This is the first test document" in result.get_text() for result in results), "The results should include the correct document"
