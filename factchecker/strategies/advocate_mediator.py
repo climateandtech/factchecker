@@ -28,6 +28,7 @@ class AdvocateMediatorStrategy:
             advocate_options (dict): Configuration options for advocates
             evidence_options (dict): Configuration options for evidence step
             mediator_options (dict): Configuration options for the mediator
+            
         """
         # Initialize indexers with their options
         self.indexers = [LlamaVectorStoreIndexer(options) for options in indexer_options_list]
