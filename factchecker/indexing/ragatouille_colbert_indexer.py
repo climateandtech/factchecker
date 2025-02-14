@@ -1,11 +1,11 @@
 """Ragatouille ColBERT Indexer."""
 
-import os
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
-from ragatouille import RAGPretrainedModel
 from llama_index.core import Document
+from ragatouille import RAGPretrainedModel
 
 from factchecker.indexing.abstract_indexer import AbstractIndexer
 
@@ -18,8 +18,8 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
         options (Dict[str, Any]): Configuration options for the indexer.
         index_name (str): Name of the index.
         index_path (Optional[str]): Path to the directory where the index is stored on disk.
+        source_directory (str): Directory containing source data files.
         index (Optional[Any]): In-memory index object.
-        ---
         max_document_length (int): Maximum length of documents during indexing.
         checkpoint (str): Pretrained model checkpoint to use.
         overwrite_index (bool): Whether to overwrite an existing index.
@@ -53,7 +53,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
 
     def build_index(self, documents: List[Document]) -> None:
-        """ 
+        """
         Builds the Ragatouille ColBERT index from the provided documents.
 
         Side effect: The index is stored on disk at self.index_path.
@@ -63,6 +63,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
         Raises:
             Exception: If an error occurs during index creation.
+            
         """
         try:
             self.index = RAGPretrainedModel.from_pretrained(
@@ -93,16 +94,18 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
         Args:
             index_path (Optional[str]): The path where the index should be saved.
+
         """
         logging.error("save_index() of RagatouilleColBERTIndexer is not implemented because indexing saves automatically.")
         raise NotImplementedError("save_index() of RagatouilleColBERTIndexer is not implemented")
 
     def load_index(self) -> None:
-        """ 
+        """
         Loads the Ragatouille ColBERT index from disk into memory.
 
         Raises:
             Exception: If an error occurs during index loading.
+
         """
         try:
             if self.check_persisted_index_exists():
@@ -121,6 +124,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
         Args:
             documents (List[Document]): Documents to be added to the index.
+
         """
         logging.error("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of RagatouilleColBERTIndexer is not yet implemented")
@@ -131,6 +135,7 @@ class RagatouilleColBERTIndexer(AbstractIndexer):
 
         Args:
             document_ids (List[str]): List of document IDs to delete from the index.
+            
         """
         logging.error("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of RagatouilleColBERTIndexer is not yet implemented")
