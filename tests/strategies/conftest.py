@@ -18,16 +18,8 @@ def get_test_documents() -> list[Document]:
     ]
     return [Document(text=txt) for txt in texts]
 
-# Autouse fixture that patches expensive operations.
 @pytest.fixture(autouse=True)
-def patch_expensive_operations() -> Generator:
-    """Patch methods that would trigger expensive operations so that they return quickly without side effects."""
-    # Create a dummy LLM whose chat method always returns a dummy response.
-    dummy_llm = MagicMock()
-    dummy_llm.chat.return_value = MagicMock(
-        message=MagicMock(content="((SUPPORTS)) Dummy reasoning")
-    )
-    
+def patch_expensive_operations():
     with patch(
         'factchecker.indexing.llama_vector_store_indexer.LlamaVectorStoreIndexer.initialize_index',
         return_value=None
@@ -39,31 +31,16 @@ def patch_expensive_operations() -> Generator:
         return_value=[]
     ), patch(
         'factchecker.steps.advocate.load_llm',
-        return_value=dummy_llm
+        return_value=MagicMock(
+            chat=lambda messages, **kwargs: MagicMock(
+                message=MagicMock(content="((SUPPORTS)) Dummy reasoning")
+            )
+        )
     ), patch(
         'factchecker.steps.evidence.EvidenceStep.gather_evidence',
         return_value=["Dummy evidence"]
     ):
         yield
-
-# Fixture to create a reusable AdvocateMediatorStrategy instance.
-@pytest.fixture
-def advocate_mediator_strategy(get_test_documents: list[Document]) -> AdvocateMediatorStrategy:
-    """Create an AdvocateMediatorStrategy instance with test documents."""
-    strategy = AdvocateMediatorStrategy(
-        indexer_options_list=[
-            {"index_name": f"test_{i}", "documents": get_test_documents}
-            for i in range(3)
-        ],
-        retriever_options_list=[{"top_k": 3} for _ in range(3)],
-        advocate_options={
-            "system_prompt": "test_system_prompt",
-            "label_options": ["SUPPORTS", "PARTIALLY_SUPPORTS", "REFUTES"]
-        },
-        evidence_options={"min_score": 0.7},
-        mediator_options={"system_prompt": "test_system_prompt"},
-    )
-    return strategy
 
 @pytest.fixture
 def mock_llama_retriever() -> Generator[Mock, None, None]:
@@ -105,3 +82,49 @@ def mock_mediator_step()-> Generator[Mock, None, None]:
         mediator.synthesize_verdicts.return_value = "FINAL_SUPPORTS"
         mock.return_value = mediator
         yield mock
+
+
+@pytest.fixture
+def advocate_mediator_strategy_factory(
+    get_test_documents: list[Document],
+    patch_expensive_operations,
+    mock_advocate_step,
+    mock_mediator_step
+):
+    def factory(nr_advocates: int) -> AdvocateMediatorStrategy:
+        return AdvocateMediatorStrategy(
+            indexer_options_list=[
+                {"index_name": f"test_{i}", "documents": get_test_documents}
+                for i in range(nr_advocates)
+            ],
+            retriever_options_list=[{"top_k": 3} for _ in range(nr_advocates)],
+            advocate_options={
+                "system_prompt": "test_system_prompt",
+                "label_options": ["SUPPORTS", "PARTIALLY_SUPPORTS", "REFUTES"]
+            },
+            evidence_options={"min_score": 0.7},
+            mediator_options={"system_prompt": "test_system_prompt"},
+        )
+    return factory
+
+@pytest.fixture
+def advocate_mediator_strategy(
+    get_test_documents: list[Document],
+    patch_expensive_operations,
+    mock_advocate_step,
+    mock_mediator_step
+) -> AdvocateMediatorStrategy:
+    # Default to 3 advocates.
+    return AdvocateMediatorStrategy(
+        indexer_options_list=[
+            {"index_name": f"test_{i}", "documents": get_test_documents}
+            for i in range(3)
+        ],
+        retriever_options_list=[{"top_k": 3} for _ in range(3)],
+        advocate_options={
+            "system_prompt": "test_system_prompt",
+            "label_options": ["SUPPORTS", "PARTIALLY_SUPPORTS", "REFUTES"]
+        },
+        evidence_options={"min_score": 0.7},
+        mediator_options={"system_prompt": "test_system_prompt"},
+    )
