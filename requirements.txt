@@ -21,7 +21,7 @@ charset-normalizer==3.3.2
 chroma-hnswlib==0.7.5
 chromadb==0.5.4
 click==8.1.7
-colbert-ai @ git+https://github.com/stanford-futuredata/ColBERT.git@8d5efcd178f31862a9dbcbf675693a3ed2e9bcc6
+colbert-ai
 coloredlogs==15.0.1
 comm==0.2.2
 dataclasses-json==0.6.7
