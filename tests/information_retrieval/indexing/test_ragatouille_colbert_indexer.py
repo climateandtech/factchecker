@@ -3,11 +3,13 @@
 import os
 from pathlib import Path
 
+import pytest
 from llama_index.core import Document
 
 from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTIndexer
 
 
+@pytest.mark.integration
 def test_initialize_index_from_documents(get_test_documents: list[Document], tmp_path: str) -> None:
     """Initialize an index with a list of documents."""
     # Use the tmp_path fixture to create a temporary directory for the index
@@ -27,7 +29,7 @@ def test_initialize_index_from_documents(get_test_documents: list[Document], tmp
     assert indexer.index_path is not None
     assert os.path.exists(indexer.index_path)
 
-
+@pytest.mark.integration
 def test_initialize_index_from_directory(get_test_data_directory: str, tmp_path: Path) -> None:
     """Initialize an index with a directory of text files."""
     # Use the tmp_path fixture to create a temporary directory for the index
@@ -47,7 +49,7 @@ def test_initialize_index_from_directory(get_test_data_directory: str, tmp_path:
     assert indexer.index_path is not None
     assert os.path.exists(indexer.index_path)
 
-
+@pytest.mark.integration
 def test_load_existing_index(get_ragatouille_colbert_indexer: RagatouilleColBERTIndexer, tmp_path: Path) -> None:
     """Test loading an existing index from disk."""
     indexer = get_ragatouille_colbert_indexer
