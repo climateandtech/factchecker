@@ -70,6 +70,8 @@ def setup_strategy() -> AdvocateMediatorStrategy:
         "thinking_token": "think",
         'system_prompt': advocate_primer,
         'label_options': EXPERIMENT_PARAMS['label_options'],
+        "thinking_llm": True,
+        "thinking_token": "think",
     }
 
     evidence_options = {
@@ -78,9 +80,9 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     }
 
     mediator_options = {
+        'system_prompt': arbitrator_primer,
         "thinking_llm": True,
         "thinking_token": "think",
-        'system_prompt': arbitrator_primer
     }
 
     strategy = AdvocateMediatorStrategy(
