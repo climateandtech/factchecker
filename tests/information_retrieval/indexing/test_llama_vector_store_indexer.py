@@ -5,6 +5,7 @@ from llama_index.core import Document
 
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 
+
 @pytest.mark.integration
 def test_initialize_index_from_documents(get_test_documents: list[Document]) -> None:
     """Initialize an index with a list of documents."""
