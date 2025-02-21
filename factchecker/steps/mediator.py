@@ -24,6 +24,8 @@ class MediatorStep:
 
         self.options = options if options is not None else {}
         self.prompt = self.options.get('arbitrator_primer', '')
+        self.thinking_llm = self.options.pop("thinking_llm", False)
+        self.thinking_token = self.options.pop("thinking_token", "think")
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 
@@ -55,6 +57,12 @@ class MediatorStep:
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **valid_options)
             response_content = response.message.content.strip()
+            if self.thinking_llm:
+                start_thought = response_content.find(f"<{self.thinking_token}>")
+                end_thought = response_content.find(f"</{self.thinking_token}>")
+                if end_thought > start_thought:
+                    response_content = response_content[end_thought + len(f"</{self.thinking_token}>"):]
+                logging.warning(f"Thinking segment found with start at {start_thought} and end at {end_thought}")
             # Extract the final verdict from the response
             start = response_content.find("((")
             end = response_content.find("))")

@@ -37,6 +37,8 @@ class AdvocateStep:
         self.system_prompt_template = self.options.pop('system_prompt_template', "System information:")
         self.format_prompt = self.options.pop("format_prompt", "Answer with TRUE or FALSE in the format ((correct)), ((incorrect)), or ((not_enough_information))")
         self.max_evidences = self.options.pop("max_evidences", 1)
+        self.thinking_llm = self.options.pop("thinking_llm", False)
+        self.thinking_token = self.options.pop("thinking_token", "think")
         
         # Filter out retriever-specific options
         self.additional_options = {
@@ -95,7 +97,13 @@ class AdvocateStep:
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.additional_options)
             response_content = response.message.content.strip()
-            # Extract the verdict from the response
+            if self.thinking_llm:
+                start_thought = response_content.find(f"<{self.thinking_token}>")
+                end_thought = response_content.find(f"</{self.thinking_token}>")
+                if end_thought > start_thought:
+                    response_content = response_content[end_thought + len(f"</{self.thinking_token}>"):]
+                logging.warning(f"Thinking segment found with start at {start_thought} and end at {end_thought}")
+
             start = response_content.find("((")
             end = response_content.find("))")
             if start != -1 and end != -1:
