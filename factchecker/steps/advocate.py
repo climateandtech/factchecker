@@ -4,7 +4,7 @@ from llama_index.core.llms import ChatMessage
 
 from factchecker.config.config import DEFAULT_LABEL_OPTIONS
 from factchecker.core.llm import load_llm
-from factchecker.datastructures import ClaimFactCheck, LabelOption
+from factchecker.datastructures import LabelOption
 from factchecker.prompts.advocate_prompts import get_default_system_prompt, get_default_user_prompt
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from factchecker.steps.evidence import EvidenceStep
@@ -71,7 +71,7 @@ class AdvocateStep:
         """
         return self.evidence_step.gather_evidence(claim)
 
-    def evaluate_claim(self, claim: str) -> ClaimFactCheck:
+    def evaluate_claim(self, claim: str) -> tuple[str, str]:
         """
         Evaluate a claim based on gathered evidence using the language model.
 
@@ -79,7 +79,7 @@ class AdvocateStep:
             claim (str): The claim to evaluate.
 
         Returns:
-            ClaimFactCheck: The result of the claim evaluation including the label and reasoning.
+            A tuple including the label and reasoning.
 
         """
         # Retrieve evidence for the claim
