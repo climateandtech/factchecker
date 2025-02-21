@@ -62,10 +62,15 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     advocate_options = {
         'max_evidences': EXPERIMENT_PARAMS['max_evidences'],
         'top_k': EXPERIMENT_PARAMS['advocate_top_k'],
-        'min_score': EXPERIMENT_PARAMS['min_score']
+        'min_score': EXPERIMENT_PARAMS['min_score'],
+        "thinking_llm": True,
+        "thinking_token": "think",
     }
 
-    mediator_options = {}
+    mediator_options = {
+        "thinking_llm": True,
+        "thinking_token": "think",
+    }
 
     strategy = AdvocateMediatorStrategy(
         indexer_options_list,
