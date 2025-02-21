@@ -51,6 +51,9 @@ class AdvocateStep:
         self.thinking_token = self.options.pop("thinking_token", "think")
         self.max_retries = self.options.pop('max_retries', 3)
         self.chat_completion_options = self.options.pop('chat_completion_options', {})
+        self.thinking_llm = self.options.pop("thinking_llm", False)
+        self.thinking_token = self.options.pop("thinking_token", "think")
+        
         
         # Initialize EvidenceStep
         self.evidence_step = EvidenceStep(
