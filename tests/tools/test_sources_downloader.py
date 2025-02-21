@@ -70,4 +70,3 @@ def test_cli_arguments():
         with patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
             main()
             mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'test_data')
-

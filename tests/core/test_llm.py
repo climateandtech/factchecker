@@ -105,6 +105,19 @@ def test_load_llm_ollama_custom_params(mock_env):
     assert llm.temperature == 0.8
     assert llm.request_timeout == 30.0
 
+def test_load_llm_ollama_with_context_window(mock_env):
+    """Test loading Ollama LLM with custom context window"""
+    mock_env.setenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
+    
+    llm = load_llm(
+        llm_type="ollama",
+        model="llama2",
+        context_window=4000
+    )
+    
+    assert isinstance(llm, Ollama)
+    assert llm.context_window == 4000
+
 def test_load_llm_ollama_filters_retriever_kwargs(mock_env):
     """Test that retriever-specific kwargs are filtered out for Ollama"""
     mock_env.setenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
@@ -155,4 +168,4 @@ def test_load_llm_ollama_zero_temperature(mock_env):
     )
     
     assert isinstance(llm, Ollama)
-    assert llm.temperature == 0.0  # Should keep explicit 0.0 
+    assert llm.temperature == 0.0  # Should keep explicit 0.0

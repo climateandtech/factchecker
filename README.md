@@ -13,12 +13,166 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 The project follows a modular structure:
 
 - `factchecker/`: Main package directory
+  - `core/`: Core functionality including LLM and embedding models
   - `experiments/`: Contains experiment scripts for different fact-checking approaches
   - `strategies/`: Core fact-checking strategy implementations
   - `utils/`: Utility functions and helper modules
+  - `tools/`: Utility scripts for tasks like downloading sources
 - `tests/`: Test suite following the same structure as the main package
 - `storage/`: Data storage for indices and other persistent data
 - `data/`: (gitignored) Directory for storing downloaded source documents
+
+## Configuration
+
+### Setting Up Environment Variables
+
+Before running the Climate+Tech FactChecker, you need to configure your environment variables. This is done using the `.env.example` file provided in the repository.
+
+1. **Copy the `.env.example` file to a new file named `.env`:**
+
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit the `.env` file to include your specific configuration:**
+
+   - Replace `your_openai_api_key_here` with your actual OpenAI API key.
+   - Update `OPENAI_ORGANIZATION` with your OpenAI organization ID if applicable.
+   - Adjust other variables like `LLM_TYPE`, `OLLAMA_API_BASE_URL`, and `OLLAMA_MODEL` as needed for your setup.
+   - Configure embedding model settings (see Embedding Models section below)
+
+### Configuring the LLM
+
+The project uses LlamaIndex's LLM interface through the `factchecker/core/llm.py` module:
+
+1. **OpenAI (Default)**
+   - Set `LLM_TYPE=openai` in `.env`
+   - Required settings:
+     - `OPENAI_API_KEY`: Your OpenAI API key
+   - Optional settings:
+     - `OPENAI_API_BASE`: Custom API endpoint (default: OpenAI's API)
+     - `OPENAI_API_MODEL`: Model to use (default: "gpt-3.5-turbo-1106")
+     - `OPENAI_ORGANIZATION`: Your organization ID
+     - `TEMPERATURE`: Model temperature (default: 0.1) - shared with Ollama
+   - Uses `llama_index.llms.openai.OpenAI` under the hood
+
+2. **Ollama**
+   - Set `LLM_TYPE=ollama` in `.env`
+   - Required settings:
+     - `OLLAMA_MODEL`: Model to use (e.g., "llama2", "mistral")
+   - Optional settings:
+     - `OLLAMA_API_BASE_URL`: Custom API endpoint (default: "http://localhost:11434")
+     - `OLLAMA_REQUEST_TIMEOUT`: Request timeout in seconds (default: 120.0)
+     - `TEMPERATURE`: Model temperature (default: 0.1) - shared with OpenAI
+   - Uses `llama_index.llms.ollama.Ollama` under the hood
+
+Example usage:
+```python
+from factchecker.core.llm import load_llm
+
+# Using default OpenAI settings
+llm = load_llm()
+
+# Using OpenAI with custom settings
+llm = load_llm(
+    llm_type="openai",
+    model="gpt-3.5-turbo-1106",
+    temperature=0.1,
+    api_key="your-key",
+    organization="your-org",
+    context_window=4096  # Optional: control context window size
+)
+
+# Using Ollama with custom settings
+llm = load_llm(
+    llm_type="ollama",
+    model="mistral",
+    temperature=0.1,
+    request_timeout=120.0,
+    context_window=4096  # Optional: control context window size
+)
+```
+
+Note: The LLM interface is compatible with LlamaIndex's query engine, retriever, and other components. You can use any LlamaIndex-supported LLM by modifying the loader implementation.
+
+### Embedding Models
+
+The project uses LlamaIndex's embedding interface through the `factchecker/core/embeddings.py` module:
+
+1. **OpenAI Embeddings (Default)**
+   - Set `EMBEDDING_TYPE=openai` in `.env` (or omit for default)
+   - Required settings:
+     - `OPENAI_API_KEY`: Your OpenAI API key
+   - Optional settings:
+     - `OPENAI_EMBEDDING_MODEL`: Model to use (default: "text-embedding-ada-002")
+     - `OPENAI_API_BASE`: Custom API endpoint
+   - Features:
+     - High-quality embeddings
+     - Consistent dimensionality (1536)
+     - Production-ready reliability
+   - Uses `llama_index.embeddings.openai.OpenAIEmbedding`
+
+2. **HuggingFace Embeddings**
+   - Set `EMBEDDING_TYPE=huggingface` in `.env`
+   - Optional settings:
+     - `HUGGINGFACE_EMBEDDING_MODEL`: Model to use (default: "BAAI/bge-small-en-v1.5")
+   - Additional kwargs support:
+     - `device`: CPU/GPU selection ("cpu", "cuda", etc.)
+     - `normalize_embeddings`: Whether to normalize vectors
+     - Any other kwargs supported by the model
+   - Features:
+     - Local execution capability
+     - Wide range of available models
+     - Customizable model loading
+   - Uses `llama_index.embeddings.huggingface.HuggingFaceEmbedding`
+
+3. **Ollama Embeddings**
+   - Set `EMBEDDING_TYPE=ollama` in `.env`
+   - Required settings:
+     - `OLLAMA_MODEL`: Model to use (default: "nomic-embed-text")
+   - Optional settings:
+     - `OLLAMA_API_BASE_URL`: Custom API endpoint (default: "http://localhost:11434")
+   - Additional kwargs support:
+     - `request_timeout`: Specific request timeout
+   - Features:
+     - Local execution
+     - Integration with Ollama's model ecosystem
+     - No API key required
+   - Uses `llama_index.embeddings.ollama.OllamaEmbedding`
+
+Example usage:
+```python
+from factchecker.core.embeddings import load_embedding_model
+
+# Default OpenAI embeddings
+embeddings = load_embedding_model()
+
+# OpenAI with custom settings
+embeddings = load_embedding_model(
+    embedding_type="openai",
+    model_name="text-embedding-ada-002",
+    api_key="your-key",
+    api_base="custom-endpoint"
+)
+
+# HuggingFace with custom settings
+embeddings = load_embedding_model(
+    embedding_type="huggingface",
+    model_name="BAAI/bge-small-en-v1.5",
+    device="cuda",
+    normalize_embeddings=True
+)
+
+# Ollama with custom settings
+embeddings = load_embedding_model(
+    embedding_type="ollama",
+    model_name="nomic-embed-text",
+    base_url="http://custom-server:11434",
+    request_timeout=60
+)
+```
+
+Note: The embedding interface is compatible with LlamaIndex's vector stores, retrievers, and other components. The embeddings are used for semantic search and similarity comparisons in the fact-checking process.
 
 ## Utility Modules
 
@@ -163,24 +317,31 @@ Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoU
 
 ### Download sources
 
-To use the `sources_downloader.py` script to download PDFs listed in the `sources.csv` file into the `/data` folder (which is gitignored), follow these steps:
+The project includes a source downloader tool to fetch PDFs and other source documents. The tool supports:
 
-1. Ensure that you have the `requests` library installed in your Python environment. If not, you can install it using pip:
+1. **Basic Usage**
    ```bash
-   pip install requests
+   python -m factchecker.tools.sources_downloader
+   ```
+   This uses default settings:
+   - Source file: `sources/sources.csv`
+   - Output folder: `data/`
+   - URL column: "external_link"
+
+2. **Custom Configuration**
+   ```bash
+   python -m factchecker.tools.sources_downloader \
+     --sourcefile custom_sources.csv \
+     --output_folder custom_folder \
+     --url_column url_field \
+     --rows 1 2 3  # Optional: Download specific rows only
    ```
 
-2. Navigate to the directory containing the `sources_downloader.py` script.
-
-3. Run the script:
-   ```bash
-   python sources_downloader.py
-   ```
-   By default, this uses `sources/sources.csv` as the source file and `data` as the output folder.
-
-   For custom paths:
-   ```bash
-   python sources_downloader.py --sourcefile your_custom_sources.csv --output_folder your_custom_folder
-   ```
+3. **Features**
+   - Automatically creates output directory if it doesn't exist
+   - Handles failed downloads gracefully with error messages
+   - Supports CSV files with custom column names
+   - Optional row selection for partial downloads
+   - Progress tracking for batch downloads
 
 Note: The `/data` folder is specified in the `.gitignore` file, so the downloaded PDFs will not be tracked by Git.
