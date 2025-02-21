@@ -22,7 +22,6 @@ def load_llm(
     embedding_model=None,
     **kwargs
     ) -> Union[OpenAI, Ollama]:
-):
     """
     Load and configure a Language Learning Model (LLM) based on specified parameters.
 
