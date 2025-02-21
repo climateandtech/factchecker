@@ -16,7 +16,10 @@ class AbstractIndexer(ABC):
         index_name (str): Name of the index.
         index_path (Optional[str]): Path to the directory where the index is stored on disk.
         source_directory (str): Directory containing source data files.
+        initial_documents (Optional[list[Document]]): Initial documents to be indexed.
+        initial_files (Optional[list[str]]): Initial files to be indexed.
         index (Optional[Any]): In-memory index object.
+
     """
 
     def __init__(
@@ -29,11 +32,14 @@ class AbstractIndexer(ABC):
         Args:
             options (Optional[Dict[str, Any]]): Dictionary containing configuration options. 
                 If not provided, defaults will be used.
+
         """
         self.options: Dict[str, Any] = options if options is not None else {}
         self.index_name: str = self.options.pop('index_name', 'default_index')
         self.index_path: Optional[str] = self.options.pop('index_path', None)
         self.source_directory: str = self.options.pop('source_directory', None)
+        self.initial_documents = self.options.pop('documents', None)
+        self.initial_files = self.options.pop('files', None)
         self.index: Optional[Any] = None
 
     def load_initial_documents(self) -> List[Document]:
@@ -49,16 +55,16 @@ class AbstractIndexer(ABC):
         """
         try:
             # Use preloaded documents if provided
-            documents = self.options.get('documents')
-            if documents:
+            if self.initial_documents:
                 logging.info("Using preloaded documents provided in options.")
-                return documents
+                return self.initial_documents
 
             # Use specified files if provided
-            files = self.options.get('files')
-            if files:
+            if self.initial_files:
+                files = self.initial_files
                 logging.info(f"Loading documents from specified files: {files}")
                 documents = SimpleDirectoryReader(input_files=files).load_data()
+                self.initial_documents = documents
                 logging.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
 
@@ -66,6 +72,7 @@ class AbstractIndexer(ABC):
             if self.source_directory:
                 logging.info(f"Loading documents from source directory: {self.source_directory}")
                 documents = SimpleDirectoryReader(self.source_directory).load_data()
+                self.initial_documents = documents
                 logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
                 return documents
             
@@ -85,6 +92,7 @@ class AbstractIndexer(ABC):
 
         Returns:
             bool: True if the persisted index exists, False otherwise.
+            
         """
         if self.index_path and os.path.exists(self.index_path):
             logging.debug(f"Index exists at {self.index_path}")
@@ -99,26 +107,23 @@ class AbstractIndexer(ABC):
 
         Raises:
             Exception: If an error occurs during index initialization.
+
         """
-
+        if self.index is not None:
+            logging.info("In-memory index already exists. Skipping creation.")
+            return
+        
         try:
-            if self.index is not None:
-                logging.info("In-memory index already exists. Skipping creation.")
-                return
-
             logging.info("No existing index found. Building a new index...")
             documents = self.load_initial_documents()
             self.build_index(documents)
 
         except FileNotFoundError as e:
             logging.error(f"File not found during initialization: {e}")
-            raise FileNotFoundError(f"Could not initialize index due to missing file: {e}")
+            raise
         except ValueError as e:
             logging.error(f"Invalid data provided: {e}")
-            raise ValueError(f"Initialization failed due to invalid input: {e}")
-        except Exception as e:
-            logging.exception(f"Unexpected error during index creation: {e}")
-            raise RuntimeError(f"An unexpected error occurred: {e}")
+            raise
 
     @abstractmethod
     def build_index(self, documents: List[Document]) -> None:

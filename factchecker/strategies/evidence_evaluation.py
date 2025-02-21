@@ -51,7 +51,7 @@ class EvidenceEvaluationStrategy:
         contra_evidence = self.evidence_step.gather_evidence(self.contra_query_template.format(claim=claim))
 
         # Evaluate the evidence using the LLM
-        evaluation_result = self.evaluate_step.evaluate_evidence(claim, pro_evidence, contra_evidence)
+        evaluation_result = self.evaluate_step.evaluate_claim(claim, pro_evidence, contra_evidence)
 
         # Count the pieces of evidence
         pro_count = len(pro_evidence)

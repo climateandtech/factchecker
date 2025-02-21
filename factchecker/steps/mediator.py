@@ -21,9 +21,8 @@ class MediatorStep:
                 - arbitrator_primer: Template for the system prompt
         """
         self.llm = llm if llm is not None else load_llm()
-
         self.options = options if options is not None else {}
-        self.prompt = self.options.get('arbitrator_primer', '')
+        self.system_prompt = self.options.pop('system_prompt', '')
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 
@@ -38,16 +37,14 @@ class MediatorStep:
         Returns:
             str: The final consensus verdict (CORRECT, INCORRECT, NOT_ENOUGH_INFORMATION, or ERROR_PARSING_RESPONSE)
         """
-        system_prompt_with_claim = self.prompt.format(claim=claim)
-        
         # Format the verdicts and reasonings with <> tags
         formatted_verdicts_and_reasonings = "\n".join(
             [f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>" for verdict, reasoning in verdicts_and_reasonings]
         )
         
         messages = [
-            ChatMessage(role="system", content=system_prompt_with_claim),
-            ChatMessage(role="user", content=f"Here are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information))")
+            ChatMessage(role="system", content=self.system_prompt),
+            ChatMessage(role="user", content=f"Here are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information)) for the claim: {claim}")
         ]
         
         valid_options = {key: value for key, value in self.additional_options.items() if key in ["response_format", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"]}

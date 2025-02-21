@@ -8,6 +8,7 @@ appropriate configuration settings from environment variables or direct paramete
 import os
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
+from typing import Union
 
 def load_llm(
     llm_type=None,
@@ -20,7 +21,7 @@ def load_llm(
     context_window=100000,
     embedding_model=None,
     **kwargs
-):
+    ) -> Union[OpenAI, Ollama]:
     """
     Load and configure a Language Learning Model (LLM) based on specified parameters.
 
