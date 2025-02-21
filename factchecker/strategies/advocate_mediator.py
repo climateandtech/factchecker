@@ -41,18 +41,30 @@ class AdvocateMediatorStrategy:
         self.mediator_step = MediatorStep(options={**mediator_options, 'arbitrator_primer': mediator_prompt})
 
     def evaluate_claim(self, claim):
-        # Each advocate evaluates the claim based on their own evidence
-        results = [advocate.evaluate_evidence(claim) for advocate in self.advocate_steps]
+        """
+        Evaluates a claim using multiple advocates and a mediator.
+        """
+        # Get verdicts from each advocate
+        verdicts_and_reasonings = []
+        evidences_list = []
         
-        # Separate verdicts, reasonings, and evidences
-        verdicts = [verdict for verdict, reasoning, evidence in results]
-        reasonings = [reasoning for verdict, reasoning, evidence in results]
-        evidences = [evidence for verdict, reasoning, evidence in results]
+        logger.info(f"Starting evaluation with {len(self.advocate_steps)} advocates")
         
-        # The mediator synthesizes the verdicts
-        final_verdict, mediator_reasoning = self.mediator_step.synthesize_verdicts(list(zip(verdicts, reasonings)), claim)
+        for advocate in self.advocate_steps:
+            logger.info(f"Getting verdict from advocate")
+            verdict, reasoning, evidences = advocate.evaluate_evidence(claim)  # Pass the claim here
+            logger.info(f"Advocate returned verdict: {verdict}")
+            logger.info(f"Advocate returned reasoning: {reasoning}")
+            verdicts_and_reasonings.append((verdict, reasoning))
+            evidences_list.append(evidences)
         
-        # Add mediator's reasoning to the list
-        reasonings.append(mediator_reasoning)
+        logger.info(f"All advocate verdicts: {verdicts_and_reasonings}")
         
-        return final_verdict, verdicts, reasonings, evidences
+        # Get final verdict from mediator
+        final_verdict = self.mediator_step.synthesize_verdicts(verdicts_and_reasonings, claim)
+        
+        # Return all results
+        verdicts = [v for v, _ in verdicts_and_reasonings]
+        reasonings = [r for _, r in verdicts_and_reasonings]
+        
+        return final_verdict, verdicts, reasonings, evidences_list

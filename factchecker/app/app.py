@@ -106,8 +106,8 @@ def get_strategy(
     logger.info(f"  - chunk_overlap: {chunk_overlap}")
     logger.info(f"  - advocate_sources: {advocate_sources}")
     
-    # Default to IPCC if no sources selected
-    advocate_sources = advocate_sources or ["IPCC_AR6"]
+    # Remove default fallback - let the UI selection drive the sources
+    advocate_sources = advocate_sources or []
     
     # Create an indexer option for each selected source
     indexer_options_list = [
@@ -149,36 +149,43 @@ def get_strategy(
         mediator_prompt=arbitrator_primer
     )
 
-def on_validate(claim: str):
+def on_validate(claim: str, sources: list):
     logger.info(f"🔍 Processing claim: {claim}")
+    logger.info(f"🔍 Selected sources: {sources}")
     try:
         if not claim or not claim.strip():
             raise ValueError("Please enter a claim to validate")
         
-        strategy = get_strategy()
+        strategy = get_strategy(advocate_sources=sources)
         final_verdict, verdicts, reasonings, evidences = strategy.evaluate_claim(claim.strip())
         
-        logger.info(f"Verdict received from mediator: {final_verdict}")
-        logger.info(f"Verdicts received: {verdicts}")
-        logger.info(f"Reasonings received: {reasonings}")
-        logger.info(f"Evidence chunks: {evidences}")
-        # Format advocate results for display
-        if verdicts and reasonings and len(reasonings) > 1:
-            advocate_data = [
-                [f"Advocate {i+1}", v, r, "\n".join(e)]  # Include evidence chunks
-                for i, (v, r, e) in enumerate(zip(verdicts, reasonings[:-1], evidences))
-            ]
-        else:
-            advocate_data = []
-            logger.warning("No advocate verdicts or reasonings available")
+        logger.info(f"📊 Results:")
+        logger.info(f"  - Claim evaluated: {claim}")
+        logger.info(f"  - Verdict received from mediator: {final_verdict}")
+        logger.info(f"  - Advocate verdicts: {verdicts}")
+        logger.info(f"  - Advocate reasonings: {reasonings}")
         
-        logger.info(f"Formatted advocate data: {advocate_data}")
-        logger.info(f"Final verdict being returned to UI: {final_verdict}")
+        # Format advocate results for display
+        advocate_data = []
+        if verdicts and reasonings and len(reasonings) > 1:
+            # Use all but the last verdict/reasoning (last one is mediator)
+            for i, (verdict, reasoning, evidence) in enumerate(zip(verdicts[:-1], reasonings[:-1], evidences)):
+                advocate_data.append([
+                    f"LLM {i+1}",  # Advocate name
+                    verdict,        # Verdict
+                    reasoning,      # Reasoning
+                    "\n".join(evidence) if evidence else ""  # Evidence chunks joined
+                ])
+        
+        logger.info(f"Advocate data for table: {advocate_data}")  # Debug log
+        
+        # Get just the final verdict and summary from mediator
+        mediator_reasoning = reasonings[-1] if reasonings else ""
         
         return (
             final_verdict,
-            reasonings[-1],  # Mediator reasoning
-            advocate_data
+            mediator_reasoning,  # Full mediator reasoning
+            advocate_data       # Advocate results for the table
         )
     except Exception as e:
         logger.error(f"Error in on_validate: {str(e)}")
@@ -242,10 +249,10 @@ def get_source_choices():
         data_dir = Path("data")
         if data_dir.exists():
             return [f.stem for f in data_dir.glob("*") if f.is_file()]
-        return ["IPCC_AR6"]  # Default fallback
+        return ["ipcc_ar6_wg1"]  # Updated default fallback
     except Exception as e:
         logger.error(f"Error getting source choices: {e}")
-        return ["IPCC_AR6"]  # Default fallback
+        return ["ipcc_ar6_wg1"]  # Updated default fallback
 
 def create_interface():
     theme = ClimateTheme()
@@ -329,7 +336,6 @@ def create_interface():
                             choices=get_source_choices(),  # Dynamic choices from data directory
                             label="Select Advocates",
                             info="Choose which sources to use as advocates",
-                            value=["IPCC_AR6"]
                         )
                         max_evidences = gr.Slider(
                             minimum=1,
@@ -359,27 +365,31 @@ def create_interface():
                             info="Temperature for mediator LLM responses"
                         )
                         
+                # Add a status message component
+                settings_status = gr.Text(label="Status")  # Remove visible=False to make it always visible
                 apply_settings = gr.Button("Apply Settings")
-
-                with gr.Row():
-                    with gr.Column():
-                        gr.Markdown("### Data Sources")
-                        available_sources = gr.Dataframe(
-                            headers=["Source", "Status", "Last Updated"],
-                            label="Available Sources",
-                            value=get_available_sources(),
-                            interactive=False
-                        )
-                        
-                        source_url = gr.Textbox(
-                            label="Add New Source URL",
-                            placeholder="Enter URL to download new source..."
-                        )
-                        add_source_btn = gr.Button("Add Source")
-                        source_status = gr.Textbox(
-                            label="Status",
-                            interactive=False
-                        )
+                
+                apply_settings.click(
+                    fn=lambda cs, co, tk, ms, as_, me, at, mt: (
+                        get_strategy(
+                            chunk_size=cs,
+                            chunk_overlap=co,
+                            top_k=tk,
+                            min_score=ms,
+                            advocate_sources=as_,
+                            max_evidences=me,
+                            advocate_temperature=at,
+                            mediator_temperature=mt
+                        ),
+                        "✅ Settings applied successfully!"  # Add emoji for better visibility
+                    ),
+                    inputs=[
+                        chunk_size, chunk_overlap, top_k, min_score,
+                        advocate_sources, max_evidences,
+                        advocate_temperature, mediator_temperature
+                    ],
+                    outputs=[gr.Textbox(visible=False), settings_status]  # Keep status visible
+                )
 
             with gr.Tab("Review & Validate"):
                 with gr.Row():
@@ -423,38 +433,9 @@ def create_interface():
 
         # Event handlers
         validate_btn.click(
-            fn=on_validate,
-            inputs=[claim_input],
+            fn=lambda claim, sources: on_validate(claim, sources),
+            inputs=[claim_input, advocate_sources],
             outputs=[final_verdict, mediator_reasoning, advocate_outputs]
-        )
-
-        add_source_btn.click(
-            fn=download_source,
-            inputs=[source_url],
-            outputs=[
-                source_status,
-                available_sources,  # Update sources table
-                advocate_sources    # Update advocate choices
-            ]
-        )
-        
-        apply_settings.click(
-            fn=lambda cs, co, tk, ms, as_, me, at, mt: get_strategy(
-                chunk_size=cs,
-                chunk_overlap=co,
-                top_k=tk,
-                min_score=ms,
-                advocate_sources=as_,
-                max_evidences=me,
-                advocate_temperature=at,
-                mediator_temperature=mt
-            ),
-            inputs=[
-                chunk_size, chunk_overlap, top_k, min_score,
-                advocate_sources, max_evidences,
-                advocate_temperature, mediator_temperature
-            ],
-            outputs=[]
         )
 
     return demo
