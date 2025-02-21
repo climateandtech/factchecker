@@ -1,3 +1,5 @@
+import logging
+
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
 from llama_index.core.schema import NodeWithScore
@@ -29,7 +31,7 @@ class EvidenceStep:
         # e.g. "evidence for: {claim}" for supporting evidence or "evidence against: {claim}" 
         # for contradicting evidence
         self.query_template = self.options.pop('query_template', "{claim}")
-        self.min_score = self.options.pop('min_score', 0.75)
+        self.min_score = self.options.pop('min_score', 0.0)
 
     def build_query(self, claim: str) -> str:
         """
@@ -55,11 +57,29 @@ class EvidenceStep:
         """
         query = self.build_query(claim)
         evidence = self.retriever.retrieve(query)
+
+        # Check if evidence is a list and if its elements are NodeWithScore objects
+        if not isinstance(evidence, list):
+            logging.error("Expected evidence to be a list, but got %s. Returning empty list.", type(evidence))
+            return []
+        if evidence and not isinstance(evidence[0], NodeWithScore):
+            logging.error("Evidence items are not NodeWithScore objects (first item is %s). Returning empty list.", type(evidence[0]))
+            return []
+        logging.info(f"Retrieved {len(evidence)} evidence nodes for claim: {claim}")
+
+        # Filter evidence based on similarity score
         filtered_evidence = self.classify_evidence(evidence)
+        logging.info(f"Filtered to {len(filtered_evidence)} evidence nodes with similarity score > {self.min_score}")
+        if not filtered_evidence:
+            return []
+        
+        # Extract text from evidence nodes
         evidence_texts = self.extract_text_from_evidence(filtered_evidence)
+        logging.info(f"Extracted text from {len(evidence_texts)} evidence nodes")
+
         return evidence_texts
     
-    def extract_text_from_evidence(self, evidence) -> list[str]:
+    def extract_text_from_evidence(self, evidence: list[NodeWithScore]) -> list[str]:
         """
         Extract text from evidence nodes.
 
@@ -68,6 +88,7 @@ class EvidenceStep:
 
         Returns:
             list: List of text strings extracted from evidence nodes
+
         """
         # check if evidence is a list
         if evidence is not None and isinstance(evidence, list):
@@ -78,11 +99,12 @@ class EvidenceStep:
             else: 
                 raise ValueError("Evidence must be a list of NodeWithScore objects")
         else: 
-            raise ValueError("Evidence must be a list")
+            logging.WARNING(f"Trying to extract text from non-list object: {evidence}")
+            return []
         
             
 
-    def classify_evidence(self, evidence):
+    def classify_evidence(self, evidence: list[NodeWithScore]) -> list[NodeWithScore]:
         """
         Filter and classify evidence based on similarity scores.
 
@@ -91,6 +113,7 @@ class EvidenceStep:
 
         Returns:
             list: Filtered list of evidence nodes that meet the similarity threshold
+
         """
         processor = SimilarityPostprocessor(similarity_cutoff=self.min_score, **self.options)
         filtered_evidence = processor.postprocess_nodes(evidence)
