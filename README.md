@@ -191,7 +191,7 @@ The project includes several experiment scripts to evaluate different fact-check
 
 1. Climate Feedback Advocate-Mediator Experiment:
    ```bash
-   python -m factchecker.experiments.advocate_mediator_climatefeedback
+   python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
    ```
    This experiment implements a fact-checking approach using the advocate-mediator pattern with Climate Feedback data. The process:
    - Uses Climate Feedback's expert-reviewed claims as ground truth
