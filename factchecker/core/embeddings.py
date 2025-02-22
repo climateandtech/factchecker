@@ -1,7 +1,9 @@
 import os
-from llama_index.embeddings.openai import OpenAIEmbedding
+
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.openai import OpenAIEmbedding
+
 
 def load_embedding_model(
     embedding_type=None,

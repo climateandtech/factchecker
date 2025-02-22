@@ -1,6 +1,7 @@
 import requests
 import time
 import openai 
+import os
 
 # insert your openai api key here
 openai.api_key = ''
@@ -32,10 +33,16 @@ def rephrase_with_gpt(sentence):
 
 def semantic_scholar_api(query_params):
     global api_key
+
+    semantic_scholar_kg_api_key = os.getenv("SEMANTIC_SCHOLAR_KG_API_KEY")
+
+    if not semantic_scholar_kg_api_key:
+        raise ValueError("SEMANTIC_SCHOLAR_KG_API_KEY environment variable is not set")
+
     data = {"status": "", "urls": {}}
     url = 'https://api.semanticscholar.org/graph/v1/paper/search'
     # better to get a rate limit free api key, this is my personal one (1 request per second)
-    headers = {'x-api-key': "O5vOnEH0BU6uK1IhE2qvTa8YCPatgY3C8bxmS2sp"}
+    headers = {'x-api-key': semantic_scholar_kg_api_key}
 
     shorthened = False
     max_retries = 3
