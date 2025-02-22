@@ -44,7 +44,7 @@ def test_default_options(mock_retriever: MagicMock) -> None:
     """Test default options when none provided."""
     evidence_step = EvidenceStep(retriever=mock_retriever)
     assert evidence_step.query_template == "{claim}"
-    assert evidence_step.min_score == 0.75
+    assert evidence_step.min_score == 0.0
 
 def test_build_query(mock_retriever: MagicMock) -> None:
     """Test query building from template."""
@@ -63,7 +63,9 @@ def test_gather_evidence(mock_retriever: MagicMock, mock_evidence: list[NodeWith
 
 def test_classify_evidence(mock_retriever: MagicMock) -> None:
     """Test evidence classification and filtering."""
-    evidence_step = EvidenceStep(retriever=mock_retriever)
+    evidence_step = EvidenceStep(
+        retriever=mock_retriever,
+        options={'min_score': 0.75})
     mock_evidence = [
         NodeWithScore(node=TextNode(text="High confidence"), score=0.9),
         NodeWithScore(node=TextNode(text="Low confidence"), score=0.6),
