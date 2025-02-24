@@ -66,8 +66,6 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     }]
 
     advocate_options = {
-        "thinking_llm": True,
-        "thinking_token": "think",
         'system_prompt': advocate_primer,
         'label_options': EXPERIMENT_PARAMS['label_options'],
         "thinking_llm": True,

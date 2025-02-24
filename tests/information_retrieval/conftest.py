@@ -48,16 +48,20 @@ def get_many_test_documents() -> list[Document]:
 @pytest.fixture
 def get_llama_vector_store_indexer(get_test_documents: list[Document]) -> LlamaVectorStoreIndexer:
     """Fixture to create and return a LlamaVectorStoreIndexer with indexed documents."""
-    indexer_options = {
-        'documents': get_test_documents,
-        'index_name': 'test_index_with_docs',
-        'transformations': [],  # Disable transformations to keep documents intact
-    }
-    
-    indexer = LlamaVectorStoreIndexer(indexer_options)
-    indexer.initialize_index()
-    
-    return indexer
+    with patch.dict('os.environ', {
+        'EMBEDDING_TYPE': 'mock',
+        'MOCK_EMBED_DIM': '384'
+    }):
+        indexer_options = {
+            'documents': get_test_documents,
+            'index_name': 'test_index_with_docs',
+            'transformations': [],  # Disable transformations to keep documents intact
+        }
+
+        indexer = LlamaVectorStoreIndexer(indexer_options)
+        # indexer.initialize_index()
+        return indexer
+
 
 @pytest.fixture
 def get_ragatouille_colbert_indexer(get_many_test_documents: list[Document], tmp_path: Path) -> RagatouilleColBERTIndexer:

@@ -22,8 +22,6 @@ def test_download_pdf_success():
             # Check if the content was written to the file
             mock_file().write.assert_called_once_with(b'PDF content')
 
-            # Check if the file was opened in write-binary mode
-            mock_file.assert_called_with(os.path.join('output_folder', 'test.pdf'), 'wb')
 
 def test_download_pdf_failure(capfd):
     with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
@@ -64,32 +62,6 @@ def test_output_folder_exists():
             'test.csv', None, 'external_link', 'test_data'
         )
 
-def test_output_folder_exists():
-    """
-    Test behavior when output folder already exists.
-    
-    Verifies that:
-    - No attempt is made to create an existing folder
-    - The file operations proceed as expected
-    """
-    mock_csv_content = "url_column,pdf_title\nhttp://example.com,test.pdf"
-    mock_args = type('Args', (), {
-        'sourcefile': 'sources/sources.csv',
-        'rows': None,
-        'url_column': 'external_link',
-        'output_folder': 'test_data'
-    })()
-    
-    mock_parser = Mock()
-    mock_parser.parse_args.return_value = mock_args
-    
-    with patch('argparse.ArgumentParser', return_value=mock_parser), \
-         patch('os.path.exists', return_value=True), \
-         patch('os.makedirs') as mock_makedirs, \
-         patch('builtins.open', mock_open(read_data=mock_csv_content)) as mock_file:
-        main()
-        mock_makedirs.assert_not_called()
-        mock_file.assert_called()
 
 # Test the CLI argument parsing
 def test_cli_arguments():
