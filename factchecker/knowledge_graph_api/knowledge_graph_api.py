@@ -35,7 +35,7 @@ def semantic_scholar_api(query_params):
     data = {"status": "", "urls": {}}
     url = 'https://api.semanticscholar.org/graph/v1/paper/search'
     # better to get a rate limit free api key, this is my personal one (1 request per second)
-    headers = {'x-api-key': "O5vOnEH0BU6uK1IhE2qvTa8YCPatgY3C8bxmS2sp"}
+    headers = {'x-api-key': ""}
 
     shorthened = False
     max_retries = 3
