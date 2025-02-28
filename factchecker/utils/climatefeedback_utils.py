@@ -189,7 +189,53 @@ def evaluate_climatefeedback_claim(
         
     return collectors
 
-def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int = 1) -> Dict:
+
+def evaluate_climatefeedback_text(
+    strategy,
+    claim: str,
+    true_label: str,
+    collectors: Dict,
+    claim_index: int,
+    total_claims: int
+) -> Dict:
+    """
+    Evaluate a single Climate Feedback claim and collect results.
+    
+    Args:
+        strategy: The evaluation strategy to use
+        claim: The claim text to evaluate
+        true_label: The true label from Climate Feedback
+        collectors: Dictionary of result collectors
+        claim_index: Index of current claim (for logging)
+        total_claims: Total number of claims (for logging)
+        
+    Returns:
+        Updated collectors dictionary
+        
+    Raises:
+        Exception: If evaluation fails
+    """
+    try:
+        final_verdict, verdicts, reasonings = strategy.evaluate_text(claim)
+        collectors = collect_evaluation_results(
+            collectors,
+            (true_label, final_verdict, verdicts, reasonings),
+            num_advocates=len(verdicts) if not collectors['advocate_evidences'] else None
+        )
+        
+        logger.debug(f"\nClaim {claim_index + 1}/{total_claims}:")
+        logger.debug(f"Claim: {claim[:100]}...")
+        logger.debug(f"True Label: {true_label} (Mapped: {map_verdict(true_label)})")
+        logger.debug(f"Final Verdict: {final_verdict}")
+        
+    except Exception as e:
+        logger.error(f"Error processing claim {claim_index + 1}: {str(e)}")
+        logger.error(f"Claim text: {claim}")
+        raise
+        
+    return collectors
+
+def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int = 1, text_col: str = "Claim", label_col:str = "Climate Feedback") -> Dict:
     """
     Evaluate a batch of Climate Feedback claims using the provided strategy.
     
@@ -207,8 +253,8 @@ def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int
     if sampled_claims.empty:
         raise ValueError("sampled_claims cannot be empty")
         
-    if 'Claim' not in sampled_claims.columns or 'Climate Feedback' not in sampled_claims.columns:
-        raise ValueError("sampled_claims must contain 'Claim' and 'Climate Feedback' columns")
+    if text_col not in sampled_claims.columns or label_col not in sampled_claims.columns:
+        raise ValueError(f"sampled_claims must contain {text_col} and {label_col} columns")
     
     collectors = initialize_results_collectors(num_advocates)
     
@@ -217,8 +263,49 @@ def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int
         try:
             collectors = evaluate_climatefeedback_claim(
                 strategy=strategy,
-                claim=row['Claim'],
-                true_label=row['Climate Feedback'],
+                claim=row[text_col],
+                true_label=row[label_col],
+                collectors=collectors,
+                claim_index=idx,
+                total_claims=len(sampled_claims)
+            )
+        except Exception as e:
+            logger.error(f"Skipping claim {idx + 1} due to error")
+            continue
+            
+    return collectors 
+
+
+def evaluate_climatefeedback_texts(strategy, sampled_claims, num_advocates: int = 1, text_col: str = "Claim", label_col:str = "Climate Feedback") -> Dict:
+    """
+    Evaluate a batch of Climate Feedback claims using the provided strategy.
+    
+    Args:
+        strategy: The evaluation strategy to use
+        sampled_claims: DataFrame containing claims to evaluate
+        num_advocates: Number of advocates in the strategy
+        
+    Returns:
+        Dictionary containing collected results
+        
+    Raises:
+        ValueError: If sampled_claims is empty or missing required columns
+    """
+    if sampled_claims.empty:
+        raise ValueError("sampled_claims cannot be empty")
+        
+    if text_col not in sampled_claims.columns or label_col not in sampled_claims.columns:
+        raise ValueError(f"sampled_claims must contain {text_col} and {label_col} columns")
+    
+    collectors = initialize_results_collectors(num_advocates)
+    
+    logger.info("Starting claim evaluation...")
+    for idx, row in tqdm(sampled_claims.iterrows(), total=len(sampled_claims), desc="Evaluating claims"):
+        try:
+            collectors = evaluate_climatefeedback_claim(
+                strategy=strategy,
+                claim=row[text_col],
+                true_label=row[label_col],
                 collectors=collectors,
                 claim_index=idx,
                 total_claims=len(sampled_claims)
