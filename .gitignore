@@ -181,3 +181,5 @@ concatenated_python_code.py
 # ruff
 .ruff.toml
 
+# storage folder
+storage/
