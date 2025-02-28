@@ -130,7 +130,8 @@ def collect_evaluation_results(
 def create_results_dataframe(
     claims: pd.DataFrame,
     collectors: ResultsDict,
-    verdict_mapper: Optional[Callable[[str], str]] = None
+    verdict_mapper: Optional[Callable[[str], str]] = None,
+    text_col: str = "Claim",
 ) -> pd.DataFrame:
     """
     Creates a DataFrame from collected experiment results.
@@ -147,14 +148,14 @@ def create_results_dataframe(
         ValueError: If required columns are missing
         ValueError: If collectors and claims have different lengths
     """
-    if 'Claim' not in claims.columns:
-        raise ValueError("claims DataFrame must contain 'Claim' column")
+    if text_col not in claims.columns:
+        raise ValueError(f"claims DataFrame must contain '{text_col}' column")
         
     if len(claims) != len(collectors['true_labels']):
         raise ValueError("Number of claims doesn't match number of collected results")
     
     results_dict = {
-        'Claim': claims['Claim'],
+        'Claim': claims[text_col],
         'True Label': collectors['true_labels'],
         'Predicted Verdict': collectors['predicted_results'],
         'Mediator Reasoning': collectors['mediator_reasonings']
