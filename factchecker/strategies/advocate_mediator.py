@@ -11,6 +11,10 @@ logger = logging.getLogger('factchecker.strategies')
 class AdvocateMediatorStrategy:
     def __init__(self, indexer_options_list, retriever_options_list, advocate_options, mediator_options, advocate_prompt, mediator_prompt):
         logger.info("Initializing AdvocateMediatorStrategy")
+        
+        if not indexer_options_list or not retriever_options_list:  # Add this check
+            raise ValueError("At least one source (advocate) must be provided")
+            
         logger.debug("Creating indexers with options:")
         for i, options in enumerate(indexer_options_list):
             logger.debug(f"Indexer {i}: {options}")
@@ -52,7 +56,7 @@ class AdvocateMediatorStrategy:
         
         for advocate in self.advocate_steps:
             logger.info(f"Getting verdict from advocate")
-            verdict, reasoning, evidences = advocate.evaluate_evidence(claim)  # Pass the claim here
+            verdict, reasoning, evidences = advocate.evaluate_evidence(claim)
             logger.info(f"Advocate returned verdict: {verdict}")
             logger.info(f"Advocate returned reasoning: {reasoning}")
             verdicts_and_reasonings.append((verdict, reasoning))
@@ -61,10 +65,13 @@ class AdvocateMediatorStrategy:
         logger.info(f"All advocate verdicts: {verdicts_and_reasonings}")
         
         # Get final verdict from mediator
-        final_verdict = self.mediator_step.synthesize_verdicts(verdicts_and_reasonings, claim)
+        # TODO: consider an option to use the evidence list in the mediator
+        final_verdict, mediator_reasoning = self.mediator_step.synthesize_verdicts(verdicts_and_reasonings, claim)
+        logger.info(f"Mediator returned verdict: {final_verdict}")
+        logger.info(f"Mediator reasoning: {mediator_reasoning}")
         
         # Return all results
         verdicts = [v for v, _ in verdicts_and_reasonings]
         reasonings = [r for _, r in verdicts_and_reasonings]
         
-        return final_verdict, verdicts, reasonings, evidences_list
+        return final_verdict, mediator_reasoning, verdicts, reasonings, evidences_list

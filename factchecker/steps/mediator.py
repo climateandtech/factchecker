@@ -16,6 +16,11 @@ class MediatorStep:
 
     def synthesize_verdicts(self, verdicts_and_reasonings, claim):
         logger.info(f"Mediator received claim: {claim}")
+        
+        if not verdicts_and_reasonings:  # Add this check
+            logger.warning("No verdicts provided to mediator")
+            return "NOT_ENOUGH_INFORMATION", "No sources were selected for fact-checking. Please select at least one source and try again."
+        
         system_prompt_with_claim = self.prompt.format(claim=claim)
         logger.info(f"System prompt after formatting: {system_prompt_with_claim[:200]}...")  # First 200 chars
         

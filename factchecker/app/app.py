@@ -155,37 +155,27 @@ def on_validate(claim: str, sources: list):
     try:
         if not claim or not claim.strip():
             raise ValueError("Please enter a claim to validate")
+            
+        if not sources:  # Add this check
+            raise ValueError("Please select at least one source for fact-checking")
         
         strategy = get_strategy(advocate_sources=sources)
-        final_verdict, verdicts, reasonings, evidences = strategy.evaluate_claim(claim.strip())
+        final_verdict, mediator_reasoning, verdicts, reasonings, evidences = strategy.evaluate_claim(claim.strip())
         
-        logger.info(f"📊 Results:")
-        logger.info(f"  - Claim evaluated: {claim}")
-        logger.info(f"  - Verdict received from mediator: {final_verdict}")
-        logger.info(f"  - Advocate verdicts: {verdicts}")
-        logger.info(f"  - Advocate reasonings: {reasonings}")
-        
-        # Format advocate results for display
+        # Format advocate data for the table display
         advocate_data = []
-        if verdicts and reasonings and len(reasonings) > 1:
-            # Use all but the last verdict/reasoning (last one is mediator)
-            for i, (verdict, reasoning, evidence) in enumerate(zip(verdicts[:-1], reasonings[:-1], evidences)):
-                advocate_data.append([
-                    f"LLM {i+1}",  # Advocate name
-                    verdict,        # Verdict
-                    reasoning,      # Reasoning
-                    "\n".join(evidence) if evidence else ""  # Evidence chunks joined
-                ])
-        
-        logger.info(f"Advocate data for table: {advocate_data}")  # Debug log
-        
-        # Get just the final verdict and summary from mediator
-        mediator_reasoning = reasonings[-1] if reasonings else ""
+        for i, (verdict, reasoning, evidence) in enumerate(zip(verdicts, reasonings, evidences)):
+            advocate_data.append([
+                f"LLM {i+1}",  # Advocate column
+                verdict,        # Verdict column
+                reasoning,      # Reasoning column
+                "\n".join(evidence) if evidence else ""  # Evidence column
+            ])
         
         return (
             final_verdict,
-            mediator_reasoning,  # Full mediator reasoning
-            advocate_data       # Advocate results for the table
+            mediator_reasoning,
+            advocate_data      # Now passing formatted data for the table
         )
     except Exception as e:
         logger.error(f"Error in on_validate: {str(e)}")
