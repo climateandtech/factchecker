@@ -137,19 +137,19 @@ def main():
     strategy = setup_strategy()
 
     # Load and sample claims ensuring balanced dataset
-    logger.info("Loading and sampling claims...")
-    claims = download_claims()
-    logger.info(f"Found {len(claims)} claims")
+    logger.info("Loading and sampling texts...")
+    texts = download_claims()
+    logger.info(f"Found {len(texts)} texts")
 
     # Evaluate claims
     collectors = evaluate_climatefeedback_texts(
-        strategy, claims, text_col="text", label_col="label"
+        strategy, texts, text_col="text", label_col="label"
     )
 
     # Create and save results DataFrame
     logger.info("Creating results DataFrame...")
     results_df = create_results_dataframe(
-        claims,
+        texts,
         collectors,
         verdict_mapper=map_verdict,
         text_col="text",

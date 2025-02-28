@@ -192,22 +192,22 @@ def evaluate_climatefeedback_claim(
 
 def evaluate_climatefeedback_text(
     strategy,
-    claim: str,
+    text: str,
     true_label: str,
     collectors: Dict,
-    claim_index: int,
-    total_claims: int
+    text_index: int,
+    total_texts: int
 ) -> Dict:
     """
-    Evaluate a single Climate Feedback claim and collect results.
+    Evaluate a single Climate Feedback text and collect results.
     
     Args:
         strategy: The evaluation strategy to use
-        claim: The claim text to evaluate
+        text: The text text to evaluate
         true_label: The true label from Climate Feedback
         collectors: Dictionary of result collectors
-        claim_index: Index of current claim (for logging)
-        total_claims: Total number of claims (for logging)
+        text_index: Index of current text (for logging)
+        total_texts: Total number of texts (for logging)
         
     Returns:
         Updated collectors dictionary
@@ -216,21 +216,21 @@ def evaluate_climatefeedback_text(
         Exception: If evaluation fails
     """
     try:
-        final_verdict, verdicts, reasonings = strategy.evaluate_text(claim)
+        final_verdict, verdicts, reasonings = strategy.evaluate_text(text)
         collectors = collect_evaluation_results(
             collectors,
             (true_label, final_verdict, verdicts, reasonings),
             num_advocates=len(verdicts) if not collectors['advocate_evidences'] else None
         )
         
-        logger.debug(f"\nClaim {claim_index + 1}/{total_claims}:")
-        logger.debug(f"Claim: {claim[:100]}...")
+        logger.debug(f"\nText {text_index + 1}/{total_texts}:")
+        logger.debug(f"Text: {text[:100]}...")
         logger.debug(f"True Label: {true_label} (Mapped: {map_verdict(true_label)})")
         logger.debug(f"Final Verdict: {final_verdict}")
         
     except Exception as e:
-        logger.error(f"Error processing claim {claim_index + 1}: {str(e)}")
-        logger.error(f"Claim text: {claim}")
+        logger.error(f"Error processing text {text_index + 1}: {str(e)}")
+        logger.error(f"Text: {text}")
         raise
         
     return collectors
@@ -276,7 +276,7 @@ def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int
     return collectors 
 
 
-def evaluate_climatefeedback_texts(strategy, sampled_claims, num_advocates: int = 1, text_col: str = "Claim", label_col:str = "Climate Feedback") -> Dict:
+def evaluate_climatefeedback_texts(strategy, sampled_texts, num_advocates: int = 1, text_col: str = "Claim", label_col:str = "Climate Feedback") -> Dict:
     """
     Evaluate a batch of Climate Feedback claims using the provided strategy.
     
@@ -291,24 +291,24 @@ def evaluate_climatefeedback_texts(strategy, sampled_claims, num_advocates: int 
     Raises:
         ValueError: If sampled_claims is empty or missing required columns
     """
-    if sampled_claims.empty:
-        raise ValueError("sampled_claims cannot be empty")
+    if sampled_texts.empty:
+        raise ValueError("sampled_texts cannot be empty")
         
-    if text_col not in sampled_claims.columns or label_col not in sampled_claims.columns:
-        raise ValueError(f"sampled_claims must contain {text_col} and {label_col} columns")
+    if text_col not in sampled_texts.columns or label_col not in sampled_texts.columns:
+        raise ValueError(f"sampled_texts must contain {text_col} and {label_col} columns")
     
     collectors = initialize_results_collectors(num_advocates)
     
     logger.info("Starting claim evaluation...")
-    for idx, row in tqdm(sampled_claims.iterrows(), total=len(sampled_claims), desc="Evaluating claims"):
+    for idx, row in tqdm(sampled_texts.iterrows(), total=len(sampled_texts), desc="Evaluating texts"):
         try:
-            collectors = evaluate_climatefeedback_claim(
+            collectors = evaluate_climatefeedback_text(
                 strategy=strategy,
                 claim=row[text_col],
                 true_label=row[label_col],
                 collectors=collectors,
                 claim_index=idx,
-                total_claims=len(sampled_claims)
+                total_texts=len(sampled_texts)
             )
         except Exception as e:
             logger.error(f"Skipping claim {idx + 1} due to error")
