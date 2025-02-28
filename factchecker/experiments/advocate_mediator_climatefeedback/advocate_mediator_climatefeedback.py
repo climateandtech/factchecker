@@ -39,10 +39,6 @@ EXPERIMENT_PARAMS = {
     
     # Retrieval parameters
     'top_k': 8,  # Number of similar chunks to retrieve
-    
-    # Evidence parameters
-    'max_evidences': 10,  # Maximum pieces of evidence to consider
-    'min_score': 0.75,  # Minimum similarity score for evidence
 
     # Label options
     'label_options': ['correct', 'incorrect', 'not_enough_information'],
@@ -70,10 +66,7 @@ def setup_strategy() -> AdvocateMediatorStrategy:
         'label_options': EXPERIMENT_PARAMS['label_options'],
     }
 
-    evidence_options = {
-        'min_score': EXPERIMENT_PARAMS['min_score'],
-        'query_template': "{claim}"
-    }
+    evidence_options = {}
 
     mediator_options = {
         'system_prompt': arbitrator_primer

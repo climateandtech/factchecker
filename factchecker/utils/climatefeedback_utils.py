@@ -224,7 +224,7 @@ def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int
                 total_claims=len(sampled_claims)
             )
         except Exception as e:
-            logger.error(f"Skipping claim {idx + 1} due to error")
+            logger.error(f"Skipping claim {idx + 1} due to error {str(e)}")
             continue
             
     return collectors 
