@@ -282,14 +282,14 @@ def evaluate_climatefeedback_texts(strategy, sampled_texts, num_advocates: int =
     
     Args:
         strategy: The evaluation strategy to use
-        sampled_claims: DataFrame containing claims to evaluate
+        sampled_texts: DataFrame containing claims to evaluate
         num_advocates: Number of advocates in the strategy
         
     Returns:
         Dictionary containing collected results
         
     Raises:
-        ValueError: If sampled_claims is empty or missing required columns
+        ValueError: If sampled_texts is empty or missing required columns
     """
     if sampled_texts.empty:
         raise ValueError("sampled_texts cannot be empty")
@@ -299,19 +299,19 @@ def evaluate_climatefeedback_texts(strategy, sampled_texts, num_advocates: int =
     
     collectors = initialize_results_collectors(num_advocates)
     
-    logger.info("Starting claim evaluation...")
+    logger.info("Starting text evaluation...")
     for idx, row in tqdm(sampled_texts.iterrows(), total=len(sampled_texts), desc="Evaluating texts"):
         try:
             collectors = evaluate_climatefeedback_text(
                 strategy=strategy,
-                claim=row[text_col],
+                text=row[text_col],
                 true_label=row[label_col],
                 collectors=collectors,
-                claim_index=idx,
+                text_index=idx,
                 total_texts=len(sampled_texts)
             )
         except Exception as e:
-            logger.error(f"Skipping claim {idx + 1} due to error")
-            continue
+            logger.error(f"Skipping text {idx + 1} due to error")
+            raise
             
     return collectors 
