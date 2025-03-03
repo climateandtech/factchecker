@@ -1,11 +1,10 @@
+import logging
+
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 from factchecker.steps.advocate import AdvocateStep
 from factchecker.steps.extract import ExtractStep
 from factchecker.steps.mediator import MediatorStep
-
-import logging
-import statistics
 
 
 class ExtractorAdvocateMediatorStrategy:
@@ -118,9 +117,9 @@ class ExtractorAdvocateMediatorStrategy:
 
             str: The final verdict of the text. final_verdict = any(verdicts)
         """
-        claims = self.extractor_step.extract_claims(text=text)
-        if isinstance(claims, str):
-            claims = [claims]
+        claims_list = self.extractor_step.extract_claims(text=text)
+        claims = claims_list.claims
+        context = claims_list.context
         logging.info(f"Found the following claims: {claims}")
         classifications = []
         # Need enough lists to store outputs from all advocates.
@@ -131,8 +130,10 @@ class ExtractorAdvocateMediatorStrategy:
             advocate_reasonings = ""
             final_verdict = "correct"
         else:
-            for claim in claims["claims"]:
-                verdict, verdicts, reasonings = self.evaluate_claim(claim=claim, context=claims["context"])
+            for claim in claims:
+                verdict, verdicts, reasonings = self.evaluate_claim(
+                    claim=claim, context=context
+                )
                 classifications.append(verdict)
                 verdicts.append((verdicts, reasonings))
                 for idx, (advocate_verdict, advocate_reasoning) in enumerate(
@@ -141,9 +142,13 @@ class ExtractorAdvocateMediatorStrategy:
                     # Store the verdict and reasoning in the list corresponding to the correct advocate
                     advocate_verdicts_list[idx].append(advocate_verdict)
                     advocate_reasonings_list[idx].append(advocate_reasoning)
-                    
-            advocate_verdicts = ["|".join(_verdicts) for _verdicts in advocate_verdicts_list]
-            advocate_reasonings = ["|".join(_reasonings) for _reasonings in advocate_reasonings_list]
+
+            advocate_verdicts = [
+                "|".join(_verdicts) for _verdicts in advocate_verdicts_list
+            ]
+            advocate_reasonings = [
+                "|".join(_reasonings) for _reasonings in advocate_reasonings_list
+            ]
             if any([c.lower() == "incorrect" for c in classifications]):
                 final_verdict = "incorrect"
             else:
