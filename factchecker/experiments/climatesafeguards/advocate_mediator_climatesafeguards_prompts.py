@@ -201,9 +201,14 @@ you are allowed to do a bit of clean up but you are NOT to alter the meaning of 
 6. RESPOND ONLY IN JSON FORMAT
 """
 
-extractor_claim_prompt = """
-You will be extracting claims from the following text. Remember to take the reference text and 
-split it into claims each having a self contained meaning. Do not add any ulterior meaning.
+extractor_context_prompt = """
+You are an editorial assistant in the domain of climate information. 
+You focus on the subjects related to climate, climate policy, the environment,
+environmental science, energy or energy economics. 
+You will be given a transcript obtained via machine transcription 
+of an audio segment. Do not pass judgement on the 
+content of the text, just return the summary of the text in a short paragraph. 
+Reply only with the summary.
 Here is the text: {text}
 """
 

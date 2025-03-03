@@ -7,7 +7,7 @@ from datasets import load_dataset
 from factchecker.experiments.climatesafeguards.advocate_mediator_climatesafeguards_prompts import (
     advocate_primer,
     arbitrator_primer,
-    extractor_claim_prompt,
+    extractor_context_prompt,
     extractor_format_prompt,
     extractor_system_prompt,
 )
@@ -91,7 +91,7 @@ def setup_strategy() -> ExtractorAdvocateMediatorStrategy:
     }
 
     extractor_options = {
-        "claim_prompt_template": extractor_claim_prompt,
+        "context_prompt_template": extractor_context_prompt,
         "system_prompt_template": extractor_system_prompt,
         "format_prompt": extractor_format_prompt,
     }
@@ -122,7 +122,7 @@ def download_claims():
         .shuffle()
         .to_pandas()
         .dropna()
-        .sample(n=50)
+        .sample(n=20)
         .rename(columns={"whisper-largev3": "text"})
     )
     dataset["label"] = dataset.Misinfo.astype(int).map({0: "correct", 1: "incorrect"})
@@ -155,7 +155,6 @@ def main():
         text_col="text",
     )
 
-    # import pdb; pdb.set_trace()
 
     results_file = save_results(results_df)
     logger.info(f"Results saved to: {results_file}")
@@ -170,6 +169,7 @@ def main():
     logger.info("\nClassification Metrics:")
     print(metrics)
 
+    print(texts.label.value_counts())
 
 if __name__ == "__main__":
     main()
