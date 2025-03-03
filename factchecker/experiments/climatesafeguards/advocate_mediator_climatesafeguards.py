@@ -1,6 +1,5 @@
 import logging
 
-import numpy as np
 from llama_index.core import Settings
 
 from datasets import load_dataset
@@ -8,8 +7,6 @@ from factchecker.experiments.climatesafeguards.advocate_mediator_climatesafeguar
     advocate_primer,
     arbitrator_primer,
     extractor_context_prompt,
-    extractor_format_prompt,
-    extractor_system_prompt,
 )
 from factchecker.strategies.extractor_advocate_mediator import (
     ExtractorAdvocateMediatorStrategy,
@@ -33,27 +30,22 @@ logger = logging.getLogger(__name__)
 
 EXPERIMENT_PARAMS = {
     # Dataset parameters
-    'dataset_path': 'datasets/Combined_Overview_Climate_Feedback_Claims.csv',
-    'total_samples': 10,  # Reduced from 100 to work with available data
-    'correct_ratio': 0.3,  # Ratio of correct claims in sample
-    
+    "dataset_path": "datasets/Combined_Overview_Climate_Feedback_Claims.csv",
+    "total_samples": 10,  # Reduced from 100 to work with available data
+    "correct_ratio": 0.3,  # Ratio of correct claims in sample
     # Document processing parameters
-    'chunk_size': 150,  # Size of text chunks for indexing
-    'chunk_overlap': 20,  # Overlap between chunks
-    
+    "chunk_size": 150,  # Size of text chunks for indexing
+    "chunk_overlap": 20,  # Overlap between chunks
     # Indexing parameters
-    'source_directory': 'data',
-    'index_name': 'advocate1_index',
-    
+    "source_directory": "data",
+    "index_name": "advocate1_index",
     # Retrieval parameters
-    'top_k': 8,  # Number of similar chunks to retrieve
-    
+    "top_k": 8,  # Number of similar chunks to retrieve
     # Evidence parameters
-    'max_evidences': 10,  # Maximum pieces of evidence to consider
-    'min_score': 0.65,  # Minimum similarity score for evidence
-
+    "max_evidences": 10,  # Maximum pieces of evidence to consider
+    "min_score": 0.65,  # Minimum similarity score for evidence
     # Label options
-    'label_options': ['correct', 'incorrect', 'not_enough_information'],
+    "label_options": ["correct", "incorrect", "not_enough_information"],
 }
 
 
@@ -61,41 +53,39 @@ def setup_strategy() -> ExtractorAdvocateMediatorStrategy:
     """Sets up the advocate-mediator strategy with experiment-specific options."""
     verify_environment()
 
-    
     # Configure LlamaIndex parameters for this experiment
-    Settings.chunk_size = EXPERIMENT_PARAMS['chunk_size']
-    Settings.chunk_overlap = EXPERIMENT_PARAMS['chunk_overlap']
-    
-    indexer_options_list = [{
-        'source_directory': EXPERIMENT_PARAMS['source_directory'],
-        'index_name': EXPERIMENT_PARAMS['index_name']
-    }]
+    Settings.chunk_size = EXPERIMENT_PARAMS["chunk_size"]
+    Settings.chunk_overlap = EXPERIMENT_PARAMS["chunk_overlap"]
 
-    retriever_options_list = [{
-        'top_k': EXPERIMENT_PARAMS['top_k'],
-    }]
+    indexer_options_list = [
+        {
+            "source_directory": EXPERIMENT_PARAMS["source_directory"],
+            "index_name": EXPERIMENT_PARAMS["index_name"],
+        }
+    ]
+
+    retriever_options_list = [
+        {
+            "top_k": EXPERIMENT_PARAMS["top_k"],
+        }
+    ]
 
     advocate_options = {
-        'system_prompt': advocate_primer,
-        'label_options': EXPERIMENT_PARAMS['label_options'],
-        'with_context': True,
+        "system_prompt": advocate_primer,
+        "label_options": EXPERIMENT_PARAMS["label_options"],
+        "with_context": True,
     }
 
     evidence_options = {
-        'min_score': EXPERIMENT_PARAMS['min_score'],
-        'query_template': "{claim}"
+        "min_score": EXPERIMENT_PARAMS["min_score"],
+        "query_template": "{claim}",
     }
 
-    mediator_options = {
-        'system_prompt': arbitrator_primer
-    }
+    mediator_options = {"system_prompt": arbitrator_primer}
 
     extractor_options = {
         "context_prompt_template": extractor_context_prompt,
-        "system_prompt_template": extractor_system_prompt,
-        "format_prompt": extractor_format_prompt,
     }
-
 
     strategy = ExtractorAdvocateMediatorStrategy(
         indexer_options_list=indexer_options_list,
@@ -155,7 +145,6 @@ def main():
         text_col="text",
     )
 
-
     results_file = save_results(results_df)
     logger.info(f"Results saved to: {results_file}")
 
@@ -170,6 +159,7 @@ def main():
     print(metrics)
 
     print(texts.label.value_counts())
+
 
 if __name__ == "__main__":
     main()

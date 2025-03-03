@@ -1,4 +1,6 @@
 from llama_index.core.llms import ChatMessage
+from llama_index.core import Settings
+from llama_index.core.node_parser import SentenceSplitter
 import logging
 from factchecker.core.llm import load_llm
 from dataclasses import dataclass
@@ -6,14 +8,17 @@ from typing import List, Dict
 import json
 import os
 
+
 @dataclass
 class ClaimList:
-    claims: Dict[str, List[str]]
+    claims: List[str]
+    context: str
+
 
 class ExtractStep:
     """
-    A preprocessing step in the fact-checking process that examines the text being classified and splits it into multiple claims if necessary. 
-    
+    A preprocessing step in the fact-checking process that examines the text being classified and splits it into multiple claims if necessary.
+
     This class then returns a list of claims to be analysed
     """
 
@@ -29,12 +34,18 @@ class ExtractStep:
         """
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
-        self.claim_prompt_template = self.options.pop('claim_prompt_template', "Split the following text into claims: {text}")
-        self.system_prompt_template = self.options.pop('system_prompt_template', "You are an assistant splitting text into indivudual claims.")
-        self.format_prompt = self.options.pop("format_prompt", "Return as a list of claims [<claim_1>, <claim_2>, <claim_3>, ...]")
-        self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
+        self.context_prompt_template = self.options.pop(
+            "context_prompt_template",
+            "Summarise the following text into a couple of sentences: {text}",
+        )
+        self.splitter = SentenceSplitter(
+            chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap
+        )
+        self.additional_options = {
+            key: self.options.pop(key) for key in list(self.options.keys())
+        }
 
-    def extract_claims(self, text):
+    def extract_claims(self, text: str):
         """
         Evaluate a claim based on gathered evidence using the language model.
 
@@ -44,20 +55,21 @@ class ExtractStep:
         Returns:
             claims (ClaimList): Data structure containing the list of claims extracted.
         """
-        claim_prompt_with_text = self.claim_prompt_template.format(text=text)
-        format_prompt = self.format_prompt
-        combined_prompt = f"{claim_prompt_with_text}\n{format_prompt}"
-        messages = [
-            ChatMessage(role="system", content=self.system_prompt_template),
-            ChatMessage(role="user", content=combined_prompt)
-        ]
         logging.info("Extracting claims")
+        claims = self.splitter.split_text(text)
+        logging.info("Creating Context")
+        context_prompt_with_text = self.context_prompt_template.format(text=text)
+
+        messages = [ChatMessage(role="user", content=context_prompt_with_text)]
         response = self.llm.chat(messages, **self.additional_options)
         response_content = response.message.content.strip()
+
         try:
-            claims = ClaimList(json.loads(response_content))
-            return claims.claims
+            claims = ClaimList(claims=claims, context=response_content)
+            return claims
         except Exception as e:
-            logging.warning(f"Extractor unexpected response content: {response_content}")
-            logging.warning(f"Caught exception {e}, will return full text.")
-            return text
+            logging.warning(
+                f"Extractor unexpected response content: {response_content}"
+            )
+            logging.warning(f"Caught exception {e}, will return full text as context.")
+            return ClaimList(claims=claims, context=text)
