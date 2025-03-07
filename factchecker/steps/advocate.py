@@ -49,6 +49,9 @@ class AdvocateStep:
         self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
         self.max_retries = self.options.pop('max_retries', 3)
         self.chat_completion_options = self.options.pop('chat_completion_options', {})
+        self.thinking_llm = self.options.pop("thinking_llm", False)
+        self.thinking_token = self.options.pop("thinking_token", "think")
+        
         
         # Initialize EvidenceStep
         self.evidence_step = EvidenceStep(
@@ -97,7 +100,13 @@ class AdvocateStep:
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.chat_completion_options)
             response_content = response.message.content.strip()
-            # Extract the verdict from the response
+            if self.thinking_llm:
+                start_thought = response_content.find(f"<{self.thinking_token}>")
+                end_thought = response_content.find(f"</{self.thinking_token}>")
+                if end_thought > start_thought:
+                    response_content = response_content[end_thought + len(f"</{self.thinking_token}>"):]
+                logging.warning(f"Thinking segment found with start at {start_thought} and end at {end_thought}")
+
             start = response_content.find("((")
             end = response_content.find("))")
             if start != -1 and end != -1:

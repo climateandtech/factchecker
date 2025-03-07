@@ -75,7 +75,7 @@ high evidence and high agreement .
 from the following options at the end of your
 explanation . Strictly follow the format of
 encapsulating your verdict in two parathesis and
-only use the following options : correct, incorrect, not_enough_information
+only use the following options : ((correct)), ((incorrect)), ((not_enough_information))
 """
 
 arbitrator_primer = """
@@ -174,7 +174,7 @@ the Advocates information , provide verdict from
 the following options at the end of your
 explanation . Strictly follow the format of
 encapsulating your verdict in two parathesis and
-only use the following options : correct, incorrect, not_enough_information
+only use the following options : ((correct)), ((incorrect)), ((not_enough_information))
 
 5. Stricly use the information provided by the
 Advocates .
