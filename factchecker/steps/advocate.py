@@ -85,7 +85,7 @@ class AdvocateStep:
             claim (str): The claim to evaluate.
 
         Returns:
-            ClaimFactCheck: The result of the claim evaluation including the label and reasoning.
+            A tuple including the label and reasoning.
 
         """
         # Retrieve evidence for the claim

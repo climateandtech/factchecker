@@ -3,6 +3,12 @@ from unittest.mock import patch, MagicMock
 from factchecker.core.llm import load_llm
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
+from llama_index.core import Document
+from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
+from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+import httpx
+from llama_index.core.llms import ChatMessage
+from unittest.mock import Mock
 
 @pytest.fixture
 def mock_env(monkeypatch):
@@ -169,3 +175,54 @@ def test_load_llm_ollama_zero_temperature(mock_env):
     
     assert isinstance(llm, Ollama)
     assert llm.temperature == 0.0  # Should keep explicit 0.0
+
+
+@pytest.mark.integration
+def test_ollama_integration(mock_embedding):
+    # Mock only Ollama-specific environment variables
+    with patch.dict('os.environ', {
+        'LLM_TYPE': 'ollama',
+        'OLLAMA_API_BASE_URL': 'http://localhost:11434',
+        'OLLAMA_MODEL': 'llama2'
+    }):
+        # Create mock embedding model
+        mock_embed_model = mock_embedding
+        
+        # Create test documents
+        documents = [
+            Document(text="Test document 1"),
+            Document(text="Test document 2")
+        ]
+        
+        # Mock Ollama response
+        mock_response = ChatMessage(role="assistant", content="Test response")
+        
+        # Mock the Ollama client's HTTP requests
+        mock_http_response = Mock(spec=httpx.Response)
+        mock_http_response.json.return_value = {"message": {"role": "assistant", "content": "Test response"}}
+        mock_http_response.status_code = 200
+        
+        with patch('httpx.Client.request', return_value=mock_http_response):
+            # Load the LLM
+            llm = load_llm()
+            
+            # Create indexer with mock embedding
+            indexer_options = {
+                'documents': documents,
+                'index_name': 'test_ollama_integration',
+                'embedding_kwargs': {'embed_model': mock_embed_model}
+            }
+            indexer = LlamaVectorStoreIndexer(indexer_options)
+            indexer.initialize_index()
+            
+            # Create retriever
+            retriever_options = {'top_k': 2}
+            retriever = LlamaBaseRetriever(indexer, retriever_options)
+            
+            # Test query
+            query = "Test query"
+            nodes = retriever.retrieve(query)
+            
+            # Verify the response
+            assert nodes is not None
+            assert len(nodes) > 0 
