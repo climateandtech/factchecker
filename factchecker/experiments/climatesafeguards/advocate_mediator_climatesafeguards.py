@@ -112,7 +112,7 @@ def download_claims():
         .shuffle()
         .to_pandas()
         .dropna()
-        .sample(n=20)
+        .sample(n=100)
         .rename(columns={"whisper-largev3": "text"})
     )
     dataset["label"] = dataset.Misinfo.astype(int).map({0: "correct", 1: "incorrect"})
@@ -120,6 +120,9 @@ def download_claims():
 
 
 def main():
+    from time import time
+
+    t = time()
     # Configure logging
     configure_logging()
 
@@ -159,6 +162,8 @@ def main():
     print(metrics)
 
     print(texts.label.value_counts())
+
+    print(f"Time Taken: {round(time() - t)} seconds!")
 
 
 if __name__ == "__main__":
