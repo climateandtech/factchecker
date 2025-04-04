@@ -49,7 +49,13 @@ EXPERIMENT_PARAMS = {
 def setup_sources(csv_file: str, main_output_folder: str) -> list[str]:
     """Download the sources for the indices."""
     downloader = SourcesDownloader(main_output_folder=main_output_folder)
-    downloaded_files = downloader.download_from_csv(csv_file, rows=None, url_column="url")
+    downloaded_files = downloader.download_pdfs_from_csv(
+        csv_file, 
+        rows=None,
+        url_column="url",
+        output_filename_column="output_filename",
+        output_subfolder_column="output_subfolder",
+        )
     logging.info(f"Downloaded files: {downloaded_files}")
     return downloaded_files
 
@@ -112,40 +118,40 @@ def main():
         main_output_folder="data/sources"
     )
 
-    # Setup strategy
-    strategy = setup_strategy()
+    # # Setup strategy
+    # strategy = setup_strategy()
 
-    # Load and sample claims ensuring balanced dataset
-    logger.info("Loading and sampling claims...")
-    sampled_claims = sample_climatefeedback_claims(
-        csv_path=EXPERIMENT_PARAMS['dataset_path'],
-        total_samples=EXPERIMENT_PARAMS['total_samples'],
-        correct_ratio=EXPERIMENT_PARAMS['correct_ratio']
-    )
+    # # Load and sample claims ensuring balanced dataset
+    # logger.info("Loading and sampling claims...")
+    # sampled_claims = sample_climatefeedback_claims(
+    #     csv_path=EXPERIMENT_PARAMS['dataset_path'],
+    #     total_samples=EXPERIMENT_PARAMS['total_samples'],
+    #     correct_ratio=EXPERIMENT_PARAMS['correct_ratio']
+    # )
 
-    # Evaluate claims
-    collectors = evaluate_climatefeedback_claims(strategy, sampled_claims)
+    # # Evaluate claims
+    # collectors = evaluate_climatefeedback_claims(strategy, sampled_claims)
 
-    # Create and save results DataFrame
-    logger.info("Creating results DataFrame...")
-    results_df = create_results_dataframe(
-        sampled_claims,
-        collectors,
-        verdict_mapper=map_verdict
-    )
+    # # Create and save results DataFrame
+    # logger.info("Creating results DataFrame...")
+    # results_df = create_results_dataframe(
+    #     sampled_claims,
+    #     collectors,
+    #     verdict_mapper=map_verdict
+    # )
     
-    results_file = save_results(results_df)
-    logger.info(f"Results saved to: {results_file}")
+    # results_file = save_results(results_df)
+    # logger.info(f"Results saved to: {results_file}")
 
-    # Calculate and print metrics
-    logger.info("Calculating classification metrics...")
-    metrics = calculate_classification_metrics(
-        collectors['true_labels'],
-        collectors['predicted_results'],
-        verdict_mapper=map_verdict
-    )
-    logger.info("\nClassification Metrics:")
-    print(metrics)
+    # # Calculate and print metrics
+    # logger.info("Calculating classification metrics...")
+    # metrics = calculate_classification_metrics(
+    #     collectors['true_labels'],
+    #     collectors['predicted_results'],
+    #     verdict_mapper=map_verdict
+    # )
+    # logger.info("\nClassification Metrics:")
+    # print(metrics)
 
 if __name__ == "__main__":
     main()

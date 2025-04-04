@@ -33,7 +33,7 @@ class SourcesDownloader:
         if not os.path.exists(self.main_output_folder):
             os.makedirs(self.main_output_folder)
 
-    def download_pdf(self, url: str, output_folder: str, pdf_title: str) -> None:
+    def download_pdf(self, url: str, output_folder: str, output_filename: str) -> None:
         """
         Download a source document (PDF) from a given URL and save it to the specified folder.
         
@@ -43,25 +43,35 @@ class SourcesDownloader:
         Args:
             url (str): The URL of the source document to download.
             output_folder (str): The folder path where the source document should be saved.
-            pdf_title (str): The filename to use for the saved document.
-
+            output_filename (str): The filename to use for the saved document.
+            
         Raises:
             KeyError: If the specified url_column does not exist in the CSV file.
         
         Returns:
             None
-
         """
+        # Ensure the filename ends with '.pdf'
+        if not output_filename.lower().endswith('.pdf'):
+            output_filename += '.pdf'
+        
         response = requests.get(url)
         if response.status_code == 200:
-            pdf_path = os.path.join(output_folder, pdf_title)
+            pdf_path = os.path.join(output_folder, output_filename)
             with open(pdf_path, 'wb') as f:
                 f.write(response.content)
-            logging.info(f"Downloaded {pdf_title} to {output_folder}")
+            logging.info(f"Downloaded {output_filename} to {output_folder}")
         else:
-            logging.error(f"Failed to download {pdf_title}")
+            logging.error(f"Failed to download {url} to {output_folder}/{output_filename}")
 
-    def download_from_csv(self, sourcefile: str, rows: list[int] | None, url_column: str = "url") -> list[str]:
+    def download_pdfs_from_csv(
+            self, 
+            sourcefile: str, 
+            rows: list[int] | None, 
+            url_column: str = "url",
+            output_filename_column: str = "output_filename",
+            output_subfolder_column: str = "output_subfolder",
+        ) -> list[str]:
         """
         Download source documents from URLs specified in a claims database CSV file.
         
@@ -74,6 +84,8 @@ class SourcesDownloader:
             rows (list[int], optional): List of specific claim indices to download sources for.
                                         If None, downloads sources for all claims.
             url_column (str): Name of the column containing source document URLs.
+            output_filename_column (str): Name of the column specifying the filename for the downloaded file
+            output_subfolder_column (str): Name of the column specifying the subfolder where to download each file
 
         Raises:
             KeyError: If the specified url_column does not exist in the CSV file.
@@ -84,21 +96,19 @@ class SourcesDownloader:
         """
         downloaded_files = []
         with open(sourcefile, 'r') as csvfile:
-            reader = csv.DictReader(csvfile)
+            reader = csv.DictReader(csvfile, skipinitialspace=True)
             for i, row in enumerate(reader):
                 if rows and i not in rows:
                     continue
                 try:
                     url = row[url_column]
-                    pdf_title = row.get('pdf_title', f"document_{i}.pdf")
-                    # Use the output_folder column from the CSV to determine subfolder;
-                    # default to main_output_folder if not provided.
-                    subfolder = row.get('output_folder', "").strip()
+                    output_filename = row.get(output_filename_column, f"document_{i}.pdf")
+                    subfolder = row.get(output_subfolder_column, "").strip()
                     output_folder = os.path.join(self.main_output_folder, subfolder) if subfolder else self.main_output_folder
                     if not os.path.exists(output_folder):
                         os.makedirs(output_folder)
-                    self.download_pdf(url, output_folder, pdf_title)
-                    downloaded_files.append(os.path.join(output_folder, pdf_title))
+                    self.download_pdf(url, output_folder, output_filename)
+                    downloaded_files.append(os.path.join(output_folder, output_filename))
                 except KeyError:
                     logging.error(f"Column {url_column} does not exist in the CSV file.")
         return downloaded_files
@@ -144,7 +154,7 @@ class SourcesDownloader:
         args = parser.parse_args()
 
         downloader = SourcesDownloader(args.output_folder)
-        downloader.download_from_csv(args.sourcefile, args.rows, args.url_column)
+        downloader.download_pdfs_from_csv(args.sourcefile, args.rows, args.url_column)
 
 if __name__ == "__main__":
     SourcesDownloader.run_cli()

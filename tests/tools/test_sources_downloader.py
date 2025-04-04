@@ -57,11 +57,11 @@ def test_output_folder_exists():
          patch('argparse.ArgumentParser.parse_args', return_value=mock_args), \
          patch('os.path.exists', return_value=True), \
          patch('os.makedirs') as mock_makedirs, \
-         patch('factchecker.tools.sources_downloader.SourcesDownloader.download_from_csv') as mock_download:
+         patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
             
         SourcesDownloader.run_cli()
         mock_makedirs.assert_not_called()
-        # Since the output folder is passed to the constructor, download_from_csv is called with sourcefile, rows, and url_column.
+        # Since the output folder is passed to the constructor, download_pdfs_from_csv is called with sourcefile, rows, and url_column.
         mock_download.assert_called_once_with('test.csv', None, 'external_link')
 
 
@@ -69,7 +69,7 @@ def test_output_folder_exists():
 def test_cli_arguments():
     testargs = ["prog", "--sourcefile", "test.csv", "--rows", "1", "2", "--url_column", "test_url", "--output_folder", "test_data"]
     with patch('sys.argv', testargs):
-        with patch('factchecker.tools.sources_downloader.SourcesDownloader.download_from_csv') as mock_download:
+        with patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
             SourcesDownloader.run_cli()
             # Assert that the parsed arguments are passed correctly.
             mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url')
