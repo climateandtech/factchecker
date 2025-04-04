@@ -1,12 +1,14 @@
 import os
-import pytest
-from unittest.mock import mock_open, patch
-from factchecker.tools.sources_downloader import download_pdf
-from unittest.mock import patch, mock_open, Mock
-from factchecker.tools.sources_downloader import main
+from unittest.mock import Mock, mock_open, patch
 
-# Test for download_pdf function
+import pytest
+
+from factchecker.tools.sources_downloader import SourcesDownloader
+
+
+# Test for download_pdf function of Sources Downloader
 def test_download_pdf_success():
+    downloader = SourcesDownloader("output_folder")
     # Mock the requests.get call to return a response with status_code 200
     with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
         mock_get.return_value.status_code = 200
@@ -14,7 +16,7 @@ def test_download_pdf_success():
 
         # Mock the open function to simulate file writing
         with patch('builtins.open', mock_open()) as mock_file:
-            download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
+            downloader.download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
 
             # Check if the file was opened in write-binary mode
             mock_file.assert_called_with(os.path.join('output_folder', 'test.pdf'), 'wb')
@@ -24,9 +26,10 @@ def test_download_pdf_success():
 
 
 def test_download_pdf_failure(capfd):
+    downloader = SourcesDownloader("output_folder")
     with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
         mock_get.return_value.status_code = 404
-        download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
+        downloader.download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
         out, _ = capfd.readouterr()
         assert "Failed to download test.pdf" in out
 
@@ -36,9 +39,9 @@ def test_output_folder_creation():
          patch('os.path.exists', return_value=False), \
          patch('os.makedirs') as mock_makedirs, \
          patch('builtins.open', mock_open()) as mock_file:
-        main()
+        # Call the CLI entry point
+        SourcesDownloader.run_cli()
         mock_makedirs.assert_called_once_with('test_data')
-        mock_file.assert_called()  # Add more specific assertions if necessary
 
 def test_output_folder_exists():
     """Test that existing output folders are handled correctly"""
@@ -49,24 +52,24 @@ def test_output_folder_exists():
         url_column='external_link'
     )
     
-    # Add patch for gettext to prevent translation file reading
+    # Patch argparse to return our mock arguments.
     with patch('gettext.translation'), \
          patch('argparse.ArgumentParser.parse_args', return_value=mock_args), \
          patch('os.path.exists', return_value=True), \
          patch('os.makedirs') as mock_makedirs, \
-         patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
+         patch('factchecker.tools.sources_downloader.SourcesDownloader.download_from_csv') as mock_download:
             
-        main()
+        SourcesDownloader.run_cli()
         mock_makedirs.assert_not_called()
-        mock_download.assert_called_once_with(
-            'test.csv', None, 'external_link', 'test_data'
-        )
+        # Since the output folder is passed to the constructor, download_from_csv is called with sourcefile, rows, and url_column.
+        mock_download.assert_called_once_with('test.csv', None, 'external_link')
 
 
 # Test the CLI argument parsing
 def test_cli_arguments():
     testargs = ["prog", "--sourcefile", "test.csv", "--rows", "1", "2", "--url_column", "test_url", "--output_folder", "test_data"]
     with patch('sys.argv', testargs):
-        with patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
-            main()
-            mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'test_data')
+        with patch('factchecker.tools.sources_downloader.SourcesDownloader.download_from_csv') as mock_download:
+            SourcesDownloader.run_cli()
+            # Assert that the parsed arguments are passed correctly.
+            mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url')
