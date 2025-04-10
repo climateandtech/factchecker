@@ -4,9 +4,11 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
 ## Installation
 
-     python3 -m venv venv
-     source venv/bin/activate
-     pip install -r requirements.txt
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Quick Start
 
@@ -16,7 +18,9 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
 2. Download the sources via the sources downloader
 
-  python -m factchecker.tools.sources_downloader
+```
+python -m factchecker.tools.sources_downloader
+```
 
 There is a detailled explanation on sources below
 
@@ -25,11 +29,9 @@ There is a detailled explanation on sources below
 We recommend running the Advocate Mediator example, to test if you set up everything correctly:
 
 
-
-     python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
-
-
-
+```
+python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
+```
 
 
 
