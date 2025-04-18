@@ -68,18 +68,21 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     Settings.chunk_overlap = EXPERIMENT_PARAMS['chunk_overlap']
     
     main_source_directory = EXPERIMENT_PARAMS['main_source_directory']
-    # Get all subdirectories under the main source directory.
-    sources_subfolders = [
-        d.name for d in Path(main_source_directory).iterdir() if d.is_dir()
-    ]
-    
+
     # Create an indexer for each subfolder in the main sources directory
     indexer_options_list = [
         {
-            'source_directory': os.path.join(main_source_directory, subfolder),
-            'index_name': subfolder
-        }
-        for subfolder in sources_subfolders
+            'source_directory': os.path.join(main_source_directory, "ipcc"),
+            'index_name': "ipcc"
+        },
+        {
+            'source_directory': os.path.join(main_source_directory, "wmo"),
+            'index_name': "wmo"
+        },
+        {
+            'source_directory': os.path.join(main_source_directory, "nipcc"),
+            'index_name': "nipcc"
+        },
     ]
     
     # Create a retriever options list for each indexer.
