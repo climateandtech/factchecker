@@ -103,8 +103,8 @@ class SourcesDownloader:
 
     def download_pdfs_from_csv(
             self, 
-            sourcefile: str, 
-            row_indices: list[int] | None, 
+            sourcefile: str = "sources/sources.csv", 
+            row_indices: list[int] | None = None, 
             url_column: str = "url",
             output_filename_column: str = "output_filename",
             output_subfolder_column: str = "output_subfolder",
@@ -202,7 +202,7 @@ class SourcesDownloader:
             help='Specify which claims to download sources for (0-indexed).'
         )
         parser.add_argument(
-            '--url_column', type=str, default='external_link',
+            '--url_column', type=str, default='url',
             help='Specify the column containing source URLs.'
         )
         parser.add_argument(
@@ -214,7 +214,7 @@ class SourcesDownloader:
             help='Specify the column containing subfolders for downloaded files.'
         )
         parser.add_argument(
-            '--output_folder', type=str, default='data',
+            '--output_folder', type=str, default='data/sources',
             help='Main output folder for the downloaded source documents.'
         )
         args = parser.parse_args()

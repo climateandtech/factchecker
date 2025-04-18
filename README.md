@@ -317,31 +317,111 @@ Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoU
 
 ### Download sources
 
-The project includes a source downloader tool to fetch PDFs and other source documents. The tool supports:
+The project includes a source downloader tool to fetch PDFs for fact-checking claims. The tool reads a CSV file and downloads files into organized folders.
 
-1. **Basic Usage**
-   ```bash
-   python -m factchecker.tools.sources_downloader
-   ```
-   This uses default settings:
-   - Source file: `sources/sources.csv`
-   - Output folder: `data/`
-   - URL column: "external_link"
 
-2. **Custom Configuration**
-   ```bash
-   python -m factchecker.tools.sources_downloader \
-     --sourcefile custom_sources.csv \
-     --output_folder custom_folder \
-     --url_column url_field \
-     --rows 1 2 3  # Optional: Download specific rows only
-   ```
 
-3. **Features**
-   - Automatically creates output directory if it doesn't exist
-   - Handles failed downloads gracefully with error messages
-   - Supports CSV files with custom column names
-   - Optional row selection for partial downloads
-   - Progress tracking for batch downloads
+### Download sources
 
-Note: The `/data` folder is specified in the `.gitignore` file, so the downloaded PDFs will not be tracked by Git.
+The project includes a source downloader tool to fetch PDFs and other documents referenced in fact-checking claims. The tool reads a CSV file with metadata and downloads the files into organized folders.
+
+#### 1. **Basic Usage**
+
+```bash
+python -m factchecker.tools.sources_downloader
+```
+
+This uses default settings:
+
+- **Source CSV**: `sources/sources.csv`
+- **Output folder**: `data/sources/`
+- **URL column**: `url`
+- **Filename column**: `output_filename`
+- **Subfolder column**: `output_subfolder`
+
+---
+
+#### 2. **Custom Configuration**
+
+```bash
+python -m factchecker.tools.sources_downloader \
+  --sourcefile path/to/your_sources.csv \
+  --output_folder data/sources \
+  --url_column url \
+  --output_filename_column output_filename \
+  --output_subfolder_column output_subfolder \
+  --row_indices 0 1 2  # Optional: download specific rows only
+```
+
+---
+
+#### 3. **Expected CSV Format**
+
+Your CSV should include at least the following columns:
+
+```csv
+url,title,output_filename,output_subfolder
+https://example.com/doc1.pdf,Example Report,example_report.pdf,ipcc
+https://example.com/doc2.pdf,Another Report,another.pdf,wmo
+```
+
+This will result in files being downloaded to:
+
+```
+data/sources/ipcc/example_report.pdf
+data/sources/wmo/another.pdf
+```
+
+---
+
+#### 4. **Features**
+
+- Automatic creation of output directories and subfolders
+- URL validation before download
+- Graceful handling of timeouts, connection errors, and failed downloads
+- Customizable column names via CLI
+- Optional row filtering by index for partial downloads
+- Logging about each downloaded file
+
+---
+
+#### 5. **Programmatic Usage**
+
+You can also use the `SourcesDownloader` in Python directly:
+
+```python
+from factchecker.tools.sources_downloader import SourcesDownloader
+
+downloader = SourcesDownloader(output_folder="data/sources")
+downloaded_files = downloader.download_pdfs_from_csv(
+    sourcefile="sources/sources.csv",
+    row_indices=None,
+    url_column="url",
+    output_filename_column="output_filename",
+    output_subfolder_column="output_subfolder",
+)
+print(f"Downloaded files: {downloaded_files}")
+```
+
+---
+
+#### 6. **Integration with Indexing**
+
+Each subfolder created via the `output_subfolder` column can be used as an indexable directory:
+
+```python
+import os
+
+main_source_directory = "data/sources"
+index_subolder = "subfolder_1"
+indexer_options_list = [
+    {
+        'source_directory': os.path.join(main_source_directory, index_subfolder),
+        'index_name': "example_index"
+    }
+]
+```
+
+---
+
+**Note**: The `/data` folder is listed in `.gitignore` to prevent large source files from being committed to Git.
