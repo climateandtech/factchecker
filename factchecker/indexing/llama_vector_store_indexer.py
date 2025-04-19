@@ -1,35 +1,26 @@
 """LlamaVectorStoreIndexer class."""
 
-import logging
-<<<<<<< HEAD
-from pathlib import Path
-import os
 import json
+import logging
+import os
 from datetime import datetime
-=======
+from pathlib import Path
 from typing import Any, Optional
->>>>>>> 49-sources-subfolder-climatefeedback
 
-from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex
+from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex, load_index_from_storage
 from llama_index.core.embeddings.utils import EmbedType
-<<<<<<< HEAD
-from llama_index.core import load_index_from_storage
-=======
 from llama_index.core.node_parser import SentenceSplitter
->>>>>>> 49-sources-subfolder-climatefeedback
 
-from factchecker.indexing.abstract_indexer import AbstractIndexer
 from factchecker.core.embeddings import load_embedding_model
-
+from factchecker.indexing.abstract_indexer import AbstractIndexer
 
 logger = logging.getLogger('factchecker.indexing')
 
 class LlamaVectorStoreIndexer(AbstractIndexer):
     """
     LlamaVectorStoreIndexer class for creating and managing indexes using Llama's VectorStoreIndex.
-<<<<<<< HEAD
     """
-    def __init__(self, options: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, options: Optional[dict[str, Any]] = None) -> None:
         """Initialize the LlamaVectorStoreIndexer with specified parameters."""
         super().__init__(options)
         
@@ -44,68 +35,13 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             SentenceSplitter(chunk_size=self.chunk_size, chunk_overlap=self.chunk_overlap)
         ]
         self.show_progress = self.options.pop('show_progress', False)
-=======
-
-    Attributes:
-        options (dict[str, Any]): Configuration options for the indexer.
-        index_name (str): Name of the index.
-        index_path (Optional[str]): Path to the directory where the index is stored on disk.
-        index (Optional[Any]): In-memory index object.
-        embed_model (Optional[EmbedType]): The name of the embedding model to use.
-        storage_context_options (dict[str, Any]): Options for the storage context.
-        transformations (list[Callable]): A list of transformations to apply to the documents.
-        show_progress (bool): Whether to show progress during indexing.
-
-    """
-    
-    def __init__(self, options: Optional[dict[str, Any]] = None) -> None:
-        """
-        Initialize the LlamaVectorStoreIndexer with specified parameters.
-
-        Args:
-            options (Optional[dict[str, Any]]): Configuration options which may include:
-                - index_name (str): Name of the index. Defaults to 'default_index'.
-                - index_path (Optional[str]): Path to the directory where the index is stored on disk.
-                - source_directory (str): Directory containing source data files. Defaults to 'data'.
-                - storage_context_options (dict[str, Any]): Options for the storage context.
-                - transformations (list[Callable]): A list of transformations to apply to the documents.
-                - embedding_type (str): Type of embedding model to use.
-                - embedding_model (str): Name of the embedding model to use.
-                - storage_context_options (Dict[str, Any]): Options for the storage context.
-                - transformations (List[Callable]): A list of transformations to apply to the documents.
-                - show_progress (bool): Whether to show progress during indexing.
-
-        """
-        super().__init__(options)
-
-        # Load embedding model if specified in options
-        embedding_kwargs = {}
-        if 'embedding_type' in self.options:
-            embedding_kwargs['embedding_type'] = self.options.pop('embedding_type')
-        if 'embedding_model' in self.options:
-            embedding_kwargs['model_name'] = self.options.pop('embedding_model')
-        
-        self.embed_model = load_embedding_model(**embedding_kwargs)
-        self.storage_context_options: dict[str, Any] = self.options.pop('storage_context_options', {})
-        self.transformations = self.options.pop('transformations', [SentenceSplitter(chunk_size=Settings.chunk_size, chunk_overlap=Settings.chunk_overlap)])
-        self.show_progress = self.options.pop('show_progress', True)
-
->>>>>>> 49-sources-subfolder-climatefeedback
 
     def build_index(self, documents: list[Document]) -> None:
         """
         Builds a new VectorStoreIndex from the provided documents.
         
         Args:
-<<<<<<< HEAD
             documents (List[Document]): Documents to index
-=======
-            documents (list[Document]): list of LlamaIndex Documents to index.
-
-        Raises:
-            Exception: If an error occurs during index creation.
-
->>>>>>> 49-sources-subfolder-climatefeedback
         """
         try:
             logger.info(f"Building VectorStoreIndex with {len(documents)} documents")
@@ -188,15 +124,14 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             logger.error(f"Error loading index: {e}")
             raise
 
-<<<<<<< HEAD
-    def add_to_index(self, documents: List[Any]) -> None:
+    def add_to_index(self, documents: list[Any]) -> None:
         """Add documents to the index."""
         if self.index is None:
             raise ValueError("Index not initialized")
         self.index.insert_nodes(documents)
         self.save_index()
 
-    def delete_from_index(self, document_ids: List[str]) -> None:
+    def delete_from_index(self, document_ids: list[str]) -> None:
         """Delete documents from the index based on their IDs."""
         if self.index is None:
             raise ValueError("Index not initialized")
@@ -216,35 +151,6 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
                 except Exception as e:
                     logger.warning(f"⚠️ Could not load existing index: {e}")
                     logger.info("🔄 Will rebuild index...")
-=======
-        Raises:
-            NotImplementedError: If the method is not yet implemented.
-
-        """
-        logging.error("load_index() of LlamaVectorStoreIndexer is not yet implemented")
-        raise NotImplementedError("load_index() of LlamaVectorStoreIndexer is not yet implemented")
-
-    def add_to_index(self, documents: list[Document]) -> None:
-        """
-        Add documents to the index.
-
-        Args:
-            documents (list[Document]): Documents to be added to the index.
-
-        Raises:
-            NotImplementedError: If the method is not yet implemented.
-
-        """
-        logging.error("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
-        raise NotImplementedError("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
-
-    def delete_from_index(self, document_ids: list[str]) -> None:
-        """
-        Delete documents from the index.
-
-        Args:
-            document_ids (list[str]): list of document IDs to delete from the index.
->>>>>>> 49-sources-subfolder-climatefeedback
 
             # Create new index
             logger.info("🏗️ Building new index...")
