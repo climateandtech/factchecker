@@ -13,7 +13,6 @@ class AbstractRetriever(ABC):
         # Ensure the index is created before creating the retriever
         if self.indexer.index is None:
             self.indexer.initialize_index()
-        pass
 
     @abstractmethod
     def retrieve(self, query):

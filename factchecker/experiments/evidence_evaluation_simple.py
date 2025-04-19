@@ -7,7 +7,7 @@ def main():
         # Add other indexer options here
     }
     retriever_options = {
-        'similarity_top_k': 4,
+        'top_k': 4,
         # Add other retriever options here
     }
     evidence_options = {

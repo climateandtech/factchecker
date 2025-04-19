@@ -67,7 +67,10 @@ class AbstractIndexer(ABC):
         index_name (str): Name of the index.
         index_path (Optional[str]): Path to the directory where the index is stored on disk.
         source_directory (str): Directory containing source data files.
+        initial_documents (Optional[list[Document]]): Initial documents to be indexed.
+        initial_files (Optional[list[str]]): Initial files to be indexed.
         index (Optional[Any]): In-memory index object.
+
     """
 
     def __init__(
@@ -80,6 +83,7 @@ class AbstractIndexer(ABC):
         Args:
             options (Optional[Dict[str, Any]]): Dictionary containing configuration options. 
                 If not provided, defaults will be used.
+
         """
         logger.debug(f"Initializing indexer with options: {options}")
         self.options = options or {}
@@ -199,59 +203,73 @@ class AbstractIndexer(ABC):
             raise
 
     def load_initial_documents(self) -> List[Document]:
-        """Load documents from source"""
+        """Load documents from various sources, with support for caching and reindexing."""
         try:
+            # Use preloaded documents if provided
+            if hasattr(self, 'initial_documents') and self.initial_documents:
+                logger.info("📄 Using preloaded documents provided in options.")
+                return self.initial_documents
+
+            # Use specified files if provided
+            if hasattr(self, 'initial_files') and self.initial_files:
+                files = self.initial_files
+                logger.info(f"📄 Loading documents from specified files: {files}")
+                documents = SimpleDirectoryReader(input_files=files).load_data()
+                self.initial_documents = documents
+                logger.debug(f"Loaded {len(documents)} documents from specified files")
+                return documents
+
+            # Default behavior: load from source directory with caching and change detection
             source_dir = Path(self.options.get('source_directory', 'data'))
             logger.debug(f"Checking documents in {source_dir}")
             needs_parsing = False
-            
-            # Check parameters
+
+            # Check parameter changes
             if (self.chunk_size != self.metadata.chunk_size or
                 self.chunk_overlap != self.metadata.chunk_overlap):
                 logger.info(f"🔄 Parameters changed:")
                 logger.info(f"  - chunk_size: {self.chunk_size} != {self.metadata.chunk_size}")
                 logger.info(f"  - chunk_overlap: {self.chunk_overlap} != {self.metadata.chunk_overlap}")
                 needs_parsing = True
-            
-            # Check if any files changed
+
+            # Check file changes
             if not needs_parsing:
                 for file_path in source_dir.glob('*'):
                     if self.needs_reindexing(str(file_path)):
                         logger.info(f"🔄 File {file_path} needs parsing")
                         needs_parsing = True
                         break
-            
+
+            # Try loading cached documents
             if not needs_parsing and self.storage_path.exists():
                 try:
-                    # Try to load cached documents
                     docs_cache_path = self.storage_path / "documents.json"
                     if docs_cache_path.exists():
                         logger.info("📄 Loading cached documents (fast path)")
                         with open(docs_cache_path, "r") as f:
                             docs_data = json.load(f)
-                            return [Document.from_dict(d) for d in docs_data]
+                            documents = [Document.from_dict(d) for d in docs_data]
+                            self.initial_documents = documents
+                            return documents
                     else:
                         logger.info("⚠️ No cached documents found")
                         needs_parsing = True
                 except Exception as e:
                     logger.warning(f"⚠️ Could not load cached documents: {e}")
                     needs_parsing = True
-            
-            # Parse documents if needed
+
+            # Parse and cache documents if needed
             if needs_parsing:
-                logger.info("📚 Parsing documents from PDFs (slow path)...")
-                # Basic document loading without LlamaIndex-specific settings
+                logger.info("📚 Parsing documents from source (slow path)...")
                 reader = SimpleDirectoryReader(source_dir)
                 documents = reader.load_data()
-                
-                # Cache the parsed documents
                 self.storage_path.mkdir(parents=True, exist_ok=True)
                 with open(self.storage_path / "documents.json", "w") as f:
                     json.dump([doc.to_dict() for doc in documents], f)
-                
                 logger.info(f"✅ Parsed and cached {len(documents)} documents")
+                self.initial_documents = documents
                 return documents
-            
+
         except Exception as e:
             logger.error(f"Error loading documents: {e}")
             raise
@@ -262,6 +280,7 @@ class AbstractIndexer(ABC):
 
         Returns:
             bool: True if the persisted index exists, False otherwise.
+            
         """
         if self.index_path and os.path.exists(self.index_path):
             logging.debug(f"Index exists at {self.index_path}")
@@ -272,18 +291,24 @@ class AbstractIndexer(ABC):
     def initialize_index(self) -> None:
         """
         Initializes the index by loading an existing index or building a new one.
+        
+        This includes:
+        - Checking if an in-memory index exists
+        - Checking if a stored index exists and can be reused
+        - Detecting if reindexing is required (via param or file changes)
+        - Building a new index if needed
         """
         try:
             if self.index is not None:
                 logger.info("✅ In-memory index exists, skipping initialization")
                 return
 
-            # Check if we can load existing index
+            logger.info("🔍 Checking if an index already exists on disk...")
             if self.storage_path.exists():
                 logger.info(f"📂 Found existing index at {self.storage_path}")
                 source_dir = Path(self.options.get('source_directory', 'data'))
                 needs_reindex = False
-                
+
                 for file_path in source_dir.glob('*'):
                     if self.needs_reindexing(str(file_path)):
                         needs_reindex = True
@@ -291,27 +316,35 @@ class AbstractIndexer(ABC):
 
                 if not needs_reindex:
                     try:
-                        logger.info("🔄 Loading existing index...")
+                        logger.info("🔄 Loading existing index from disk...")
                         self.load_index()
                         logger.info("✅ Successfully loaded cached index")
                         return
                     except Exception as e:
                         logger.warning(f"⚠️ Could not load existing index: {e}")
+                        # Fall through to rebuild index
 
-            # Create new index
-            logger.info("🏗️ Building new index...")
+            # No valid cached index or reindexing needed
+            logger.info("🏗️ Building new index from scratch...")
             documents = self.load_initial_documents()
             logger.info(f"📄 Loaded {len(documents)} documents")
+
             self.build_index(documents)
-            
-            # Update metadata
+
+            # Update metadata for all processed files
             source_dir = Path(self.options.get('source_directory', 'data'))
             for file_path in source_dir.glob('*'):
                 self.update_file_metadata(str(file_path))
-            
+
             self.save_index()
             logger.info("✅ Index built and saved successfully")
 
+        except FileNotFoundError as e:
+            logger.error(f"❌ File not found during index initialization: {e}")
+            raise
+        except ValueError as e:
+            logger.error(f"❌ Invalid data during index initialization: {e}")
+            raise
         except Exception as e:
             logger.exception(f"❌ Error during index initialization: {e}")
             raise

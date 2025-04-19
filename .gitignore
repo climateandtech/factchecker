@@ -10,6 +10,10 @@ __pycache__/
 /indexes/*
 .env
 
+# Experiment results
+experiments/results/
+experiments/results/*.csv
+
 # Distribution / packaging
 .Python
 build/
@@ -179,4 +183,8 @@ experiments/.DS_Store
 .vscode/
 
 # Storage folder
+# ruff
+.ruff.toml
+
+# storage folder
 storage/

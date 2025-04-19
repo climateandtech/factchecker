@@ -3,8 +3,9 @@ from factchecker.indexing.ragatouille_colbert_indexer import RagatouilleColBERTI
 from ragatouille import RAGPretrainedModel
 
 class RagatouilleColBERTRetriever(AbstractRetriever):
-    def __init__(self, indexer: RagatouilleColBERTIndexer, options=None):
+    def __init__(self, indexer: RagatouilleColBERTIndexer, options:dict=None) -> None:
         super().__init__(indexer, options)
+        self.options.pop('top_k', None) # Remove top_k from options
 
     def create_retriever(self):
         super().create_retriever()
@@ -17,13 +18,11 @@ class RagatouilleColBERTRetriever(AbstractRetriever):
         else:
             raise ValueError("The index is not loaded or does not exist.")
 
-    def retrieve(self, query):
+    def retrieve(self, query:str):
         super().retrieve(query)
-        # Merge options with any additional keyword arguments
-        retrieve_options = {**self.options}
         
         return self.retriever.search(
             query, 
             k=self.top_k, 
-            **retrieve_options
+            **self.options
             )

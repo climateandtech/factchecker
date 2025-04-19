@@ -4,7 +4,25 @@ import os
 from factchecker.core.llm import load_llm
 
 class EvaluateStep:
+    """
+    A step in the fact-checking process that evaluates claims based on pro and con evidence.
+    
+    This class uses a language model to analyze evidence both supporting and contradicting a claim,
+    producing a final verdict on the claim's veracity.
+    """
+
     def __init__(self, llm=None, options=None):
+        """
+        Initialize an EvaluateStep instance.
+
+        Args:
+            llm: Language model instance to use for evaluation. If None, loads default model.
+            options (dict, optional): Configuration options including:
+                - pro_prompt_template: Template for formatting supporting evidence
+                - con_prompt_template: Template for formatting contradicting evidence
+                - system_prompt_template: Template for system information
+                - format_prompt: Instructions for response format
+        """
         self.llm = llm if llm is not None else load_llm()
 
         self.options = options if options is not None else {}
@@ -18,7 +36,18 @@ class EvaluateStep:
         if "response_format" not in self.additional_options:
             self.additional_options["response_format"] = {"type": "json_object"}
 
-    def evaluate_evidence(self, claim, pro_evidence, con_evidence):
+    def evaluate_claim(self, claim, pro_evidence, con_evidence):
+        """
+        Evaluate a claim by analyzing both supporting and contradicting evidence.
+
+        Args:
+            claim (str): The claim to evaluate
+            pro_evidence (str): Evidence supporting the claim
+            con_evidence (str): Evidence contradicting the claim
+
+        Returns:
+            str: The final verdict (TRUE, FALSE, or ERROR_PARSING_RESPONSE)
+        """
         # Format the system prompt with the claim
         system_prompt_with_claim = self.system_prompt_template.format(claim=claim)
         

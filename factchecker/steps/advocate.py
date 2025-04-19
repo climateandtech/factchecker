@@ -1,66 +1,101 @@
-from llama_index.core.llms import ChatMessage
 import logging
-from factchecker.steps.evidence import EvidenceStep
-from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
-from factchecker.core.llm import load_llm
 
-import os
+from llama_index.core.llms import ChatMessage
+
+from factchecker.config.config import DEFAULT_LABEL_OPTIONS
+from factchecker.core.llm import load_llm
+from factchecker.datastructures import LabelOption
+from factchecker.prompts.advocate_prompts import get_default_system_prompt, get_default_user_prompt
+from factchecker.retrieval.abstract_retriever import AbstractRetriever
+from factchecker.steps.evidence import EvidenceStep
+
 
 class AdvocateStep:
-    def __init__(self, llm=None, options=None, evidence_options=None):
+    """
+    A step in the fact-checking process that acts as an advocate by evaluating claims based on evidence.
+    
+    This class retrieves relevant evidence for a claim and uses an LLM to evaluate whether the claim
+    is supported by the evidence, producing a verdict and reasoning.
+
+    Args:
+        retriever (AbstractRetriever): Retriever instance to use for evidence retrieval.
+        llm (TODO): Language model instance to use for evaluation. If None, loads default model.
+        options (dict, optional): Configuration options for the advocate step including
+        evidence_options (dict, optional): Configuration for evidence gathering including
+        
+    Attributes:
+        retriever (AbstractRetriever): Retriever instance to use for evidence retrieval.
+        llm (TODO): Language model instance to use for evaluation.
+        options (dict): Configuration options for the advocate step.
+        system_prompt (str): The system prompt to display to the user.
+        label_options (dict): The available label options for the verdict.
+        max_retries (int): The maximum number of retries to attempt when parsing the LLM response.
+        chat_completion_options (dict): Additional options to pass to the LLM chat method.
+    """
+
+    def __init__(
+            self, 
+            retriever: AbstractRetriever,
+            llm = None, # TODO: Add type hint
+            options: dict = None,
+            evidence_options: dict = None
+        ) -> None:
+        """Initialize an AdvocateStep instance."""
+        self.retriever = retriever
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
-        self.evidence_prompt_template = self.options.pop('evidence_prompt_template', "Evidence: {evidence}")
-        self.system_prompt_template = self.options.pop('system_prompt_template', "System information:")
-        self.format_prompt = self.options.pop("format_prompt", "Answer with TRUE or FALSE in the format ((correct)), ((incorrect)), or ((not_enough_information))")
-        self.max_evidences = self.options.pop("max_evidences", 1)
-        
-        # Filter out retriever-specific options
-        self.additional_options = {
-            key: self.options.pop(key) 
-            for key in list(self.options.keys()) 
-            if key not in ['top_k', 'similarity_top_k', 'min_score']
-        }
-        self.max_retries = 3
-
-        # Extract top_k and min_score from evidence_options
-        evidence_options = evidence_options if evidence_options is not None else {}
-        top_k = evidence_options.pop('top_k', 5)
-        min_score = evidence_options.pop('min_score', 0.75)
-
-        # Get the indexer instance from evidence_options
-        indexer = evidence_options.pop('indexer', None)
-        if indexer is None:
-            raise ValueError("No indexer provided in evidence_options")
-
-        # Create retriever with the provided indexer
-        retriever = LlamaBaseRetriever(indexer, {'similarity_top_k': top_k})
+        self.evidence_options = evidence_options if evidence_options is not None else {}
+        self.system_prompt = self.options.pop('system_prompt', get_default_system_prompt())
+        self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
+        self.max_retries = self.options.pop('max_retries', 3)
+        self.chat_completion_options = self.options.pop('chat_completion_options', {})
         
         # Initialize EvidenceStep
         self.evidence_step = EvidenceStep(
             retriever=retriever,
             options={
-                **evidence_options,
-                'top_k': top_k,
-                'min_score': min_score
+                **self.evidence_options,
             }
         )
 
-    def evaluate_evidence(self, claim):
+    def retrieve_evidence(self, claim: str) -> list[str]:
+        """
+        Retrieve relevant evidence for a given claim.
+
+        Args:
+            claim (str): The claim for which to retrieve evidence.
+
+        Returns:
+            list[str]: A list of evidence pieces relevant to the claim.
+
+        """
+        return self.evidence_step.gather_evidence(claim)
+
+    def evaluate_claim(self, claim: str) -> tuple[str, str]:
+        """
+        Evaluate a claim based on gathered evidence using the language model.
+
+        Args:
+            claim (str): The claim to evaluate.
+
+        Returns:
+            A tuple including the label and reasoning.
+
+        """
         # Retrieve evidence for the claim
-        evidences = self.evidence_step.gather_evidence(claim)
-        system_prompt_with_claim = self.system_prompt_template.format(claim=claim)
-        evidence_text = "\n".join([self.evidence_prompt_template.format(evidence=evidence.text) for evidence in evidences])
-        format_prompt = self.format_prompt
-        combined_prompt = f"Factcheck the following claim:\n\nClaim: {claim}\nGiven the following evidence:\n{evidence_text}\n{format_prompt}"
+        evidence_list = self.retrieve_evidence(claim)
+
+        # Define the message containing the payload for the LLM
+        user_prompt = get_default_user_prompt(claim=claim, evidence=evidence_list, label_options=self.label_options)
+
         messages = [
-            ChatMessage(role="system", content=system_prompt_with_claim),
-            ChatMessage(role="user", content=combined_prompt)
+            ChatMessage(role="system", content=self.system_prompt),
+            ChatMessage(role="user", content=user_prompt)
         ]
 
+
         for attempt in range(self.max_retries):
-            response = self.llm.chat(messages, **self.additional_options)
+            response = self.llm.chat(messages, **self.chat_completion_options)
             response_content = response.message.content.strip()
             # Extract the verdict from the response
             start = response_content.find("((")

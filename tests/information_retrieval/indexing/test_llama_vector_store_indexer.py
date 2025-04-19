@@ -1,6 +1,8 @@
 from unittest.mock import patch
 import numpy as np
 from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+import pytest
+from llama_index.core import Document
 
 @patch('llama_index.embeddings.openai.OpenAIEmbedding')
 def test_initialize_index_from_documents(mock_embedding, get_test_documents):
@@ -8,14 +10,19 @@ def test_initialize_index_from_documents(mock_embedding, get_test_documents):
     mock_embedding.return_value._get_text_embedding.return_value = np.array([0.1] * 384)
     mock_embedding.return_value._get_query_embedding.return_value = np.array([0.1] * 384)
 
+@pytest.mark.integration
+def test_initialize_index_from_documents(get_test_documents: list[Document]) -> None:
+    """Initialize an index with a list of documents."""
     indexer_options = {
         'documents': get_test_documents,
         'index_name': 'test_index_with_docs',
     }
-    
+
     indexer = LlamaVectorStoreIndexer(indexer_options)
+    assert indexer.index is None
     indexer.initialize_index()
     
+    assert indexer.initial_documents == get_test_documents
     assert indexer.index is not None
     assert indexer.index_name == 'test_index_with_docs'
 
@@ -29,10 +36,10 @@ def test_initialize_index_from_directory(mock_embedding, get_test_data_directory
         'source_directory': get_test_data_directory,
         'index_name': 'test_index_from_dir',
     }
-    
+
     indexer = LlamaVectorStoreIndexer(indexer_options)
+    assert indexer.index is None
     indexer.initialize_index()
-    
     assert indexer.index is not None
     assert indexer.index_name == 'test_index_from_dir'
 

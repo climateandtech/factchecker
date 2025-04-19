@@ -6,11 +6,25 @@ from factchecker.core.llm import load_llm
 logger = logging.getLogger('factchecker.steps')
 
 class MediatorStep:
-    def __init__(self, llm=None, options=None):
-        self.llm = llm if llm is not None else load_llm()
+    """
+    A step in the fact-checking process that mediates between multiple advocate verdicts.
+    
+    This class synthesizes multiple verdicts and their associated reasoning to produce
+    a final consensus verdict on a claim's veracity.
+    """
 
+    def __init__(self, llm=None, options=None):
+        """
+        Initialize a MediatorStep instance.
+
+        Args:
+            llm: Language model instance to use for mediation. If None, loads default model.
+            options (dict, optional): Configuration options including:
+                - arbitrator_primer: Template for the system prompt
+        """
+        self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
-        self.prompt = self.options.get('arbitrator_primer', '')
+        self.system_prompt = self.options.pop('system_prompt', '')
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = 3
 

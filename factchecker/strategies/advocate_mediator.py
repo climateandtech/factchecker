@@ -9,40 +9,63 @@ import debugpy
 logger = logging.getLogger('factchecker.strategies')
 
 class AdvocateMediatorStrategy:
-    def __init__(self, indexer_options_list, retriever_options_list, advocate_options, mediator_options, advocate_prompt, mediator_prompt):
-        logger.info("Initializing AdvocateMediatorStrategy")
-        
-        if not indexer_options_list or not retriever_options_list:  # Add this check
-            raise ValueError("At least one source (advocate) must be provided")
+    """
+    A strategy that combines multiple advocates and a mediator for fact-checking claims.
+    
+    This strategy uses multiple advocates, each with their own evidence sources, to evaluate
+    a claim independently. A mediator then synthesizes their verdicts into a final consensus.
+    """
+
+    def __init__(
+            self, 
+            indexer_options_list: list[dict], 
+            retriever_options_list: list[dict], 
+            advocate_options: dict, 
+            evidence_options: dict, 
+            mediator_options: dict,
+        ) -> None:
+        """
+        Initialize an AdvocateMediatorStrategy instance.
+
+        Args:
+            indexer_options_list (list): List of options for initializing document indexers
+            retriever_options_list (list): List of options for configuring retrievers
+            advocate_options (dict): Configuration options for advocates
+            evidence_options (dict): Configuration options for evidence step
+            mediator_options (dict): Configuration options for the mediator
             
-        logger.debug("Creating indexers with options:")
-        for i, options in enumerate(indexer_options_list):
-            logger.debug(f"Indexer {i}: {options}")
+        """
+        if not indexer_options_list or not retriever_options_list:
+            raise ValueError("At least one source (advocate) must be provided")
+
         # Initialize indexers with their options
+        for i, options in enumerate(indexer_options_list):
+            logger.debug(f"Creating indexer {i} with options: {options}")
         self.indexers = [LlamaVectorStoreIndexer(options) for options in indexer_options_list]
+
+        # Initialize retrievers with their options
+        self.retrievers = [LlamaBaseRetriever(
+            indexer=indexer,
+            options=retriever_options
+            ) 
+        for retriever_options, indexer in zip(retriever_options_list, self.indexers, strict=True)]
         
         # Create advocate steps with proper options
         self.advocate_steps = []
-        for retriever_options, indexer in zip(retriever_options_list, self.indexers):
-            # Extract indexer options from retriever options
-            indexer_opts = retriever_options.pop('indexer_options', {})
-            
-            # Create evidence options with proper structure
-            evidence_options = {
-                'indexer': indexer,
-                'top_k': advocate_options.get('top_k', 5),
-                'min_score': advocate_options.get('min_score', 0.75),
-                'query_template': "evidence for: {claim}"
-            }
+
+        # Create advocate step for each retriever
+        for retriever in self.retrievers:
             
             # Create advocate step
             advocate_step = AdvocateStep(
-                options={**advocate_options, 'system_prompt_template': advocate_prompt},
+                retriever=retriever,
+                options=advocate_options,
                 evidence_options=evidence_options
             )
+
             self.advocate_steps.append(advocate_step)
             
-        self.mediator_step = MediatorStep(options={**mediator_options, 'arbitrator_primer': mediator_prompt})
+        self.mediator_step = MediatorStep(options=mediator_options)
 
     def evaluate_claim(self, claim):
         """
