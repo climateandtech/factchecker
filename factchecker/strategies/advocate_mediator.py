@@ -93,6 +93,9 @@ class AdvocateMediatorStrategy:
                     raise ValueError(
                         f"Missing indexer or indexer_options for retriever_options at position {i}"
                     )
+                
+                # TODO: Validate retriever/indexer compatibility at construction
+                # TODO: Make retriever type dynamic based on indexer or explicit config later.
 
                 # Create the retriever using the indexer and retriever options
                 # For now, we hard-code the retriever type to LlamaBaseRetriever
@@ -111,6 +114,7 @@ class AdvocateMediatorStrategy:
             retrievers.append(retriever)
 
         return retrievers
+    
 
     def evaluate_claim(self, claim: str):
         """

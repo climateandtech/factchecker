@@ -1,4 +1,5 @@
 import logging
+import copy
 
 from llama_index.core.llms import ChatMessage
 
@@ -43,7 +44,7 @@ class AdvocateStep:
         """Initialize an AdvocateStep instance."""
         self.retriever = retriever
         self.llm = llm if llm is not None else load_llm()
-        self.options = options if options is not None else {}
+        self.options = copy.deepcopy(options or {}) # Use deepcopy to avoid modifying the original options with pop
         self.evidence_options = evidence_options if evidence_options is not None else {}
         self.system_prompt = self.options.pop('system_prompt', get_default_system_prompt())
         self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
@@ -105,6 +106,8 @@ class AdvocateStep:
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.chat_completion_options)
             response_content = response.message.content.strip()
+
+            # TODO: Add more robust ways of getting verdict and reasoning from the response
 
             # Extract the verdict from the response
             start = response_content.find("((")
