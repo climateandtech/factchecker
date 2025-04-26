@@ -93,6 +93,49 @@ class ClimateTheme(Base):
             block_label_text_color_dark="white"
         )
 
+def apply_settings_and_create_strategy(
+    chunk_size: int,
+    chunk_overlap: int,
+    top_k: int,
+    min_score: float,
+    max_evidences: int,
+    advocate_temperature: float,
+    mediator_temperature: float,
+) -> str:
+    """
+    Apply the current settings to create a new AdvocateMediatorStrategy.
+
+    Args:
+        chunk_size (int): Text chunk size.
+        chunk_overlap (int): Overlap between chunks.
+        top_k (int): Number of top retrieval results.
+        min_score (float): Minimum similarity score for retrieval.
+        max_evidences (int): Maximum evidence pieces per advocate.
+        advocate_temperature (float): Temperature for advocate LLM.
+        mediator_temperature (float): Temperature for mediator LLM.
+
+    Returns:
+        str: Status message indicating success.
+    """
+    global strategy
+
+    logger.info("Applying settings to create new strategy with parameters:")
+    for param, value in locals().items():
+        logger.info(f"  - {param}: {value}")
+
+    strategy = get_strategy(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        top_k=top_k,
+        min_score=min_score,
+        max_evidences=max_evidences,
+        advocate_temperature=advocate_temperature,
+        mediator_temperature=mediator_temperature
+    )
+
+    return "✅ Settings applied successfully!"
+
+
 def build_indexer_retriever_configs_from_base_path_sources(
     base_path_sources: str,
     chunk_size: int,
@@ -221,41 +264,30 @@ def get_strategy(
         mediator_options=mediator_options,
     )
 
-def on_validate(claim: str, sources: list):
-    logger.info(f"🔍 Processing claim: {claim}")
-    logger.info(f"🔍 Selected sources: {sources}")
+def on_validate(claim: str):
+    global strategy
+    logger.info(f"Processing claim: {claim}")
+
     try:
         if not claim or not claim.strip():
             raise ValueError("Please enter a claim to validate")
             
-        if not sources:  # Add this check
-            raise ValueError("Please select at least one source for fact-checking")
+        if strategy is None:
+            raise ValueError("Please apply settings first!")
         
-        strategy = get_strategy(advocate_sources=sources)
         final_verdict, mediator_reasoning, verdicts, reasonings, evidences = strategy.evaluate_claim(claim.strip())
         
-        # Format advocate data for the table display
-        advocate_data = []
-        for i, (verdict, reasoning, evidence) in enumerate(zip(verdicts, reasonings, evidences)):
-            advocate_data.append([
-                f"LLM {i+1}",  # Advocate column
-                verdict,        # Verdict column
-                reasoning,      # Reasoning column
-                "\n".join(evidence) if evidence else ""  # Evidence column
-            ])
-        
-        return (
-            final_verdict,
-            mediator_reasoning,
-            advocate_data      # Now passing formatted data for the table
-        )
+        advocate_data = [
+            [f"LLM {i+1}", verdict, reasoning, "\n".join(evidence) if evidence else ""]
+            for i, (verdict, reasoning, evidence) in enumerate(zip(verdicts, reasonings, evidences, strict=True))
+        ]
+
+        return final_verdict, mediator_reasoning, advocate_data
+    
     except Exception as e:
         logger.error(f"Error in on_validate: {str(e)}")
-        return (
-            f"Error: {str(e)}",
-            "",
-            []  # Empty list for no results
-        )
+        return f"Error: {str(e)}", "", []
+
 
 def save_validation(claim: str, verdict: str, reasoning: str, chunks: list):
     try:
