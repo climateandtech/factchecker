@@ -133,6 +133,9 @@ def apply_settings_and_create_strategy(
         mediator_temperature=mediator_temperature
     )
 
+    global STRATEGY
+    STRATEGY = strategy
+
     return "✅ Settings applied successfully!"
 
 
@@ -464,25 +467,32 @@ def create_interface():
                 apply_settings = gr.Button("Apply Settings")
                 
                 apply_settings.click(
-                    fn=lambda cs, co, tk, ms, as_, me, at, mt: (
+                    fn=lambda chunk_size, chunk_overlap, top_k, min_score, advocate_sources, 
+                              max_evidences, advocate_temperature, mediator_temperature: (
                         get_strategy(
-                            chunk_size=cs,
-                            chunk_overlap=co,
-                            top_k=tk,
-                            min_score=ms,
-                            advocate_sources=as_,
-                            max_evidences=me,
-                            advocate_temperature=at,
-                            mediator_temperature=mt
+                            base_path_sources=advocate_sources,
+                            chunk_size=chunk_size,
+                            chunk_overlap=chunk_overlap,
+                            top_k=top_k,
+                            min_score=min_score,
+                            max_evidences=max_evidences,
+                            advocate_temperature=advocate_temperature,
+                            mediator_temperature=mediator_temperature
                         ),
-                        "✅ Settings applied successfully!"  # Add emoji for better visibility
                     ),
+
                     inputs=[
-                        chunk_size, chunk_overlap, top_k, min_score,
-                        advocate_sources, max_evidences,
-                        advocate_temperature, mediator_temperature
+                        chunk_size, 
+                        chunk_overlap, 
+                        top_k, 
+                        min_score,
+                        advocate_sources, 
+                        max_evidences,
+                        advocate_temperature, 
+                        mediator_temperature
                     ],
-                    outputs=[gr.Textbox(visible=False), settings_status]  # Keep status visible
+                    # outputs=[gr.Textbox(visible=False), settings_status]
+                    outputs=[settings_status]
                 )
 
             with gr.Tab("Review & Validate"):
