@@ -102,11 +102,11 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     }
 
     strategy = AdvocateMediatorStrategy(
-        indexer_options_list,
-        retriever_options_list,
-        advocate_options,
-        evidence_options,
-        mediator_options,
+        indexer_options_list=indexer_options_list,
+        retriever_options_list=retriever_options_list,
+        advocate_options=advocate_options,
+        evidence_options=evidence_options,
+        mediator_options=mediator_options,
     )
     logger.info("Strategy initialized successfully")
     return strategy
