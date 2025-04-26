@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import gradio as gr
 from gradio.themes.base import Base
@@ -26,7 +27,7 @@ from factchecker.utils.logging_config import setup_logging
 
 logger = setup_logging()
 
-
+strategy: Optional[AdvocateMediatorStrategy] = None
 
 # Brand colors from the image
 COLORS = {
