@@ -94,6 +94,7 @@ class ClimateTheme(Base):
         )
 
 def apply_settings_and_create_strategy(
+    base_path_sources: str,
     chunk_size: int,
     chunk_overlap: int,
     top_k: int,
@@ -124,6 +125,7 @@ def apply_settings_and_create_strategy(
         logger.info(f"  - {param}: {value}")
 
     strategy = get_strategy(
+        base_path_sources=base_path_sources,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         top_k=top_k,
@@ -467,31 +469,11 @@ def create_interface():
                 apply_settings = gr.Button("Apply Settings")
                 
                 apply_settings.click(
-                    fn=lambda chunk_size, chunk_overlap, top_k, min_score, advocate_sources, 
-                              max_evidences, advocate_temperature, mediator_temperature: (
-                        get_strategy(
-                            base_path_sources=advocate_sources,
-                            chunk_size=chunk_size,
-                            chunk_overlap=chunk_overlap,
-                            top_k=top_k,
-                            min_score=min_score,
-                            max_evidences=max_evidences,
-                            advocate_temperature=advocate_temperature,
-                            mediator_temperature=mediator_temperature
-                        ),
-                    ),
-
+                    fn=apply_settings_and_create_strategy,
                     inputs=[
-                        chunk_size, 
-                        chunk_overlap, 
-                        top_k, 
-                        min_score,
-                        advocate_sources, 
-                        max_evidences,
-                        advocate_temperature, 
-                        mediator_temperature
+                        advocate_sources, chunk_size, chunk_overlap, top_k, min_score,
+                        max_evidences, advocate_temperature, mediator_temperature
                     ],
-                    # outputs=[gr.Textbox(visible=False), settings_status]
                     outputs=[settings_status]
                 )
 
@@ -537,8 +519,8 @@ def create_interface():
 
         # Event handlers
         validate_btn.click(
-            fn=lambda claim, sources: on_validate(claim, sources),
-            inputs=[claim_input, advocate_sources],
+            fn=on_validate,
+            inputs=[claim_input],
             outputs=[final_verdict, mediator_reasoning, advocate_outputs]
         )
 
