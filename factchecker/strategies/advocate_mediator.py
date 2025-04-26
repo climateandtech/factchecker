@@ -87,6 +87,7 @@ class AdvocateMediatorStrategy:
                     indexer = config['indexer']
                     logger.info(f"Using provided indexer of type {type(indexer).__name__} at position {i}")
                 elif 'indexer_options' in config:
+                    # TODO: Make indexer type dynamic based on retriever or explicit config.
                     indexer = LlamaVectorStoreIndexer(config['indexer_options'])
                     logger.info(f"Built new indexer of type {type(indexer).__name__} at position {i} from options")
                 else:
@@ -95,7 +96,7 @@ class AdvocateMediatorStrategy:
                     )
                 
                 # TODO: Validate retriever/indexer compatibility at construction
-                # TODO: Make retriever type dynamic based on indexer or explicit config later.
+                # TODO: Make retriever type dynamic based on indexer or explicit config.
 
                 # Create the retriever using the indexer and retriever options
                 # For now, we hard-code the retriever type to LlamaBaseRetriever
@@ -116,7 +117,7 @@ class AdvocateMediatorStrategy:
         return retrievers
     
 
-    def evaluate_claim(self, claim: str):
+    def evaluate_claim(self, claim: str) -> tuple[str, str, list[str], list[str], list[list]]:
         """
         Evaluates a claim using multiple advocates and a mediator.
 

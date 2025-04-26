@@ -1,4 +1,19 @@
+import json
 import os
+from datetime import datetime
+from pathlib import Path
+
+import gradio as gr
+from gradio.themes.base import Base
+from gradio.themes.utils import colors, fonts, sizes
+from llama_index.core import Settings
+
+from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback_prompts import (
+    advocate_primer,
+    arbitrator_primer,
+)
+from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
+from factchecker.tools.sources_downloader import download_pdf
 
 # Only enable debugpy if DEBUG environment variable is set
 if os.getenv("DEBUG"):
@@ -8,21 +23,10 @@ if os.getenv("DEBUG"):
     debugpy.wait_for_client()
 
 from factchecker.utils.logging_config import setup_logging
+
 logger = setup_logging()
 
-import gradio as gr
-from gradio.themes.base import Base
-from gradio.themes.utils import colors, fonts, sizes
-from typing import Iterable
-from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
-from factchecker.prompts.advocate_mediator_prompts import advocate_primer, arbitrator_primer
-import pandas as pd
-from datetime import datetime
-import os
-import json
-from llama_index.core import Settings
-from pathlib import Path
-from factchecker.tools.sources_downloader import download_pdf
+
 
 # Brand colors from the image
 COLORS = {
@@ -88,46 +92,115 @@ class ClimateTheme(Base):
             block_label_text_color_dark="white"
         )
 
-def get_strategy(
-    chunk_size=150, 
-    chunk_overlap=20, 
-    top_k=8, 
-    min_score=0.75,
-    advocate_sources=None,
-    max_evidences=10,
-    advocate_temperature=0.0,
-    mediator_temperature=0.0
-):
+def build_indexer_retriever_configs_from_base_path_sources(
+    base_path_sources: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    top_k: int,
+    min_score: float,
+) -> list[dict]:
     """
-    Creates an instance of the AdvocateMediatorStrategy.
-    """
-    logger.info("🔧 Creating strategy with settings:")
-    logger.info(f"  - chunk_size: {chunk_size}")
-    logger.info(f"  - chunk_overlap: {chunk_overlap}")
-    logger.info(f"  - advocate_sources: {advocate_sources}")
-    
-    # Remove default fallback - let the UI selection drive the sources
-    advocate_sources = advocate_sources or []
-    
-    # Create an indexer option for each selected source
-    indexer_options_list = [
-        {
-            'source_directory': 'data',
-            'index_name': f'{source}_index',
-            'chunk_size': chunk_size,
-            'chunk_overlap': chunk_overlap
-        }
-        for source in advocate_sources
-    ]
+    Build indexer-retriever configurations by detecting subfolders (or fallback to base folder).
 
-    retriever_options_list = [
-        {
-            'similarity_top_k': top_k,
-            'min_score': min_score,
-            'indexer_options': indexer_opt
-        }
-        for indexer_opt in indexer_options_list
-    ]
+    Args:
+        base_path_sources (str): Path to the base folder containing subfolders or files.
+        chunk_size (int): Chunk size for text splitting.
+        chunk_overlap (int): Overlap between text chunks.
+        top_k (int): Top-k similarity retrieval setting.
+        min_score (float): Minimum similarity score for retrieval.
+
+    Returns:
+        List[dict]: List of indexer_retriever config dictionaries.
+    """
+    configs = []
+
+    base_path_sources = Path(base_path_sources)
+
+    if not base_path_sources.exists() or not base_path_sources.is_dir():
+        raise ValueError(f"Base data path {base_path_sources} does not exist or is not a directory.")
+
+    subfolders = [f for f in sorted(base_path_sources.iterdir()) if f.is_dir()]
+
+    if subfolders:
+        logger.info(f"Found {len(subfolders)} source folders under {base_path_sources}.")
+
+        for folder in subfolders:
+            logger.info(f"Adding source: {folder.name}")
+
+            configs.append({
+                "indexer_options": {
+                    "source_directory": str(folder),
+                    "index_name": f"{folder.name}_index",
+                    "chunk_size": chunk_size,
+                    "chunk_overlap": chunk_overlap,
+                },
+                "retriever_options": {
+                    "similarity_top_k": top_k,
+                    "min_score": min_score,
+                },
+            })
+
+    else:
+        logger.warning(f"No subfolders found. Using base directory {base_path_sources} as a single source.")
+
+        configs.append({
+            "indexer_options": {
+                "source_directory": str(base_path_sources),
+                "index_name": f"{base_path_sources.name}_index",
+                "chunk_size": chunk_size,
+                "chunk_overlap": chunk_overlap,
+            },
+            "retriever_options": {
+                "similarity_top_k": top_k,
+                "min_score": min_score,
+            },
+        })
+
+    return configs
+
+def get_strategy(
+    base_path_sources: str = "data/sources",
+    chunk_size: int = 150,
+    chunk_overlap: int = 20,
+    top_k: int = 8,
+    min_score: float = 0.75,
+    max_evidences: int = 10,
+    advocate_temperature: float = 0.0,
+    mediator_temperature: float = 0.0
+) -> AdvocateMediatorStrategy:
+    """
+    Create an instance of the AdvocateMediatorStrategy.
+
+    This function builds a complete AdvocateMediatorStrategy by detecting available
+    source folders or falling back to the base source path directly if no subfolders are found.
+    
+    Args:
+        base_path_sources (str, optional): Base directory path containing source documents or subfolders. 
+            Defaults to "data/sources".
+        chunk_size (int, optional): Size of text chunks for indexing. Defaults to 150.
+        chunk_overlap (int, optional): Overlap between chunks. Defaults to 20.
+        top_k (int, optional): Number of top retrieval results to use. Defaults to 8.
+        min_score (float, optional): Minimum similarity score for retrieval. Defaults to 0.75.
+        max_evidences (int, optional): Maximum number of evidence pieces per advocate. Defaults to 10.
+        advocate_temperature (float, optional): Temperature setting for the advocate LLM. Defaults to 0.0.
+        mediator_temperature (float, optional): Temperature setting for the mediator LLM. Defaults to 0.0.
+
+    Returns:
+        AdvocateMediatorStrategy: An initialized strategy ready to evaluate claims.
+    """
+    logger.info("Creating AdvocateMediatorStrategy with following settings:")
+    for param, value in locals().items():
+        logger.info(f"  - {param}: {value}")
+
+    indexer_retriever_configs = build_indexer_retriever_configs_from_base_path_sources(
+        base_path_sources=base_path_sources,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        top_k=top_k,
+        min_score=min_score,
+    )
+
+    evidence_options = {}
 
     advocate_options = {
         'max_evidences': max_evidences,
@@ -141,12 +214,10 @@ def get_strategy(
     }
 
     return AdvocateMediatorStrategy(
-        indexer_options_list=indexer_options_list,
-        retriever_options_list=retriever_options_list,
+        indexer_retriever_configs=indexer_retriever_configs,
+        evidence_options=evidence_options,
         advocate_options=advocate_options,
         mediator_options=mediator_options,
-        advocate_prompt=advocate_primer,
-        mediator_prompt=arbitrator_primer
     )
 
 def on_validate(claim: str, sources: list):
