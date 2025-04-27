@@ -14,7 +14,7 @@ from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator
     arbitrator_primer,
 )
 from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
-from factchecker.tools.sources_downloader import download_pdf
+from factchecker.tools.sources_downloader import SourcesDownloader
 
 # Only enable debugpy if DEBUG environment variable is set
 if os.getenv("DEBUG"):
@@ -28,6 +28,7 @@ from factchecker.utils.logging_config import setup_logging
 logger = setup_logging()
 
 strategy: Optional[AdvocateMediatorStrategy] = None
+sources_downloader = SourcesDownloader(output_folder="data/sources")
 
 # Brand colors from the image
 COLORS = {
@@ -94,7 +95,7 @@ class ClimateTheme(Base):
         )
 
 def apply_settings_and_create_strategy(
-    base_path_sources: str,
+    advocate_subfolders: list[str],
     chunk_size: int,
     chunk_overlap: int,
     top_k: int,
@@ -107,6 +108,7 @@ def apply_settings_and_create_strategy(
     Apply the current settings to create a new AdvocateMediatorStrategy.
 
     Args:
+        advocate_subfolders (list[str]): The subfolders for the individual advocate sources.
         chunk_size (int): Text chunk size.
         chunk_overlap (int): Overlap between chunks.
         top_k (int): Number of top retrieval results.
@@ -125,7 +127,7 @@ def apply_settings_and_create_strategy(
         logger.info(f"  - {param}: {value}")
 
     strategy = get_strategy(
-        base_path_sources=base_path_sources,
+        advocate_subfolders=advocate_subfolders,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         top_k=top_k,
@@ -143,59 +145,58 @@ def apply_settings_and_create_strategy(
 
 def build_indexer_retriever_configs_from_base_path_sources(
     base_path_sources: str,
+    advocate_subfolders: Optional[list[str]],
     chunk_size: int,
     chunk_overlap: int,
     top_k: int,
     min_score: float,
 ) -> list[dict]:
     """
-    Build indexer-retriever configurations by detecting subfolders (or fallback to base folder).
+    Build indexer-retriever configuration dictionaries based on a base source directory.
+
+    This function detects source folders under a given base directory and creates 
+    indexer-retriever configurations for them. If specific subfolders are provided, 
+    only those will be included; otherwise, all subfolders will be processed. 
+    If no valid subfolders are found, the base directory itself is used.
 
     Args:
-        base_path_sources (str): Path to the base folder containing subfolders or files.
-        chunk_size (int): Chunk size for text splitting.
-        chunk_overlap (int): Overlap between text chunks.
-        top_k (int): Top-k similarity retrieval setting.
+        base_path_sources (str): Path to the base directory containing source folders.
+        advocate_subfolders (Optional[List[str]]): List of specific subfolder names to include. 
+            If None, all available subfolders will be used.
+        chunk_size (int): Size of text chunks for indexing.
+        chunk_overlap (int): Overlap between text chunks for indexing.
+        top_k (int): Number of top retrieval results.
         min_score (float): Minimum similarity score for retrieval.
 
     Returns:
-        List[dict]: List of indexer_retriever config dictionaries.
+        List[dict]: A list of indexer and retriever configuration dictionaries for the selected sources.
     """
     configs = []
+    base_path = Path(base_path_sources)
 
-    base_path_sources = Path(base_path_sources)
+    if not base_path.exists() or not base_path.is_dir():
+        raise ValueError(f"Base data path {base_path} does not exist or is not a directory.")
 
-    if not base_path_sources.exists() or not base_path_sources.is_dir():
-        raise ValueError(f"Base data path {base_path_sources} does not exist or is not a directory.")
-
-    subfolders = [f for f in sorted(base_path_sources.iterdir()) if f.is_dir()]
-
-    if subfolders:
-        logger.info(f"Found {len(subfolders)} source folders under {base_path_sources}.")
-
-        for folder in subfolders:
-            logger.info(f"Adding source: {folder.name}")
-
-            configs.append({
-                "indexer_options": {
-                    "source_directory": str(folder),
-                    "index_name": f"{folder.name}_index",
-                    "chunk_size": chunk_size,
-                    "chunk_overlap": chunk_overlap,
-                },
-                "retriever_options": {
-                    "similarity_top_k": top_k,
-                    "min_score": min_score,
-                },
-            })
-
+    if advocate_subfolders:
+        logger.info(f"Using only selected subfolders: {advocate_subfolders}")
+        folders_to_use = [base_path / folder_name for folder_name in advocate_subfolders]
     else:
-        logger.warning(f"No subfolders found. Using base directory {base_path_sources} as a single source.")
+        folders_to_use = [f for f in sorted(base_path.iterdir()) if f.is_dir()]
+        logger.info(f"No subfolders selected explicitly. Using all {len(folders_to_use)} available subfolders.")
+
+    if not folders_to_use:
+        logger.warning(f"No valid folders found. Using base directory {base_path} as a single source.")
+        folders_to_use = [base_path]
+
+    for folder in folders_to_use:
+        if not folder.exists() or not folder.is_dir():
+            logger.warning(f"Folder {folder} does not exist or is not a directory. Skipping.")
+            continue
 
         configs.append({
             "indexer_options": {
-                "source_directory": str(base_path_sources),
-                "index_name": f"{base_path_sources.name}_index",
+                "source_directory": str(folder),
+                "index_name": f"{folder.name}_index",
                 "chunk_size": chunk_size,
                 "chunk_overlap": chunk_overlap,
             },
@@ -209,6 +210,7 @@ def build_indexer_retriever_configs_from_base_path_sources(
 
 def get_strategy(
     base_path_sources: str = "data/sources",
+    advocate_subfolders: Optional[list[str]] = None,
     chunk_size: int = 150,
     chunk_overlap: int = 20,
     top_k: int = 8,
@@ -226,6 +228,7 @@ def get_strategy(
     Args:
         base_path_sources (str, optional): Base directory path containing source documents or subfolders. 
             Defaults to "data/sources".
+        advocate_subfolders: Specific selection of subfolders to use as Advocates.
         chunk_size (int, optional): Size of text chunks for indexing. Defaults to 150.
         chunk_overlap (int, optional): Overlap between chunks. Defaults to 20.
         top_k (int, optional): Number of top retrieval results to use. Defaults to 8.
@@ -243,6 +246,7 @@ def get_strategy(
 
     indexer_retriever_configs = build_indexer_retriever_configs_from_base_path_sources(
         base_path_sources=base_path_sources,
+        advocate_subfolders=advocate_subfolders,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap,
         top_k=top_k,
@@ -321,37 +325,91 @@ def save_validation(claim: str, verdict: str, reasoning: str, chunks: list):
     except Exception as e:
         return f"Error: {str(e)}"
 
+
 def download_source(url: str) -> tuple[str, list[dict], list[str]]:
     """
-    Downloads content and returns status, updated sources list, and updated choices
+    Downloads a single source PDF from a URL and updates the UI source list.
+
+    :param url: The url of the PDF to download
     """
     try:
         if not url:
-            return "Please enter a URL", get_available_sources(), get_source_choices()
-            
-        filename = url.split('/')[-1] or "downloaded_content.txt"
-        os.makedirs("data", exist_ok=True)
-        
-        download_pdf(url, "data", filename)
-        
-        return (
-            f"Successfully downloaded {filename}", 
-            get_available_sources(),  # Update sources table
-            get_source_choices()      # Update advocate choices
-        )
-    except Exception as e:
-        return f"Error downloading source: {str(e)}", get_available_sources(), get_source_choices()
+            return "Please enter a URL", get_available_sources(), get_subfolder_choices()
 
-def get_source_choices():
-    """Get list of available source names from data directory"""
-    try:
-        data_dir = Path("data")
-        if data_dir.exists():
-            return [f.stem for f in data_dir.glob("*") if f.is_file()]
-        return ["ipcc_ar6_wg1"]  # Updated default fallback
+        filename = url.split('/')[-1] or "downloaded_content.pdf"
+
+        success = sources_downloader.download_pdf(
+            url=url,
+            output_folder="data/sources",
+            output_filename=filename
+        )
+        
+        if success:
+            return (
+                f"Successfully downloaded {filename}",
+                get_available_sources(),
+                get_subfolder_choices()
+            )
+        else:
+            return (
+                f"Failed to download {filename}",
+                get_available_sources(),
+                get_subfolder_choices()
+            )
+        
     except Exception as e:
-        logger.error(f"Error getting source choices: {e}")
-        return ["ipcc_ar6_wg1"]  # Updated default fallback
+        logger.error(f"Error in download_source: {str(e)}")
+        return f"Error downloading source: {str(e)}", get_available_sources(), get_subfolder_choices()
+
+
+def get_subfolder_choices(base_dir: str = "data/sources") -> list[str]:
+    """
+    Get a list of subfolder names inside the given base directory.
+
+    Each subfolder typically represents a separate source collection for fact-checking.
+
+    Args:
+        base_dir (str, optional): The base directory to search for subfolders. Defaults to "data/sources".
+
+    Returns:
+        List[str]: A list of subfolder names relative to the base directory. 
+                   Returns an empty list if no subfolders are found or an error occurs.
+    """
+    try:
+        sources_dir = Path(base_dir)
+        if sources_dir.exists():
+            return [folder.name for folder in sources_dir.iterdir() if folder.is_dir()]
+        return []
+    except Exception as e:
+        logger.error(f"Error getting subfolder choices from {base_dir}: {e}")
+        return []
+
+
+def get_individual_file_choices(base_dir: str = "data/sources") -> list[str]:
+    """
+    Get a list of individual PDF file paths inside the given base directory, searched recursively.
+
+    This is useful for displaying all available source documents individually.
+
+    Args:
+        base_dir (str, optional): The base directory to search for PDF files. Defaults to "data/sources".
+
+    Returns:
+        List[str]: A list of file paths relative to the base directory for all PDFs found recursively.
+                   Returns an empty list if no files are found or an error occurs.
+    """
+    try:
+        sources_dir = Path(base_dir)
+        if sources_dir.exists():
+            return [
+                str(file.relative_to(sources_dir))
+                for file in sources_dir.rglob("*.pdf")
+            ]
+        return []
+    except Exception as e:
+        logger.error(f"Error getting individual file choices from {base_dir}: {e}")
+        return []
+
 
 def create_interface():
     theme = ClimateTheme()
@@ -431,10 +489,10 @@ def create_interface():
 
                     with gr.Column():
                         gr.Markdown("### Advocate Settings")
-                        advocate_sources = gr.CheckboxGroup(
-                            choices=get_source_choices(),  # Dynamic choices from data directory
-                            label="Select Advocates",
-                            info="Choose which sources to use as advocates",
+                        advocate_subfolders = gr.CheckboxGroup(
+                            choices=get_subfolder_choices(),  # Dynamic choices from data directory
+                            label="Select Advocate Subfolders",
+                            info="Choose which subfolders of your sources to use as advocates",
                         )
                         max_evidences = gr.Slider(
                             minimum=1,
@@ -471,7 +529,7 @@ def create_interface():
                 apply_settings.click(
                     fn=apply_settings_and_create_strategy,
                     inputs=[
-                        advocate_sources, chunk_size, chunk_overlap, top_k, min_score,
+                        advocate_subfolders, chunk_size, chunk_overlap, top_k, min_score,
                         max_evidences, advocate_temperature, mediator_temperature
                     ],
                     outputs=[settings_status]
