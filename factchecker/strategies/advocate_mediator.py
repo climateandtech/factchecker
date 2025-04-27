@@ -1,12 +1,11 @@
 import logging
 
+from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+from factchecker.retrieval.abstract_retriever import AbstractRetriever
+from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
 from factchecker.steps.advocate import AdvocateStep
 from factchecker.steps.mediator import MediatorStep
-from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
-from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from factchecker.utils.logging_config import setup_logging
-
 
 logger = logging.getLogger('factchecker.strategies')
 
@@ -36,7 +35,6 @@ class AdvocateMediatorStrategy:
             advocate_options (dict): Options for advocate behavior.
             mediator_options (dict): Options for mediator behavior.
         """
-
         if not indexer_retriever_configs:
             raise ValueError("At least one indexer-retriever configuration must be provided")
 
@@ -146,7 +144,7 @@ class AdvocateMediatorStrategy:
             logger.info(f"Getting verdict from advocate #{i+1}")
 
             # Get advocate's evaluation
-            verdict, reasoning, evidences = advocate.evaluate_evidence(claim)
+            verdict, reasoning, evidences = advocate.evaluate_claim(claim=claim)
 
             logger.info(f"Advocate returned verdict: {verdict}")
             logger.info(f"Advocate returned reasoning: {reasoning}")
