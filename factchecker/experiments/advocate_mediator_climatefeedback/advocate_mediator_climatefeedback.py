@@ -1,4 +1,6 @@
 import logging
+import os
+from pathlib import Path
 
 from llama_index.core import Settings
 
@@ -7,6 +9,7 @@ from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator
     arbitrator_primer,
 )
 from factchecker.strategies.advocate_mediator import AdvocateMediatorStrategy
+from factchecker.tools.sources_downloader import SourcesDownloader
 from factchecker.utils.climatefeedback_utils import (
     evaluate_climatefeedback_claims,
     map_verdict,
@@ -34,8 +37,7 @@ EXPERIMENT_PARAMS = {
     'chunk_overlap': 20,  # Overlap between chunks
     
     # Indexing parameters
-    'source_directory': 'data',
-    'index_name': 'advocate1_index',
+    'main_source_directory': 'data/sources',
     
     # Retrieval parameters
     'top_k': 8,  # Number of similar chunks to retrieve
@@ -43,6 +45,19 @@ EXPERIMENT_PARAMS = {
     # Label options
     'label_options': ['correct', 'incorrect', 'not_enough_information'],
 }
+
+def setup_sources(csv_file: str, output_folder: str) -> list[str]:
+    """Download the sources for the indices."""
+    downloader = SourcesDownloader(output_folder=output_folder)
+    downloaded_files = downloader.download_pdfs_from_csv(
+        csv_file, 
+        row_indices=None,
+        url_column="url",
+        output_filename_column="output_filename",
+        output_subfolder_column="output_subfolder",
+        )
+    logging.info(f"Downloaded files: {downloaded_files}")
+    return downloaded_files
 
 def setup_strategy() -> AdvocateMediatorStrategy:
     """Sets up the advocate-mediator strategy with experiment-specific options."""
@@ -52,14 +67,28 @@ def setup_strategy() -> AdvocateMediatorStrategy:
     Settings.chunk_size = EXPERIMENT_PARAMS['chunk_size']
     Settings.chunk_overlap = EXPERIMENT_PARAMS['chunk_overlap']
     
-    indexer_options_list = [{
-        'source_directory': EXPERIMENT_PARAMS['source_directory'],
-        'index_name': EXPERIMENT_PARAMS['index_name']
-    }]
+    main_source_directory = EXPERIMENT_PARAMS['main_source_directory']
 
+    # Create an indexer for each subfolder in the main sources directory
+    indexer_options_list = [
+        {
+            'source_directory': os.path.join(main_source_directory, "ipcc"),
+            'index_name': "ipcc"
+        },
+        {
+            'source_directory': os.path.join(main_source_directory, "wmo"),
+            'index_name': "wmo"
+        },
+        {
+            'source_directory': os.path.join(main_source_directory, "nipcc"),
+            'index_name': "nipcc"
+        },
+    ]
+    
+    # Create a retriever options list for each indexer.
     retriever_options_list = [{
         'top_k': EXPERIMENT_PARAMS['top_k'],
-    }]
+    } for _ in indexer_options_list]
 
     advocate_options = {
         'system_prompt': advocate_primer,
@@ -85,6 +114,12 @@ def setup_strategy() -> AdvocateMediatorStrategy:
 def main():
     # Configure logging
     configure_logging()
+
+    # Download sources
+    setup_sources(
+        csv_file="factchecker/experiments/advocate_mediator_climatefeedback/advocate_mediator_climatefeedback_sources.csv",
+        output_folder="data/sources"
+    )
 
     # Setup strategy
     strategy = setup_strategy()
