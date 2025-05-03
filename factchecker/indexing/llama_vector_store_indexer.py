@@ -19,9 +19,35 @@ logger = logging.getLogger('factchecker.indexing')
 class LlamaVectorStoreIndexer(AbstractIndexer):
     """
     LlamaVectorStoreIndexer class for creating and managing indexes using Llama's VectorStoreIndex.
+
+    Attributes:
+        options (dict[str, Any]): Configuration options for the indexer.
+        index_name (str): Name of the index.
+        index_path (Optional[str]): Path to the directory where the index is stored on disk.
+        index (Optional[Any]): In-memory index object.
+        embed_model (Optional[EmbedType]): The name of the embedding model to use.
+        storage_context_options (dict[str, Any]): Options for the storage context.
+        transformations (list[Callable]): A list of transformations to apply to the documents.
+        show_progress (bool): Whether to show progress during indexing.
     """
+
     def __init__(self, options: Optional[dict[str, Any]] = None) -> None:
-        """Initialize the LlamaVectorStoreIndexer with specified parameters."""
+        """
+        Initialize the LlamaVectorStoreIndexer with specified parameters.
+        
+        Args:
+        options (Optional[dict[str, Any]]): Configuration options which may include:
+            - index_name (str): Name of the index. Defaults to 'default_index'.
+            - index_path (Optional[str]): Path to the directory where the index is stored on disk.
+            - source_directory (str): Directory containing source data files. Defaults to 'data'.
+            - storage_context_options (dict[str, Any]): Options for the storage context.
+            - transformations (list[Callable]): A list of transformations to apply to the documents.
+            - embedding_type (str): Type of embedding model to use.
+            - embedding_model (str): Name of the embedding model to use.
+            - storage_context_options (Dict[str, Any]): Options for the storage context.
+            - transformations (List[Callable]): A list of transformations to apply to the documents.
+            - show_progress (bool): Whether to show progress during indexing.
+        """
         super().__init__(options)
         
         # Just set the path, don't create yet
