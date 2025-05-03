@@ -4,23 +4,36 @@ Climate+Tech FactChecker is designed to serve as a comprehensive toolkit for bot
 
 ## Installation
 
-     python3 -m venv venv
-     source venv/bin/activate
-     pip install -r requirements.txt
+```
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-## Project Structure
+## Quick Start
 
-The project follows a modular structure:
+1. After installation, configure the environment variables, specifically which LLM you want to use, if you want to use OpenAI or Ollama, embeddings, chunk size etc.
 
-- `factchecker/`: Main package directory
-  - `core/`: Core functionality including LLM and embedding models
-  - `experiments/`: Contains experiment scripts for different fact-checking approaches
-  - `strategies/`: Core fact-checking strategy implementations
-  - `utils/`: Utility functions and helper modules
-  - `tools/`: Utility scripts for tasks like downloading sources
-- `tests/`: Test suite following the same structure as the main package
-- `storage/`: Data storage for indices and other persistent data
-- `data/`: (gitignored) Directory for storing downloaded source documents
+-> see Section below
+
+2. Download the sources via the sources downloader
+
+```
+python -m factchecker.tools.sources_downloader
+```
+
+There is a detailled explanation on sources below
+
+3. Run an example
+
+We recommend running the Advocate Mediator example, to test if you set up everything correctly:
+
+
+```
+python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
+```
+
+
 
 ## Configuration
 
@@ -40,6 +53,24 @@ Before running the Climate+Tech FactChecker, you need to configure your environm
    - Update `OPENAI_ORGANIZATION` with your OpenAI organization ID if applicable.
    - Adjust other variables like `LLM_TYPE`, `OLLAMA_API_BASE_URL`, and `OLLAMA_MODEL` as needed for your setup.
    - Configure embedding model settings (see Embedding Models section below)
+
+
+## Project Structure
+
+The project follows a modular structure:
+
+- `factchecker/`: Main package directory
+  - `core/`: Core functionality including LLM and embedding models
+  - `experiments/`: Contains experiment scripts for different fact-checking approaches
+  - `strategies/`: Core fact-checking strategy implementations
+  - `utils/`: Utility functions and helper modules
+  - `tools/`: Utility scripts for tasks like downloading sources
+- `tests/`: Test suite following the same structure as the main package
+- `storage/`: Data storage for indices and other persistent data
+- `data/`: (gitignored) Directory for storing downloaded source documents
+
+
+## Modules explained
 
 ### Configuring the LLM
 
