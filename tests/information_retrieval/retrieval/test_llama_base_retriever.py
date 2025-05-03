@@ -1,21 +1,15 @@
-import pytest
-from unittest.mock import patch
 from factchecker.retrieval.llama_base_retriever import LlamaBaseRetriever
-from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreIndexer
+from unittest.mock import patch
+import numpy as np
 
-def fake_embedding(text):
-    # Return a vector based on a hash or a simple mapping so that identical texts produce identical vectors.
-    return [hash(text) % 100]
-
-@pytest.fixture(autouse=True)
-def patch_openai_embedding():
-    with patch('llama_index.embeddings.openai.OpenAIEmbedding', autospec=False) as mock_embedding_cls:
-        instance = mock_embedding_cls.return_value
-        instance.embed = fake_embedding  # Patch the 'embed' method
-        yield mock_embedding_cls
-
-def test_retrieve_with_llama_base_retriever(get_llama_vector_store_indexer: LlamaVectorStoreIndexer) -> None:
+@patch('llama_index.embeddings.openai.OpenAIEmbedding')
+def test_retrieve_with_llama_base_retriever(mock_embedding, get_llama_vector_store_indexer):
     """Test the LlamaBaseRetriever's ability to retrieve documents from the index."""
+
+    # Configure mock embeddings
+    mock_embedding.return_value._get_text_embedding.return_value = np.array([0.1] * 384)
+    mock_embedding.return_value._get_query_embedding.return_value = np.array([0.1] * 384)
+    
     indexer = get_llama_vector_store_indexer
 
     top_k = 2

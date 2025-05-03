@@ -1,12 +1,15 @@
+import logging
 import os
-import pytest
-from unittest.mock import mock_open, patch
-from factchecker.tools.sources_downloader import download_pdf
-from unittest.mock import patch, mock_open, Mock
-from factchecker.tools.sources_downloader import main
+from unittest.mock import Mock, mock_open, patch
 
-# Test for download_pdf function
+import requests
+
+from factchecker.tools.sources_downloader import SourcesDownloader
+
+
+# Test for download_pdf function of Sources Downloader
 def test_download_pdf_success():
+    downloader = SourcesDownloader("output_folder")
     # Mock the requests.get call to return a response with status_code 200
     with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
         mock_get.return_value.status_code = 200
@@ -14,7 +17,7 @@ def test_download_pdf_success():
 
         # Mock the open function to simulate file writing
         with patch('builtins.open', mock_open()) as mock_file:
-            download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
+            downloader.download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
 
             # Check if the file was opened in write-binary mode
             mock_file.assert_called_with(os.path.join('output_folder', 'test.pdf'), 'wb')
@@ -23,12 +26,19 @@ def test_download_pdf_success():
             mock_file().write.assert_called_once_with(b'PDF content')
 
 
-def test_download_pdf_failure(capfd):
+def test_download_pdf_failure(caplog):
+    downloader = SourcesDownloader("output_folder")
     with patch('factchecker.tools.sources_downloader.requests.get') as mock_get:
+        # Configure the mock to simulate a 404 response
         mock_get.return_value.status_code = 404
-        download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
-        out, _ = capfd.readouterr()
-        assert "Failed to download test.pdf" in out
+        mock_get.return_value.content = b''  # Ensure a bytes object is provided
+        # Simulate raise_for_status() raising an HTTPError
+        mock_get.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError("404 Client Error")
+    
+        with caplog.at_level(logging.ERROR, logger="factchecker.tools.sources_downloader"):
+            downloader.download_pdf('http://example.com/pdf', 'output_folder', 'test.pdf')
+            # Expect the error log message to contain "HTTP error occurred"
+            assert "HTTP error occurred" in caplog.text
 
 def test_output_folder_creation():
     testargs = ["prog", "--output_folder", "test_data"]
@@ -36,37 +46,40 @@ def test_output_folder_creation():
          patch('os.path.exists', return_value=False), \
          patch('os.makedirs') as mock_makedirs, \
          patch('builtins.open', mock_open()) as mock_file:
-        main()
+        # Call the CLI entry point
+        SourcesDownloader.run_cli()
         mock_makedirs.assert_called_once_with('test_data')
-        mock_file.assert_called()  # Add more specific assertions if necessary
 
 def test_output_folder_exists():
     """Test that existing output folders are handled correctly"""
     mock_args = Mock(
         sourcefile='test.csv',
         output_folder='test_data',
-        rows=None,
-        url_column='external_link'
+        row_indices=None,
+        url_column='external_link',
+        output_filename_column='output_filename',
+        output_subfolder_column='output_subfolder'
     )
     
-    # Add patch for gettext to prevent translation file reading
+    # Patch argparse to return our mock arguments.
     with patch('gettext.translation'), \
          patch('argparse.ArgumentParser.parse_args', return_value=mock_args), \
          patch('os.path.exists', return_value=True), \
          patch('os.makedirs') as mock_makedirs, \
-         patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
+         patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
             
-        main()
+        SourcesDownloader.run_cli()
         mock_makedirs.assert_not_called()
         mock_download.assert_called_once_with(
-            'test.csv', None, 'external_link', 'test_data'
+            'test.csv', None, 'external_link', 'output_filename', 'output_subfolder'
         )
 
 
 # Test the CLI argument parsing
 def test_cli_arguments():
-    testargs = ["prog", "--sourcefile", "test.csv", "--rows", "1", "2", "--url_column", "test_url", "--output_folder", "test_data"]
+    testargs = ["prog", "--sourcefile", "test.csv", "--row_indices", "1", "2", "--url_column", "test_url", "--output_folder", "test_data"]
     with patch('sys.argv', testargs):
-        with patch('factchecker.tools.sources_downloader.download_from_csv') as mock_download:
-            main()
-            mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'test_data')
+        with patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
+            SourcesDownloader.run_cli()
+            # The row_indices parameter should now be parsed as [1, 2]
+            mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'output_filename', 'output_subfolder')
