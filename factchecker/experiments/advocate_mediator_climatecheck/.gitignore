@@ -1,0 +1,3 @@
+# Ignore storage contents but keep the directory structure
+storage/*
+!storage/.gitkeep 

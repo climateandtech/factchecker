@@ -1,19 +1,22 @@
 import logging
+from typing import List, Dict, Any, Optional
 
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from llama_index.core.postprocessor import SimilarityPostprocessor
-from llama_index.core.schema import NodeWithScore
+from llama_index.core.schema import NodeWithScore, TextNode
 from factchecker.core.llm import load_llm
+
+logger = logging.getLogger(__name__)
 
 class EvidenceStep:
     """
-    A step in the fact-checking process that gathers and classifies evidence for claims.
+    A step in the fact-checking process that gathers evidence for claims.
     
-    This class handles the retrieval and filtering of relevant evidence from a document store,
-    using similarity-based search and post-processing to ensure quality results.
+    This class handles the retrieval of relevant evidence from a document store,
+    using similarity-based search to find potential matches.
     """
 
-    def __init__(self, retriever: AbstractRetriever, options: dict =None) -> None:
+    def __init__(self, retriever: AbstractRetriever, options: dict = None) -> None:
         """
         Initialize an EvidenceStep instance.
 
@@ -22,16 +25,15 @@ class EvidenceStep:
             options (dict, optional): Configuration options including:
                 - query_template: Template for formatting the search query
                 - top_k: Number of top results to retrieve
-                - min_score: Minimum similarity score threshold
+                - min_score: Minimum similarity score for retriever (not for filtering)
         """
         self.retriever = retriever
         self.options = options if options is not None else {}
-        # Extract specific options and remove them from the options hash
-        # The query_template can be customized to target specific types of evidence,
-        # e.g. "evidence for: {claim}" for supporting evidence or "evidence against: {claim}" 
-        # for contradicting evidence
         self.query_template = self.options.pop('query_template', "{claim}")
-        self.min_score = self.options.pop('min_score', 0.0)
+        
+        # Pass min_score to retriever if specified
+        if 'min_score' in self.options:
+            self.retriever.options['min_score'] = self.options.pop('min_score')
 
     def build_query(self, claim: str) -> str:
         """
@@ -45,76 +47,49 @@ class EvidenceStep:
         """
         return self.query_template.format(claim=claim)
 
-    def gather_evidence(self, claim: str):
+    def gather_evidence(self, claim: str) -> List[str]:
         """
-        Gather and filter evidence relevant to a given claim.
+        Gather evidence relevant to a given claim.
 
         Args:
             claim (str): The claim to gather evidence for
 
         Returns:
-            list: List of filtered evidence nodes that meet the similarity threshold
+            list[str]: List of evidence texts found by the retriever
         """
-        query = self.build_query(claim)
-        evidence = self.retriever.retrieve(query)
+        try:
+            query = self.build_query(claim)
+            evidence = self.retriever.retrieve(query)
 
-        # Check if evidence is a list and if its elements are NodeWithScore objects
-        if not isinstance(evidence, list):
-            logging.error("Expected evidence to be a list, but got %s. Returning empty list.", type(evidence))
-            return []
-        if evidence and not isinstance(evidence[0], NodeWithScore):
-            logging.error("Evidence items are not NodeWithScore objects (first item is %s). Returning empty list.", type(evidence[0]))
-            return []
-        logging.info(f"Retrieved {len(evidence)} evidence nodes for claim: {claim}")
-
-        # Filter evidence based on similarity score
-        filtered_evidence = self.classify_evidence(evidence)
-        logging.info(f"Filtered to {len(filtered_evidence)} evidence nodes with similarity score > {self.min_score}")
-        if not filtered_evidence:
-            return []
-        
-        # Extract text from evidence nodes
-        evidence_texts = self.extract_text_from_evidence(filtered_evidence)
-        logging.info(f"Extracted text from {len(evidence_texts)} evidence nodes")
-
-        return evidence_texts
-    
-    def extract_text_from_evidence(self, evidence: list[NodeWithScore]) -> list[str]:
-        """
-        Extract text from evidence nodes.
-
-        Args:
-            evidence (list): List of evidence nodes to extract text from
-
-        Returns:
-            list: List of text strings extracted from evidence nodes
-
-        """
-        # check if evidence is a list
-        if evidence is not None and isinstance(evidence, list):
-            if evidence and isinstance(evidence[0], NodeWithScore):
-                # For each NodeWithScore, extract the text from its node attribute.
-                evidence_texts = [item.node.text for item in evidence]
-                return evidence_texts
-            else: 
-                raise ValueError("Evidence must be a list of NodeWithScore objects")
-        else: 
-            logging.WARNING(f"Trying to extract text from non-list object: {evidence}")
-            return []
-        
+            # Check if evidence is a list and has required attributes
+            if not isinstance(evidence, list):
+                logger.error("Expected evidence to be a list, but got %s. Returning empty list.", type(evidence))
+                return []
             
+            if not evidence:
+                logger.info("No evidence found for claim")
+                return []
 
-    def classify_evidence(self, evidence: list[NodeWithScore]) -> list[NodeWithScore]:
-        """
-        Filter and classify evidence based on similarity scores.
+            # Log evidence scores for debugging
+            logger.info(f"Retrieved {len(evidence)} evidence nodes for claim: {claim}")
+            for i, item in enumerate(evidence):
+                score = getattr(item, 'score', None) or (
+                    getattr(item.node, 'score', None) if hasattr(item, 'node') else None
+                )
+                logger.debug(f"Evidence {i+1} score: {score}")
 
-        Args:
-            evidence (list): List of evidence nodes to classify
+            # Convert evidence to text list
+            evidence_texts = []
+            for item in evidence:
+                if hasattr(item, 'text'):
+                    evidence_texts.append(item.text)
+                elif hasattr(item, 'node') and hasattr(item.node, 'text'):
+                    evidence_texts.append(item.node.text)
+                else:
+                    logger.warning(f"Skipping evidence item without text attribute: {item}")
 
-        Returns:
-            list: Filtered list of evidence nodes that meet the similarity threshold
+            return evidence_texts
 
-        """
-        processor = SimilarityPostprocessor(similarity_cutoff=self.min_score, **self.options)
-        filtered_evidence = processor.postprocess_nodes(evidence)
-        return filtered_evidence
+        except Exception as e:
+            logger.error(f"Error gathering evidence: {str(e)}")
+            return []
