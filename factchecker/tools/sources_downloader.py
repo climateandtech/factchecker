@@ -63,7 +63,7 @@ class SourcesDownloader:
             output_filename (str): The filename to use for the saved document.
             
         Returns:
-            bool: True if download was successful, False otherwise
+            bool: True if download was successful or file already exists, False otherwise
         """
         # Validate URL before attempting download
         if not self._is_valid_url(url):
@@ -73,32 +73,37 @@ class SourcesDownloader:
         # Ensure the filename ends with '.pdf'
         if not output_filename.lower().endswith('.pdf'):
             output_filename += '.pdf'
-        
-        try:
-            # Add timeout to prevent hanging on slow servers
-            response = requests.get(url, timeout=30)
-            response.raise_for_status()  # Raise exception for 4XX/5XX responses
             
-            pdf_path = os.path.join(output_folder, output_filename)
-            with open(pdf_path, 'wb') as f:
-                f.write(response.content)
+        # Create output folder if it doesn't exist
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+            
+        output_path = os.path.join(output_folder, output_filename)
+        
+        # Check if file already exists
+        if os.path.exists(output_path):
+            logger.info(f"File already exists, skipping: {output_path}")
+            return True
+            
+        try:
+            # Download the file
+            response = requests.get(url, stream=True)
+            response.raise_for_status()
+            
+            # Save the file
+            with open(output_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        
             logger.info(f"Downloaded {output_filename} to {output_folder}")
             return True
             
-        except requests.exceptions.Timeout:
-            logger.error(f"Request timed out for {url}")
-            return False
-        except requests.exceptions.HTTPError as e:
-            logger.error(f"HTTP error occurred for {url}: {e}")
-            return False
-        except requests.exceptions.ConnectionError:
-            logger.error(f"Connection error occurred for {url}")
-            return False
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Error occurred during request for {url}: {e}")
-            return False
-        except IOError as e:
-            logger.error(f"IO error occurred while saving {output_filename}: {e}")
+        except Exception as e:
+            logger.error(f"Error downloading {url}: {str(e)}")
+            # Clean up partially downloaded file if it exists
+            if os.path.exists(output_path):
+                os.remove(output_path)
             return False
 
     def download_pdfs_from_csv(
@@ -129,7 +134,7 @@ class SourcesDownloader:
             KeyError: If the specified url_column does not exist in the CSV file.
         
         Returns:
-            list[str]: A list of file paths for the downloaded documents.
+            list[str]: A list of file paths for all available documents (both downloaded and existing).
 
         """
         downloaded_files = []
@@ -138,35 +143,50 @@ class SourcesDownloader:
         if not os.path.isfile(sourcefile):
             logger.error(f"Source file not found: {sourcefile}")
             raise FileNotFoundError(f"Source file not found: {sourcefile}")
-        
-        with open(sourcefile, 'r') as csvfile:
-            reader = csv.DictReader(csvfile, skipinitialspace=True)
             
-            # Validate that required columns exist
-            if reader.fieldnames and url_column not in reader.fieldnames:
-                logger.error(f"Column {url_column} does not exist in the CSV file.")
-                raise KeyError(f"Column {url_column} does not exist in the CSV file.")
-            
-            for i, row in enumerate(reader):
-                if row_indices and i not in row_indices:
-                    continue
+        try:
+            with open(sourcefile, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
                 
-                url = row.get(url_column, "").strip()
-                if not url:
-                    logger.warning(f"Empty URL in row {i}, skipping")
-                    continue
+                # Verify required columns exist
+                if url_column not in reader.fieldnames:
+                    raise KeyError(f"URL column '{url_column}' not found in CSV")
+                if output_filename_column not in reader.fieldnames:
+                    raise KeyError(f"Output filename column '{output_filename_column}' not found in CSV")
+                if output_subfolder_column not in reader.fieldnames:
+                    raise KeyError(f"Output subfolder column '{output_subfolder_column}' not found in CSV")
+                
+                # Process each row
+                for idx, row in enumerate(reader):
+                    if row_indices is not None and idx not in row_indices:
+                        continue
+                        
+                    url = row[url_column].strip()
+                    output_filename = row[output_filename_column].strip()
+                    output_subfolder = row[output_subfolder_column].strip()
                     
-                output_filename = row.get(output_filename_column, f"document_{i}.pdf")
-                subfolder = row.get(output_subfolder_column, "").strip()
-                output_folder = os.path.join(self.output_folder, subfolder) if subfolder else self.output_folder
-                
-                if not os.path.exists(output_folder):
-                    os.makedirs(output_folder)
-                
-                success = self.download_pdf(url, output_folder, output_filename)
-                if success:
-                    downloaded_files.append(os.path.join(output_folder, output_filename))
-                
+                    if not url or not output_filename:
+                        logger.warning(f"Skipping row {idx}: Missing URL or filename")
+                        continue
+                        
+                    # Create full output path
+                    output_folder = os.path.join(self.output_folder, output_subfolder)
+                    output_path = os.path.join(output_folder, output_filename)
+                    
+                    # Check if file already exists
+                    if os.path.exists(output_path):
+                        logger.info(f"File already exists: {output_path}")
+                        downloaded_files.append(output_path)
+                        continue
+                    
+                    # Download the file
+                    if self.download_pdf(url, output_folder, output_filename):
+                        downloaded_files.append(output_path)
+                    
+        except Exception as e:
+            logger.error(f"Error processing CSV file: {str(e)}")
+            raise
+            
         return downloaded_files
 
     @staticmethod
@@ -207,30 +227,27 @@ class SourcesDownloader:
         )
         parser.add_argument(
             '--output_filename_column', type=str, default='output_filename',
-            help='Specify the column containing filenames for downloaded files.'
+            help='Specify the column containing output filenames.'
         )
         parser.add_argument(
             '--output_subfolder_column', type=str, default='output_subfolder',
-            help='Specify the column containing subfolders for downloaded files.'
+            help='Specify the column containing output subfolders.'
         )
         parser.add_argument(
-            '--output_folder', type=str, default='data/sources',
-            help='Main output folder for the downloaded source documents.'
+            '--output_folder', type=str, default='data',
+            help='Main output folder for downloaded documents.'
         )
+        
         args = parser.parse_args()
-
-        downloader = SourcesDownloader(args.output_folder)
-        try:
-            downloader.download_pdfs_from_csv(
-                args.sourcefile, 
-                args.row_indices, 
-                args.url_column,
-                args.output_filename_column,
-                args.output_subfolder_column
-            )
-        except (FileNotFoundError, KeyError) as e:
-            logger.error(f"Error: {e}")
-            exit(1)
+        
+        downloader = SourcesDownloader(output_folder=args.output_folder)
+        downloader.download_pdfs_from_csv(
+            sourcefile=args.sourcefile,
+            row_indices=args.row_indices,
+            url_column=args.url_column,
+            output_filename_column=args.output_filename_column,
+            output_subfolder_column=args.output_subfolder_column
+        )
 
 if __name__ == "__main__":
     SourcesDownloader.run_cli()

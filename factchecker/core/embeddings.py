@@ -1,92 +1,97 @@
 import os
+from typing import Optional, List, Dict, Any
+import logging
+import logging.handlers
+from ollama import Client as OllamaClient
+import numpy as np
 
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.embeddings.ollama import OllamaEmbedding
-from llama_index.embeddings.openai import OpenAIEmbedding
+logger = logging.getLogger(__name__)
 
+# Set up a dedicated file logger for embedding progress
+embedding_logger = logging.getLogger("embedding_progress")
+embedding_logger.setLevel(logging.INFO)
+embedding_logger.propagate = False  # Don't send to parent logger
 
-def load_embedding_model(
-    embedding_type=None,
-    model_name=None,
-    api_key=None,
-    api_base=None,
-    **kwargs
-):
-    """
-    Load and configure an embedding model based on specified parameters.
+# Create logs directory if it doesn't exist
+os.makedirs("logs", exist_ok=True)
 
-    This function initializes an embedding model instance (OpenAI, HuggingFace, or Ollama)
-    with configuration from provided parameters or environment variables. It supports flexible
-    configuration through both direct parameters and environment variables.
-
-    Args:
-        embedding_type (str, optional): Type of embedding model to use ('openai', 'huggingface', or 'ollama').
-            Defaults to env var EMBEDDING_TYPE or 'openai'.
-        model_name (str, optional): Name of the model to use. Defaults vary by embedding type:
-            - OpenAI: env var OPENAI_EMBEDDING_MODEL or 'text-embedding-ada-002'
-            - HuggingFace: env var HUGGINGFACE_EMBEDDING_MODEL or 'BAAI/bge-small-en-v1.5'
-            - Ollama: env var OLLAMA_MODEL or 'nomic-embed-text'
-        api_key (str, optional): API key for OpenAI. Defaults to env var OPENAI_API_KEY.
-        api_base (str, optional): Base API URL. Defaults vary by embedding type:
-            - OpenAI: env var OPENAI_API_BASE
-            - Ollama: env var OLLAMA_API_BASE_URL or 'http://localhost:11434'
-        **kwargs: Additional keyword arguments passed to the embedding model constructor.
-
-    Returns:
-        Union[OpenAIEmbedding, HuggingFaceEmbedding, OllamaEmbedding]: Configured embedding model instance.
-
-    Raises:
-        ValueError: If OpenAI API key is missing when using OpenAI embeddings
-        ValueError: If unsupported embedding type is specified
-
-    Environment Variables:
-        EMBEDDING_TYPE: Type of embedding model to use
-        OPENAI_EMBEDDING_MODEL: Model name for OpenAI embeddings
-        OPENAI_API_KEY: API key for OpenAI
-        OPENAI_API_BASE: Base URL for OpenAI API
-        HUGGINGFACE_EMBEDDING_MODEL: Model name for HuggingFace embeddings
-        OLLAMA_MODEL: Model name for Ollama embeddings
-        OLLAMA_API_BASE_URL: Base URL for Ollama API
-    """
-    embedding_type = embedding_type or os.getenv("EMBEDDING_TYPE", "openai").lower()
+# Check if handler already exists to avoid duplicates
+if not embedding_logger.handlers:
+    # Create a file handler for the embedding logger
+    embedding_file_handler = logging.FileHandler("logs/embedding_progress.log", mode="w")
+    embedding_file_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+    embedding_logger.addHandler(embedding_file_handler)
     
-    if embedding_type == "openai":
-        model_name = model_name or os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
-        api_key = api_key or os.getenv("OPENAI_API_KEY")
-        api_base = api_base or os.getenv("OPENAI_API_BASE")
+    # Also add a console handler for direct visibility
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(logging.Formatter('EMBEDDING: %(message)s'))
+    embedding_logger.addHandler(console_handler)
+
+# Log startup message to confirm logger is working
+embedding_logger.info("Embedding progress logger initialized")
+
+class DirectOllamaEmbedding:
+    """Direct Ollama embedding class using the official client."""
+    
+    def __init__(self, model_name: str = "bge-m3", base_url: Optional[str] = None):
+        """Initialize with direct Ollama client."""
+        self._client = OllamaClient(host=base_url) if base_url else OllamaClient()
+        self._model = model_name
+        self._embedding_cache: Dict[str, List[float]] = {}
+        embedding_logger.info(f"DirectOllamaEmbedding initialized with model {model_name}")
         
-        if not api_key:
-            raise ValueError("OpenAI API key is required")
+    def get_text_embedding(self, text: str) -> List[float]:
+        """Get embedding for a single text."""
+        embedding_logger.info("ENTRY: get_text_embedding called for single text")
+        # Check cache first
+        if text in self._embedding_cache:
+            embedding_logger.info("Cache hit for single text embedding")
+            return self._embedding_cache[text]
+            
+        embedding_logger.info(f"Getting single embedding for text of length {len(text)}")
+        response = self._client.embeddings(model=self._model, prompt=text)
+        embedding_logger.info("Successfully got single embedding")
+        embedding = response['embedding']
+        self._embedding_cache[text] = embedding
+        return embedding
+
+    def get_text_embeddings(self, texts: List[str], show_progress: bool = True) -> List[List[float]]:
+        """Get embeddings for multiple texts."""
+        embedding_logger.info(f"ENTRY: get_text_embeddings called with {len(texts)} texts")
+        # Check which texts need to be embedded
+        texts_to_embed = [text for text in texts if text not in self._embedding_cache]
         
-        return OpenAIEmbedding(
-            model_name=model_name,
-            api_key=api_key,
-            api_base=api_base,
-            **kwargs
-        )
+        if texts_to_embed:
+            # Process each text individually since Ollama doesn't support true batching
+            embedding_logger.info(f"Getting embeddings for {len(texts_to_embed)} texts")
+            for i, text in enumerate(texts_to_embed):
+                if show_progress and i % 10 == 0:
+                    embedding_logger.info(f"Processing text {i+1}/{len(texts_to_embed)}")
+                response = self._client.embeddings(model=self._model, prompt=text)
+                self._embedding_cache[text] = response['embedding']
+        else:
+            embedding_logger.info("All texts found in cache")
         
-    elif embedding_type == "huggingface":
-        model_name = model_name or os.getenv("HUGGINGFACE_EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5")
+        # Return embeddings from cache
+        return [self._embedding_cache[text] for text in texts]
+
+    def similarity(self, embedding1: List[float], embedding2: List[float], mode: str = "cosine") -> float:
+        """Compute similarity between two embeddings."""
+        # Convert to numpy arrays
+        emb1 = np.array(embedding1)
+        emb2 = np.array(embedding2)
         
-        return HuggingFaceEmbedding(
-            model_name=model_name,
-            **kwargs
-        )
-        
-    elif embedding_type == "ollama":
-        model_name = model_name or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
-        api_base = api_base or os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
-        
-        return OllamaEmbedding(
-            model_name=model_name,
-            base_url=api_base,
-            **kwargs
-        )
-        
-    elif embedding_type == "mock":
-        from tests.conftest import MockEmbedding
-        mock_dim = int(os.getenv("MOCK_EMBED_DIM", "384"))
-        return MockEmbedding(dim=mock_dim)
-        
-    else:
-        raise ValueError(f"Unsupported embedding type: {embedding_type}")
+        if mode == "cosine":
+            # Compute cosine similarity
+            return float(np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2)))
+        else:
+            raise ValueError(f"Unsupported similarity mode: {mode}")
+
+def load_embedding_model(**kwargs) -> DirectOllamaEmbedding:
+    """Load the embedding model based on environment variables and kwargs."""
+    model_name = kwargs.pop('model_name', os.getenv('OLLAMA_MODEL', 'bge-m3'))
+    base_url = kwargs.pop('base_url', os.getenv('OLLAMA_API_BASE_URL'))
+    return DirectOllamaEmbedding(
+        model_name=model_name,
+        base_url=base_url,
+    )

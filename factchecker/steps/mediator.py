@@ -75,7 +75,18 @@ class MediatorStep:
 
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **valid_options)
-            response_content = response.message.content.strip()
+            
+            # Add debugger for response inspection
+            import pdb; pdb.set_trace()  # Debugger for response inspection
+            
+            # Handle different response formats (Ollama vs OpenAI)
+            if isinstance(response, dict):
+                # Ollama format
+                response_content = response['message']['content'].strip()
+            else:
+                # OpenAI format
+                response_content = response.message.content.strip() if hasattr(response.message, 'content') else response.content.strip()
+            
             logger.debug(f"LLM response content: {response_content}")
             
             final_verdict = self.parser.parse_verdict(response_content)

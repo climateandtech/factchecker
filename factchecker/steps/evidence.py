@@ -76,7 +76,15 @@ class EvidenceStep:
                 score = getattr(item, 'score', None) or (
                     getattr(item.node, 'score', None) if hasattr(item, 'node') else None
                 )
-                logger.debug(f"Evidence {i+1} score: {score}")
+                # Change to INFO level and show text preview
+                if hasattr(item, 'text'):
+                    text = item.text[:150] + "..."
+                elif hasattr(item, 'node') and hasattr(item.node, 'text'):
+                    text = item.node.text[:150] + "..."
+                else:
+                    text = "No text available"
+                
+                logger.info(f"Evidence {i+1} score: {score} - {text}")
 
             # Convert evidence to text list
             evidence_texts = []
