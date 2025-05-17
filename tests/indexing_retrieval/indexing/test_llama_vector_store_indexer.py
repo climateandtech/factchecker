@@ -4,12 +4,6 @@ from factchecker.indexing.llama_vector_store_indexer import LlamaVectorStoreInde
 import pytest
 from llama_index.core import Document
 
-@patch('llama_index.embeddings.openai.OpenAIEmbedding')
-def test_initialize_index_from_documents(mock_embedding, get_test_documents):
-    # Configure mock to return fixed embeddings
-    mock_embedding.return_value._get_text_embedding.return_value = np.array([0.1] * 384)
-    mock_embedding.return_value._get_query_embedding.return_value = np.array([0.1] * 384)
-
 @pytest.mark.integration
 def test_initialize_index_from_documents(get_test_documents: list[Document]) -> None:
     """Initialize an index with a list of documents."""
