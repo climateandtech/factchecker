@@ -59,6 +59,6 @@ class MediatorStep:
                 final_verdict = response_content[start+2:end].strip().upper().replace(" ", "_")
                 return final_verdict
             else:
-                logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
+                logging.warning(f"Unexpected mediator response content on attempt {attempt + 1}: {response_content}")
         
         return "ERROR_PARSING_RESPONSE"

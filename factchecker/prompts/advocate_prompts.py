@@ -48,6 +48,8 @@ def get_default_user_prompt(
         claim: str,
         evidence: list[str],
         label_options: list[str] | dict[str, str],
+        context: str = "",
+        with_context: bool = False,
     ) -> str:
     """
     Returns the default user prompt for the advocate step, formatted as a JSON-like structure.
@@ -74,6 +76,13 @@ def get_default_user_prompt(
         "evidence": evidence,
         "label_options": label_options
     }
+
+    if with_context:
+        input_data.update(
+            {
+                "context": context
+            }
+        )
 
     # Return as formatted JSON string for better readability
     return json.dumps(input_data, indent=4, ensure_ascii=False)
