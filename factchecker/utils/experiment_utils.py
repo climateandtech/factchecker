@@ -11,11 +11,68 @@ from llama_index.core import Settings
 logger = logging.getLogger(__name__)
 
 def configure_logging():
-    """Configure basic logging for experiments."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+    """Configure logging for experiments with both file and console output."""
+    import logging.handlers
+    import multiprocessing
+    import os
+    from datetime import datetime
+    import queue
+    import threading
+    
+    # Create logs directory if it doesn't exist
+    log_dir = "logs"
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Generate timestamp for log file
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_file = os.path.join(log_dir, f"experiment_{timestamp}.log")
+    
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    
+    # Clear any existing handlers
+    root_logger.handlers = []
+    
+    # Create formatters
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(processName)s - %(name)s - %(levelname)s - %(message)s'
     )
+    
+    # File handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(detailed_formatter)
+    root_logger.addHandler(file_handler)
+    
+    # Console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(detailed_formatter)
+    root_logger.addHandler(console_handler)
+    
+    # Set up queue logging for multiprocessing
+    if multiprocessing.current_process().name != 'MainProcess':
+        # Create a queue handler
+        queue_handler = logging.handlers.QueueHandler(multiprocessing.Queue())
+        root_logger.addHandler(queue_handler)
+        
+        # Start queue listener in a separate thread
+        def queue_listener():
+            while True:
+                try:
+                    record = queue_handler.queue.get()
+                    if record is None:
+                        break
+                    logger = logging.getLogger(record.name)
+                    logger.handle(record)
+                except (KeyboardInterrupt, SystemExit):
+                    break
+                except Exception:
+                    import traceback
+                    traceback.print_exc()
+        
+        listener_thread = threading.Thread(target=queue_listener)
+        listener_thread.daemon = True
+        listener_thread.start()
 
 def configure_llama_index():
     """Configure LlamaIndex settings."""
@@ -179,7 +236,8 @@ def create_results_dataframe(
 def save_results(
     results_df: pd.DataFrame,
     base_path: str = "experiments/results",
-    prefix: str = "claims_results"
+    prefix: str = "claims_results",
+    custom_path: Optional[str] = None
 ) -> str:
     """
     Saves results DataFrame to a timestamped CSV file.
@@ -188,18 +246,26 @@ def save_results(
         results_df: DataFrame containing results
         base_path: Directory to save results in
         prefix: Prefix for the filename
+        custom_path: Optional custom full path for the results file
         
     Returns:
         Path to the saved file
-        
-    Raises:
-        ValueError: If results_df is empty
     """
-    if results_df.empty:
-        raise ValueError("Cannot save empty results DataFrame")
+    if custom_path:
+        # Use custom path directly
+        os.makedirs(os.path.dirname(custom_path), exist_ok=True)
+        results_df.to_csv(custom_path, index=False)
+        logger.info(f"Results saved to custom path: {custom_path}")
+        return custom_path
+    else:
+        # Use timestamped file in base_path
+        os.makedirs(base_path, exist_ok=True)
         
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"{base_path}/{prefix}_{timestamp}.csv"
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    results_df.to_csv(filename, index=False)
-    return filename 
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{prefix}_{timestamp}.csv"
+        filepath = os.path.join(base_path, filename)
+        
+        results_df.to_csv(filepath, index=False)
+        logger.info(f"Results saved to: {filepath}")
+        
+        return filepath 

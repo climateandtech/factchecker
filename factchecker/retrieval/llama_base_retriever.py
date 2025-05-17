@@ -14,6 +14,7 @@ class LlamaBaseRetriever(AbstractRetriever):
         super().create_retriever()
         self.retriever = self.indexer.index.as_retriever(
             similarity_top_k=self.top_k,
+            mode="default",  # This should return NodeWithScore by default
             **self.options
         )
 

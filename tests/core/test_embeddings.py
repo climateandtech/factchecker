@@ -128,7 +128,10 @@ def test_load_ollama_embedding(mock_env: MonkeyPatch, mock_ollama: MagicMock) ->
     
     mock_ollama.assert_called_once_with(
         model_name="nomic-embed-text",
-        base_url="http://localhost:11434"
+        base_url="http://localhost:11434",
+        embed_batch_size=32,
+        show_progress=True,
+        additional_kwargs={}
     )
 
 def test_load_ollama_embedding_from_env(mock_env: MonkeyPatch, mock_ollama: MagicMock) -> None:
@@ -141,40 +144,55 @@ def test_load_ollama_embedding_from_env(mock_env: MonkeyPatch, mock_ollama: Magi
     
     mock_ollama.assert_called_once_with(
         model_name="nomic-embed-text",
-        base_url="http://localhost:11434"
+        base_url="http://localhost:11434",
+        embed_batch_size=32,
+        show_progress=True,
+        additional_kwargs={}
     )
-
 
 def test_load_ollama_embedding_custom(mock_ollama: MagicMock) -> None:
     """Test loading Ollama embedding with custom settings."""
     _ = load_embedding_model(
         embedding_type="ollama",
         model_name="custom-model",
-        api_base="http://custom-server:11434"
-    )
-    
-    mock_ollama.assert_called_once_with(
-        model_name="custom-model",
-        base_url="http://custom-server:11434"
-    )
-
-def test_load_ollama_embedding_with_kwargs(mock_ollama: MagicMock) -> None:
-    """Test loading Ollama embedding with extra kwargs."""
-    extra_kwargs = {"timeout": 30, "request_timeout": 60}
-    
-    _ = load_embedding_model(
-        embedding_type="ollama",
-        model_name="custom-model",
         api_base="http://custom-server:11434",
-        **extra_kwargs
+        embed_batch_size=64,
+        show_progress=False
     )
     
     mock_ollama.assert_called_once_with(
         model_name="custom-model",
         base_url="http://custom-server:11434",
-        **extra_kwargs
+        embed_batch_size=64,
+        show_progress=False,
+        additional_kwargs={}
     )
 
+def test_load_ollama_embedding_with_kwargs(mock_ollama: MagicMock) -> None:
+    """Test loading Ollama embedding with extra kwargs."""
+    _ = load_embedding_model(
+        embedding_type="ollama",
+        model_name="custom-model",
+        api_base="http://custom-server:11434",
+        embed_batch_size=150,
+        additional_kwargs={
+            "request_timeout": 120,
+            "max_retries": 3,
+            "max_concurrent": 6
+        }
+    )
+    
+    mock_ollama.assert_called_once_with(
+        model_name="custom-model",
+        base_url="http://custom-server:11434",
+        embed_batch_size=150,
+        show_progress=True,
+        additional_kwargs={
+            "request_timeout": 120,
+            "max_retries": 3,
+            "max_concurrent": 6
+        }
+    )
 
 def test_invalid_embedding_type() -> None:
     """Test error handling for invalid embedding type."""
