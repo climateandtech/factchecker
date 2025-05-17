@@ -44,7 +44,7 @@ EXPERIMENT_PARAMS = {
     'main_source_directory': 'data/papers',  # Base directory for papers
     'index_name': 'climatecheck_index',  # Name for the persisted index
     'index_path': 'data/indices/climatecheck',  # Path to store the index
-    'force_rebuild': False,  # Don't rebuild if index exists
+    'force_rebuild': True,  # Force rebuild to use correct embedding model
     
     # Retrieval parameters
     'top_k': 8,  # Number of similar chunks to retrieve
@@ -54,6 +54,10 @@ EXPERIMENT_PARAMS = {
     'llm_model': 'qwen:14b',  # Use Qwen 2.5 14B
     'temperature': 0.1,  # Temperature for the LLM
     'context_window': 131072,  # Qwen 2.5 14B's actual context window size
+    
+    # Embedding parameters
+    'embedding_provider': 'ollama',  # Use Ollama by default, can be 'huggingface' for local
+    'embedding_device': None,  # Will auto-detect GPU if available for HuggingFace
     
     # Label options
     'label_options': ['SUPPORTS', 'REFUTES', 'NOT_ENOUGH_INFO'],  # Updated to match dataset annotations
@@ -123,6 +127,12 @@ def setup_specialized_advocate_strategy(papers: Optional[List[Dict[str, Any]]] =
         model=EXPERIMENT_PARAMS['llm_model'],
         temperature=EXPERIMENT_PARAMS['temperature'],
         context_window=EXPERIMENT_PARAMS['context_window']
+    )
+    
+    # Configure embeddings
+    Settings.embed_model = load_embedding_model(
+        provider=EXPERIMENT_PARAMS['embedding_provider'],
+        device=EXPERIMENT_PARAMS['embedding_device']
     )
     
     # Set index path
