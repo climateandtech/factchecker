@@ -88,6 +88,7 @@ class AbstractIndexer(ABC):
         logger.debug(f"Initializing indexer with options: {options}")
         self.options = options or {}
         self.index_name = self.options.pop('index_name', 'default_index')
+        self.initial_documents = self.options.pop('documents', None)
         self.storage_path = Path(self.options.pop('storage_path', f"indexes/{self.index_name}"))
         self.chunk_size = self.options.pop('chunk_size', 150)
         self.chunk_overlap = self.options.pop('chunk_overlap', 20)

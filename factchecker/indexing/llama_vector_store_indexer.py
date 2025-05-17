@@ -50,9 +50,9 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
         """
         super().__init__(options)
         
-        # Just set the path, don't create yet
-        base_dir = Path.cwd() / "storage"
-        self.storage_path = base_dir / "indices" / self.index_name
+        # # Just set the path, don't create yet
+        # base_dir = Path.cwd() / "storage"
+        # self.storage_path = base_dir / "indices" / self.index_name
         
         logger.debug(f"Using storage path: {self.storage_path}")
         
