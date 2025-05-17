@@ -3,6 +3,8 @@ import logging
 import os
 from factchecker.core.llm import load_llm
 
+logger = logging.getLogger('factchecker.steps')
+
 class MediatorStep:
     """
     A step in the fact-checking process that mediates between multiple advocate verdicts.
@@ -27,25 +29,25 @@ class MediatorStep:
         self.max_retries = 3
 
     def synthesize_verdicts(self, verdicts_and_reasonings, claim):
-        """
-        Synthesize multiple verdicts and their reasoning into a final consensus verdict.
-
-        Args:
-            verdicts_and_reasonings (list): List of (verdict, reasoning) tuples from advocates
-            claim (str): The claim being evaluated
-
-        Returns:
-            str: The final consensus verdict (CORRECT, INCORRECT, NOT_ENOUGH_INFORMATION, or ERROR_PARSING_RESPONSE)
-        """
+        logger.info(f"Mediator received claim: {claim}")
+        
+        if not verdicts_and_reasonings:  # Add this check
+            logger.warning("No verdicts provided to mediator")
+            return "NOT_ENOUGH_INFORMATION", "No sources were selected for fact-checking. Please select at least one source and try again."
+        
+        system_prompt_with_claim = self.prompt.format(claim=claim)
+        logger.info(f"System prompt after formatting: {system_prompt_with_claim[:200]}...")  # First 200 chars
+        
         # Format the verdicts and reasonings with <> tags
         formatted_verdicts_and_reasonings = "\n".join(
             [f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>" for verdict, reasoning in verdicts_and_reasonings]
         )
         
         messages = [
-            ChatMessage(role="system", content=self.system_prompt),
-            ChatMessage(role="user", content=f"Here are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information)) for the claim: {claim}")
+            ChatMessage(role="system", content=system_prompt_with_claim),
+            ChatMessage(role="user", content=f"Claim to evaluate: {claim}\n\nHere are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\nPlease provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information))")
         ]
+        logger.info(f"User message content: {messages[1].content[:200]}...")  # First 200 chars
         
         valid_options = {key: value for key, value in self.additional_options.items() if key in ["response_format", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"]}
 
@@ -57,8 +59,8 @@ class MediatorStep:
             end = response_content.find("))")
             if start != -1 and end != -1:
                 final_verdict = response_content[start+2:end].strip().upper().replace(" ", "_")
-                return final_verdict
+                return final_verdict, response_content
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
         
-        return "ERROR_PARSING_RESPONSE"
+        return "ERROR_PARSING_RESPONSE", "No reasoning available"

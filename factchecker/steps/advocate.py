@@ -1,4 +1,5 @@
 import logging
+import copy
 
 from llama_index.core.llms import ChatMessage
 
@@ -43,7 +44,7 @@ class AdvocateStep:
         """Initialize an AdvocateStep instance."""
         self.retriever = retriever
         self.llm = llm if llm is not None else load_llm()
-        self.options = options if options is not None else {}
+        self.options = copy.deepcopy(options or {}) # Use deepcopy to avoid modifying the original options with pop
         self.evidence_options = evidence_options if evidence_options is not None else {}
         self.system_prompt = self.options.pop('system_prompt', get_default_system_prompt())
         self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
@@ -71,7 +72,8 @@ class AdvocateStep:
         """
         return self.evidence_step.gather_evidence(claim)
 
-    def evaluate_claim(self, claim: str) -> tuple[str, str]:
+
+    def evaluate_claim(self, claim: str) -> tuple[str, str ,list]:
         """
         Evaluate a claim based on gathered evidence using the language model.
 
@@ -79,33 +81,43 @@ class AdvocateStep:
             claim (str): The claim to evaluate.
 
         Returns:
-            A tuple including the label and reasoning.
+            tuple[str, str, list]: A tuple containing:
+                - verdict (str): The verdict label (e.g., "TRUE", "FALSE")
+                - reasoning (str): The reasoning behind the verdict
+                - evidence (list): The evidence used to evaluate the claim
 
         """
         # Retrieve evidence for the claim
         evidence_list = self.retrieve_evidence(claim)
 
         # Define the message containing the payload for the LLM
-        user_prompt = get_default_user_prompt(claim=claim, evidence=evidence_list, label_options=self.label_options)
+        user_prompt = get_default_user_prompt(
+            claim=claim, 
+            evidence_list=evidence_list, 
+            label_options=self.label_options,
+        )
 
         messages = [
             ChatMessage(role="system", content=self.system_prompt),
             ChatMessage(role="user", content=user_prompt)
         ]
 
-
+        # Try to get a valid response from the LLM
         for attempt in range(self.max_retries):
             response = self.llm.chat(messages, **self.chat_completion_options)
             response_content = response.message.content.strip()
+
+            # TODO: Add more robust ways of getting verdict and reasoning from the response
+
             # Extract the verdict from the response
             start = response_content.find("((")
             end = response_content.find("))")
+
             if start != -1 and end != -1:
                 label = response_content[start+2:end].strip().upper().replace(" ", "_")
-                # Remove the label inside (( )) from the response content
-                reasoning = response_content[:start].strip() + response_content[end+2:].strip()
-                return label, reasoning
+                reasoning = response_content.strip()  # Return the whole response_content as reasoning
+                return label, reasoning, evidence_list
             else:
                 logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
         
-        return "ERROR_PARSING_RESPONSE", "No reasoning available"
+        return "ERROR_PARSING_RESPONSE", "No reasoning available", []

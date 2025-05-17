@@ -19,7 +19,7 @@ def get_default_system_prompt():
 
     {{
         "claim": "the claim you need to evaluate",
-        "evidence": ["evidence piece 1 to consider", "evidence piece 2 to consider", ...],
+        "evidence_list": ["evidence piece 1 to consider", "evidence piece 2 to consider", ...],
         "label_options": {{
             "label_option_1": "description of label option 1",
             "label_option_2": "description of label option 2",
@@ -46,7 +46,7 @@ def get_default_system_prompt():
 
 def get_default_user_prompt(
         claim: str,
-        evidence: list[str],
+        evidence_list: list[str],
         label_options: list[str] | dict[str, str],
     ) -> str:
     """
@@ -56,7 +56,7 @@ def get_default_user_prompt(
 
     Args:
         claim (str): The claim to be fact-checked.
-        evidence (List[str]): A list of evidence pieces.
+        evidence_list (List[str]): A list of evidence pieces.
         label_options (List[str] | Dict[str, str]): Either a list of labels or a dictionary mapping labels to explanations.
 
     Returns:
@@ -71,7 +71,7 @@ def get_default_user_prompt(
     # Construct the input dictionary
     input_data = {
         "claim": claim,
-        "evidence": evidence,
+        "evidence_list": evidence_list,
         "label_options": label_options
     }
 

@@ -8,6 +8,7 @@ appropriate configuration settings from environment variables or direct paramete
 import os
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.ollama import Ollama
+import logging
 from typing import Union
 
 def load_llm(
@@ -21,10 +22,10 @@ def load_llm(
     context_window=100000,
     embedding_model=None,
     **kwargs
-    ) -> Union[OpenAI, Ollama]:
+)-> Union[OpenAI, Ollama]:
     """
     Load and configure a Language Learning Model (LLM) based on specified parameters.
-
+    
     This function initializes either an OpenAI or Ollama LLM instance with configuration
     from provided parameters or environment variables. It supports flexible configuration
     through both direct parameters and environment variables.
@@ -61,6 +62,7 @@ def load_llm(
         OPENAI_ORGANIZATION: Organization ID for OpenAI
         OPENAI_API_BASE: Base URL for OpenAI API
     """
+    logger = logging.getLogger('factchecker.api')
     llm_type = llm_type or os.getenv("LLM_TYPE", "openai").lower()
     
     if llm_type == "ollama":
@@ -95,5 +97,7 @@ def load_llm(
             context_window=context_window,
             **openai_kwargs
         )
+    
+    logger.api(f"Loading LLM model: {model}")
     
     return llm
