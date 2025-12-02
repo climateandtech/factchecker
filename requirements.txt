@@ -172,7 +172,7 @@ PyYAML==6.0.1
 pyzmq==26.0.3
 RAGatouille==0.0.8.post2
 regex==2024.5.15
-requests==2.32.3
+requests==2.32.4
 requests-oauthlib==2.0.0
 rich==13.7.1
 rsa==4.9
