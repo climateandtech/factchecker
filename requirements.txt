@@ -143,7 +143,7 @@ platformdirs==4.2.2
 pluggy==1.5.0
 posthog==3.5.0
 prompt_toolkit==3.0.47
-protobuf==4.25.3
+protobuf==4.25.8
 psutil==6.0.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
