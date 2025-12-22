@@ -102,7 +102,7 @@ llama-index-readers-llama-parse==0.3.0
 llama-parse==0.5.19
 markdown-it-py==3.0.0
 MarkupSafe==2.1.5
-marshmallow==3.21.3
+marshmallow==3.26.2
 matplotlib-inline==0.1.7
 mdurl==0.1.2
 mmh3==4.1.0
