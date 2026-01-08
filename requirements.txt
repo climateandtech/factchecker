@@ -218,7 +218,7 @@ watchfiles==0.22.0
 wcwidth==0.2.13
 websocket-client==1.8.0
 websockets==12.0
-Werkzeug==3.0.3
+Werkzeug==3.1.5
 wrapt==1.16.0
 xxhash==3.4.1
 yarl==1.9.4
