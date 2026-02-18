@@ -4,6 +4,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
+from factchecker.core.ollama_batch_embedding import BatchedOllamaEmbedding
+
 
 def load_embedding_model(
     embedding_type=None,
@@ -77,7 +79,7 @@ def load_embedding_model(
         model_name = model_name or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
         api_base = api_base or os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
         
-        return OllamaEmbedding(
+        return BatchedOllamaEmbedding(
             model_name=model_name,
             base_url=api_base,
             **kwargs
