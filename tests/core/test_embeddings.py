@@ -133,7 +133,7 @@ def test_load_ollama_embedding(mock_env: MonkeyPatch, mock_ollama: MagicMock) ->
     )
 
 def test_load_ollama_embedding_from_env(mock_env: MonkeyPatch, mock_ollama: MagicMock) -> None:
-    """Test loading Ollama embedding."""
+    """Test loading Ollama embedding from env (OLLAMA_MODEL)."""
     mock_env.setenv("EMBEDDING_TYPE", "ollama")
     mock_env.setenv("OLLAMA_MODEL", "nomic-embed-text")
     mock_env.setenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
@@ -142,6 +142,21 @@ def test_load_ollama_embedding_from_env(mock_env: MonkeyPatch, mock_ollama: Magi
     
     mock_ollama.assert_called_once_with(
         model_name="nomic-embed-text",
+        base_url="http://localhost:11434"
+    )
+
+
+def test_load_ollama_embedding_uses_embedding_model_env(mock_env: MonkeyPatch, mock_ollama: MagicMock) -> None:
+    """When OLLAMA_EMBEDDING_MODEL is set, it is used for embeddings (overrides OLLAMA_MODEL)."""
+    mock_env.setenv("EMBEDDING_TYPE", "ollama")
+    mock_env.setenv("OLLAMA_EMBEDDING_MODEL", "jina/jina-embeddings-v2-base-de")
+    mock_env.setenv("OLLAMA_MODEL", "llama3.2:latest")
+    mock_env.setenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
+    
+    _ = load_embedding_model()
+    
+    mock_ollama.assert_called_once_with(
+        model_name="jina/jina-embeddings-v2-base-de",
         base_url="http://localhost:11434"
     )
 
@@ -249,3 +264,33 @@ def test_ollama_batch_returns_correct_shape() -> None:
     assert len(result) == 2
     assert len(result[0]) == dim and len(result[1]) == dim
     assert result[0][0] == 0.1 and result[1][0] == 0.2
+
+
+@pytest.mark.integration
+def test_ollama_batch_real_local() -> None:
+    """
+    Real Ollama test: load BatchedOllamaEmbedding via load_embedding_model(embedding_type="ollama")
+    and get embeddings for multiple texts. Skips if Ollama is not reachable or no embedding model.
+    Uses OLLAMA_API_BASE_URL from env (default http://localhost:11434).
+    """
+    import os
+    import urllib.error
+    import urllib.request
+
+    base_url = os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
+    try:
+        urllib.request.urlopen(f"{base_url.rstrip('/')}/api/tags", timeout=5)
+    except (OSError, urllib.error.URLError) as err:
+        pytest.skip(f"Ollama not reachable at {base_url}: {err}")
+
+    model = load_embedding_model(embedding_type="ollama")
+    assert isinstance(model, BatchedOllamaEmbedding)
+
+    texts = ["first", "second text", "third"]
+    embeddings = model.get_text_embedding_batch(texts)
+    assert len(embeddings) == len(texts)
+    dim = len(embeddings[0])
+    assert dim > 0
+    for i, emb in enumerate(embeddings):
+        assert len(emb) == dim, f"embedding {i} wrong length"
+        assert all(isinstance(x, float) for x in emb), f"embedding {i} not all float"

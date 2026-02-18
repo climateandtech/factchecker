@@ -158,18 +158,20 @@ The project uses LlamaIndex's embedding interface through the `factchecker/core/
    - Uses `llama_index.embeddings.huggingface.HuggingFaceEmbedding`
 
 3. **Ollama Embeddings**
-   - Set `EMBEDDING_TYPE=ollama` in `.env`
-   - Required settings:
-     - `OLLAMA_MODEL`: Model to use (default: "nomic-embed-text")
+   - Set `EMBEDDING_TYPE=ollama` in `.env` (or pass `provider="ollama"`)
+   - Model selection (embedding model is separate from LLM):
+     - `OLLAMA_EMBEDDING_MODEL`: Embedding model (e.g. "jina/jina-embeddings-v2-base-de", "nomic-embed-text")
+     - `OLLAMA_MODEL`: Fallback if OLLAMA_EMBEDDING_MODEL not set (default: "nomic-embed-text")
    - Optional settings:
      - `OLLAMA_API_BASE_URL`: Custom API endpoint (default: "http://localhost:11434")
+     - `embed_batch_size`: Texts per request (default from LlamaIndex, typically 10)
    - Additional kwargs support:
      - `request_timeout`: Specific request timeout
    - Features:
-     - Local execution
-     - Integration with Ollama's model ecosystem
+     - Batch API: multiple texts per request (faster than one-by-one)
+     - Local or remote Ollama
      - No API key required
-   - Uses `llama_index.embeddings.ollama.OllamaEmbedding`
+   - Uses `factchecker.core.ollama_batch_embedding.BatchedOllamaEmbedding`
 
 Example usage:
 ```python
@@ -194,11 +196,12 @@ embeddings = load_embedding_model(
     normalize_embeddings=True
 )
 
-# Ollama with custom settings
+# Ollama with custom settings (batch embeddings)
 embeddings = load_embedding_model(
     embedding_type="ollama",
     model_name="nomic-embed-text",
-    base_url="http://custom-server:11434",
+    api_base="http://custom-server:11434",
+    embed_batch_size=32,
     request_timeout=60
 )
 ```

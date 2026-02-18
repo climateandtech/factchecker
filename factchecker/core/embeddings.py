@@ -27,7 +27,7 @@ def load_embedding_model(
         model_name (str, optional): Name of the model to use. Defaults vary by embedding type:
             - OpenAI: env var OPENAI_EMBEDDING_MODEL or 'text-embedding-ada-002'
             - HuggingFace: env var HUGGINGFACE_EMBEDDING_MODEL or 'BAAI/bge-small-en-v1.5'
-            - Ollama: env var OLLAMA_MODEL or 'nomic-embed-text'
+            - Ollama: env var OLLAMA_EMBEDDING_MODEL, then OLLAMA_MODEL, or 'nomic-embed-text'
         api_key (str, optional): API key for OpenAI. Defaults to env var OPENAI_API_KEY.
         api_base (str, optional): Base API URL. Defaults vary by embedding type:
             - OpenAI: env var OPENAI_API_BASE
@@ -47,7 +47,8 @@ def load_embedding_model(
         OPENAI_API_KEY: API key for OpenAI
         OPENAI_API_BASE: Base URL for OpenAI API
         HUGGINGFACE_EMBEDDING_MODEL: Model name for HuggingFace embeddings
-        OLLAMA_MODEL: Model name for Ollama embeddings
+        OLLAMA_EMBEDDING_MODEL: Model name for Ollama embeddings (overrides OLLAMA_MODEL for embeddings)
+        OLLAMA_MODEL: Model name for Ollama (used for embeddings if OLLAMA_EMBEDDING_MODEL not set)
         OLLAMA_API_BASE_URL: Base URL for Ollama API
     """
     embedding_type = (
@@ -80,7 +81,11 @@ def load_embedding_model(
         )
         
     elif embedding_type == "ollama":
-        model_name = model_name or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+        model_name = (
+            model_name
+            or os.getenv("OLLAMA_EMBEDDING_MODEL")
+            or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+        )
         api_base = api_base or os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
         
         return BatchedOllamaEmbedding(

@@ -16,6 +16,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> MonkeyPatch:
         "OPENAI_API_KEY": None,
         "OPENAI_API_BASE": None,
         "HUGGINGFACE_EMBEDDING_MODEL": None,
+        "OLLAMA_EMBEDDING_MODEL": None,
         "OLLAMA_MODEL": None,
         "OLLAMA_API_BASE_URL": None
     }
