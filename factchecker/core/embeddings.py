@@ -23,7 +23,7 @@ def load_embedding_model(
 
     Args:
         embedding_type (str, optional): Type of embedding model to use ('openai', 'huggingface', or 'ollama').
-            Defaults to env var EMBEDDING_TYPE or 'openai'.
+            May be passed as ``provider`` for compatibility. Defaults to env var EMBEDDING_TYPE or 'openai'.
         model_name (str, optional): Name of the model to use. Defaults vary by embedding type:
             - OpenAI: env var OPENAI_EMBEDDING_MODEL or 'text-embedding-ada-002'
             - HuggingFace: env var HUGGINGFACE_EMBEDDING_MODEL or 'BAAI/bge-small-en-v1.5'
@@ -50,7 +50,11 @@ def load_embedding_model(
         OLLAMA_MODEL: Model name for Ollama embeddings
         OLLAMA_API_BASE_URL: Base URL for Ollama API
     """
-    embedding_type = embedding_type or os.getenv("EMBEDDING_TYPE", "openai").lower()
+    embedding_type = (
+        embedding_type or kwargs.pop("provider", None) or os.getenv("EMBEDDING_TYPE", "openai")
+    )
+    if embedding_type:
+        embedding_type = str(embedding_type).lower()
     
     if embedding_type == "openai":
         model_name = model_name or os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
