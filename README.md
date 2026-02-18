@@ -348,12 +348,6 @@ Request access to https://docs.google.com/spreadsheets/d/1R0-q5diheG3zXDBq8V2aoU
 
 ### Download sources
 
-The project includes a source downloader tool to fetch PDFs for fact-checking claims. The tool reads a CSV file and downloads files into organized folders.
-
-
-
-### Download sources
-
 The project includes a source downloader tool to fetch PDFs and other documents referenced in fact-checking claims. The tool reads a CSV file with metadata and downloads the files into organized folders.
 
 #### 1. **Basic Usage**
@@ -362,46 +356,45 @@ The project includes a source downloader tool to fetch PDFs and other documents 
 python -m factchecker.tools.sources_downloader
 ```
 
-This uses default settings:
+This uses default settings that match the project's `sources/sources.csv`:
 
 - **Source CSV**: `sources/sources.csv`
 - **Output folder**: `data/sources/`
-- **URL column**: `url`
-- **Filename column**: `output_filename`
+- **URL column**: `external_link`
+- **Filename column**: `pdf_title`
 - **Subfolder column**: `output_subfolder`
 
 ---
 
 #### 2. **Custom Configuration**
 
+Override defaults only when needed:
+
 ```bash
 python -m factchecker.tools.sources_downloader \
   --sourcefile path/to/your_sources.csv \
   --output_folder data/sources \
-  --url_column url \
-  --output_filename_column output_filename \
-  --output_subfolder_column output_subfolder \
   --row_indices 0 1 2  # Optional: download specific rows only
 ```
+
+Use `--url_column`, `--output_filename_column`, and `--output_subfolder_column` if your CSV uses different column names.
 
 ---
 
 #### 3. **Expected CSV Format**
 
-Your CSV should include at least the following columns:
+The default format matches the project's sources file. Your CSV should include at least:
 
 ```csv
-url,title,output_filename,output_subfolder
-https://example.com/doc1.pdf,Example Report,example_report.pdf,ipcc
-https://example.com/doc2.pdf,Another Report,another.pdf,wmo
+external_link,title,date,pdf_link,pdf_title
+https://example.com/doc1.pdf,Example Report,,,example_report.pdf
+https://example.com/reports/IPCC_AR6.pdf,IPCC Report,,,
 ```
 
-This will result in files being downloaded to:
+- **external_link**: URL of the PDF to download.
+- **pdf_title**: Filename for the downloaded file. If empty, the filename is derived from the URL path.
 
-```
-data/sources/ipcc/example_report.pdf
-data/sources/wmo/another.pdf
-```
+Optional **output_subfolder** column places files in subfolders under the output folder (e.g. `data/sources/ipcc/...`).
 
 ---
 
@@ -418,7 +411,7 @@ data/sources/wmo/another.pdf
 
 #### 5. **Programmatic Usage**
 
-You can also use the `SourcesDownloader` in Python directly:
+You can also use the `SourcesDownloader` in Python directly. Defaults match the project's `sources/sources.csv`:
 
 ```python
 from factchecker.tools.sources_downloader import SourcesDownloader
@@ -426,13 +419,11 @@ from factchecker.tools.sources_downloader import SourcesDownloader
 downloader = SourcesDownloader(output_folder="data/sources")
 downloaded_files = downloader.download_pdfs_from_csv(
     sourcefile="sources/sources.csv",
-    row_indices=None,
-    url_column="url",
-    output_filename_column="output_filename",
-    output_subfolder_column="output_subfolder",
 )
 print(f"Downloaded files: {downloaded_files}")
 ```
+
+Pass `url_column`, `output_filename_column`, and `output_subfolder_column` when using a different CSV format.
 
 ---
 

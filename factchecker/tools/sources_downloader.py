@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import csv
 import logging
@@ -105,8 +107,8 @@ class SourcesDownloader:
             self, 
             sourcefile: str = "sources/sources.csv", 
             row_indices: list[int] | None = None, 
-            url_column: str = "url",
-            output_filename_column: str = "output_filename",
+            url_column: str = "external_link",
+            output_filename_column: str = "pdf_title",
             output_subfolder_column: str = "output_subfolder",
         ) -> list[str]:
         """
@@ -156,7 +158,11 @@ class SourcesDownloader:
                     logger.warning(f"Empty URL in row {i}, skipping")
                     continue
                     
-                output_filename = row.get(output_filename_column, f"document_{i}.pdf")
+                output_filename = row.get(output_filename_column, "").strip()
+                if not output_filename:
+                    # Derive filename from URL path if possible, otherwise use fallback
+                    url_path = urlparse(url).path
+                    output_filename = os.path.basename(url_path) or f"document_{i}.pdf"
                 subfolder = row.get(output_subfolder_column, "").strip()
                 output_folder = os.path.join(self.output_folder, subfolder) if subfolder else self.output_folder
                 
@@ -182,7 +188,7 @@ class SourcesDownloader:
             --sourcefile: Path to the CSV file containing claims and source links (default: 'sources/sources.csv')
             --row_indices: Specific claim indices to download sources for (optional, 0-indexed)
             --url_column: Name of the column containing source URLs (default: 'external_link')
-            --output_filename_column: Name of the column specifying filename for downloaded file (default: 'output_filename')
+            --output_filename_column: Name of the column specifying filename for downloaded file (default: 'pdf_title')
             --output_subfolder_column: Name of the column specifying subfolder for each file (default: 'output_subfolder')
             --output_folder: Main output folder for the downloaded source documents (default: 'data')
         
@@ -202,11 +208,11 @@ class SourcesDownloader:
             help='Specify which claims to download sources for (0-indexed).'
         )
         parser.add_argument(
-            '--url_column', type=str, default='url',
+            '--url_column', type=str, default='external_link',
             help='Specify the column containing source URLs.'
         )
         parser.add_argument(
-            '--output_filename_column', type=str, default='output_filename',
+            '--output_filename_column', type=str, default='pdf_title',
             help='Specify the column containing filenames for downloaded files.'
         )
         parser.add_argument(

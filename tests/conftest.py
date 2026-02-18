@@ -89,9 +89,15 @@ def mock_openai_env(monkeypatch):
         def get_text_embedding(self, text):
             return [0.0] * 384
 
-    # Apply mocks
-    monkeypatch.setattr("llama_index.llms.openai.OpenAI", MockOpenAI)
-    monkeypatch.setattr("llama_index.embeddings.openai.OpenAIEmbedding", MockOpenAIEmbedding)
+    # Apply mocks only when llama_index is already loaded (do not import it here to avoid
+    # pulling in numpy/llama_index in tool-only test runs and potential segfaults)
+    if "llama_index" not in sys.modules:
+        return
+    try:
+        monkeypatch.setattr("llama_index.llms.openai.OpenAI", MockOpenAI)
+        monkeypatch.setattr("llama_index.embeddings.openai.OpenAIEmbedding", MockOpenAIEmbedding)
+    except ModuleNotFoundError:
+        pass
 
 @pytest.fixture(autouse=True)
 def setup_test_env():
