@@ -11,11 +11,14 @@ from llama_index.core import Settings
 logger = logging.getLogger(__name__)
 
 def configure_logging():
-    """Configure basic logging for experiments."""
+    """Configure basic logging for experiments. Ensures indexers and LlamaIndex show INFO logs."""
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+    # Ensure factchecker and LlamaIndex loggers show INFO (indexing, retrieval, etc.)
+    for name in ('factchecker', 'llama_index', 'root'):
+        logging.getLogger(name).setLevel(logging.INFO)
 
 def configure_llama_index():
     """Configure LlamaIndex settings."""

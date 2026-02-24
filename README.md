@@ -26,12 +26,21 @@ There is a detailled explanation on sources below
 
 3. Run an example
 
-We recommend running the Advocate Mediator example, to test if you set up everything correctly:
+We recommend running the Advocate Mediator example, to test if you set up everything correctly.
 
+**Option A — Run as a module** (all options are set inside the experiment file and via `.env`):
 
-```
+```bash
 python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
 ```
+
+**Option B — Run via script** (same module; script creates Python 3.12 venv and uses `.env`):
+
+```bash
+./run_with_venv.sh
+```
+
+See "Running Experiments" below for both entry points in detail.
 
 
 
@@ -221,7 +230,42 @@ Additional utilities handle common operations like data processing, API interact
 
 ## Running Experiments
 
-The project includes several experiment scripts to evaluate different fact-checking approaches:
+The project includes several experiment scripts to evaluate different fact-checking approaches.
+
+### Advocate-Mediator (Climate Feedback): two ways to run
+
+You can run the advocate-mediator Climate Feedback experiment in either of these ways:
+
+**1. As a module** — Options are set in the experiment file `factchecker/experiments/advocate_mediator_climatefeedback/advocate_mediator_climatefeedback.py`. LLM and embeddings are controlled via `.env` (e.g. `LLM_TYPE=ollama`, `EMBEDDING_TYPE=ollama`, `OLLAMA_EMBEDDING_MODEL`).
+
+   ```bash
+   python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
+   ```
+
+**2. Via the venv script** — Same module; the script ensures a Python 3.12 venv and loads `.env`:
+
+   ```bash
+   ./run_with_venv.sh
+   ```
+
+---
+
+### Working with limited sources
+
+The experiment downloads PDFs from a CSV by default. To run quickly or with less data:
+
+- **Limit downloads:** In `advocate_mediator_climatefeedback.py`, set `sources_max_sources`: `1` (or another number) in `EXPERIMENT_PARAMS`. Only that many PDFs are downloaded; the indexer loads only those files, not the whole directory.
+- **Use a folder of your own PDFs (no download):** Put your PDF(s) in a folder (e.g. `data/sources/ipcc/`). In `main()`, comment out the download step and build a list of paths to pass in:
+  ```python
+  # downloaded_files = setup_sources(params=params)
+  import pathlib
+  folder = pathlib.Path("data/sources/ipcc")  # or your path
+  downloaded_files = [str(p) for p in folder.glob("*.pdf")]
+  strategy = setup_strategy(params=params, downloaded_files=downloaded_files)
+  ```
+  The indexer will load only those files. Use this when you already have sources and want to skip the downloader.
+
+---
 
 1. Climate Feedback Advocate-Mediator Experiment:
    ```bash

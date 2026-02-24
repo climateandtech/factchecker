@@ -1,14 +1,18 @@
 """LlamaVectorStoreIndexer class."""
 
 import logging
+import os
 from typing import Any, Optional
 
 from llama_index.core import Document, Settings, StorageContext, VectorStoreIndex
 from llama_index.core.embeddings.utils import EmbedType
+from llama_index.core.indices import load_index_from_storage
 from llama_index.core.node_parser import SentenceSplitter
 
 from factchecker.indexing.abstract_indexer import AbstractIndexer
 from factchecker.core.embeddings import load_embedding_model
+
+logger = logging.getLogger(__name__)
 
 
 class LlamaVectorStoreIndexer(AbstractIndexer):
@@ -72,7 +76,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
 
         """
         try:
-
+            logger.info("Building vector index (chunking and embedding documents)...")
             storage_context = StorageContext.from_defaults(**self.storage_context_options)
             
             self.index = VectorStoreIndex.from_documents(
@@ -82,33 +86,48 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
                 transformations=self.transformations,
                 show_progress=self.show_progress,
             )
-            logging.info("VectorStoreIndex successfully built")
+            logger.info("VectorStoreIndex successfully built")
         
         except Exception as e:
-            logging.exception(f"Failed to create LlamaVectorStore index: {e}")
+            logger.exception(f"Failed to create LlamaVectorStore index: {e}")
             raise
 
-    def save_index(self) -> None:
+    def save_index(self, index_path: Optional[str] = None) -> None:
         """
         Save the LlamaVectorStore index to disk.
 
-        Raises:
-            NotImplementedError: If the method is not yet implemented.
+        Args:
+            index_path (Optional[str]): Path where the index will be saved.
+                Defaults to self.index_path. Required if self.index_path is not set.
 
+        Raises:
+            ValueError: If no index_path is available and none is provided.
         """
-        logging.error("save_index() of LlamaVectorStoreIndexer is not yet implemented")
-        raise NotImplementedError("save_index() of LlamaVectorStoreIndexer is not yet implemented")
+        persist_dir = index_path or self.index_path
+        if not persist_dir:
+            raise ValueError("index_path is required to save the index")
+        if self.index is None:
+            raise ValueError("No index to save; build the index first")
+        os.makedirs(persist_dir, exist_ok=True)
+        self.index.storage_context.persist(persist_dir=persist_dir)
+        logger.info("VectorStoreIndex saved to %s", persist_dir)
 
     def load_index(self) -> None:
         """
         Load the LlamaVectorStore index from disk.
 
         Raises:
-            NotImplementedError: If the method is not yet implemented.
-
+            ValueError: If index_path is not set or no persisted index exists.
         """
-        logging.error("load_index() of LlamaVectorStoreIndexer is not yet implemented")
-        raise NotImplementedError("load_index() of LlamaVectorStoreIndexer is not yet implemented")
+        if not self.index_path:
+            raise ValueError("index_path is required to load the index")
+        if not os.path.isdir(self.index_path):
+            raise ValueError(f"No persisted index found at {self.index_path}")
+        storage_context = StorageContext.from_defaults(persist_dir=self.index_path)
+        self.index = load_index_from_storage(
+            storage_context, embed_model=self.embed_model
+        )
+        logger.info("VectorStoreIndex loaded from %s", self.index_path)
 
     def add_to_index(self, documents: list[Document]) -> None:
         """
@@ -121,7 +140,7 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logging.error("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logger.error("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("add_to_index() of LlamaVectorStoreIndexer is not yet implemented")
 
     def delete_from_index(self, document_ids: list[str]) -> None:
@@ -135,5 +154,5 @@ class LlamaVectorStoreIndexer(AbstractIndexer):
             NotImplementedError: If the method is not yet implemented.
 
         """
-        logging.error("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")
+        logger.error("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")
         raise NotImplementedError("delete_from_index() of LlamaVectorStoreIndexer is not yet implemented")

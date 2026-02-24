@@ -7,6 +7,9 @@ import logging
 
 from llama_index.core import SimpleDirectoryReader, Document
 
+logger = logging.getLogger(__name__)
+
+
 class AbstractIndexer(ABC):
     """
     Abstract base class for creating and managing indexes.
@@ -56,33 +59,34 @@ class AbstractIndexer(ABC):
         try:
             # Use preloaded documents if provided
             if self.initial_documents:
-                logging.info("Using preloaded documents provided in options.")
+                logger.info("Using preloaded documents provided in options.")
                 return self.initial_documents
 
             # Use specified files if provided
             if self.initial_files:
                 files = self.initial_files
-                logging.info(f"Loading documents from specified files: {files}")
+                logger.info(f"Loading documents from specified files: {files}")
                 documents = SimpleDirectoryReader(input_files=files).load_data()
                 self.initial_documents = documents
-                logging.debug(f"Loaded {len(documents)} documents from specified files")
+                logger.debug(f"Loaded {len(documents)} documents from specified files")
                 return documents
 
             # Load from source directory
             if self.source_directory:
-                logging.info(f"Loading documents from source directory: {self.source_directory}")
+                logger.info(f"Loading documents from source directory: {self.source_directory}")
+                logger.info("Parsing PDF(s)... this may take several minutes for large files.")
                 documents = SimpleDirectoryReader(self.source_directory).load_data()
                 self.initial_documents = documents
-                logging.debug(f"Loaded {len(documents)} documents from {self.source_directory}")
+                logger.info(f"Loaded {len(documents)} documents from {self.source_directory}")
                 return documents
             
             raise ValueError("No documents, files or source directory provided for indexing.")
 
         except FileNotFoundError as e:
-            logging.error(f"File not found during document loading: {e}")
+            logger.error(f"File not found during document loading: {e}")
             raise
         except Exception as e:
-            logging.exception(f"An error occurred while loading documents: {e}")
+            logger.exception(f"An error occurred while loading documents: {e}")
             raise
 
         
@@ -95,9 +99,9 @@ class AbstractIndexer(ABC):
             
         """
         if self.index_path and os.path.exists(self.index_path):
-            logging.debug(f"Index exists at {self.index_path}")
+            logger.debug(f"Index exists at {self.index_path}")
             return True
-        logging.debug("No persisted index found.")
+        logger.debug("No persisted index found.")
         return False
 
 
@@ -110,19 +114,19 @@ class AbstractIndexer(ABC):
 
         """
         if self.index is not None:
-            logging.info("In-memory index already exists. Skipping creation.")
+            logger.info("In-memory index already exists. Skipping creation.")
             return
         
         try:
-            logging.info("No existing index found. Building a new index...")
+            logger.info("No existing index found. Building a new index...")
             documents = self.load_initial_documents()
             self.build_index(documents)
 
         except FileNotFoundError as e:
-            logging.error(f"File not found during initialization: {e}")
+            logger.error(f"File not found during initialization: {e}")
             raise
         except ValueError as e:
-            logging.error(f"Invalid data provided: {e}")
+            logger.error(f"Invalid data provided: {e}")
             raise
 
     @abstractmethod
