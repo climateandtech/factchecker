@@ -34,7 +34,7 @@ We recommend running the Advocate Mediator example, to test if you set up everyt
 python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
 ```
 
-**Option B — Run via script** (same module; script creates Python 3.12 venv and uses `.env`):
+**Option B — Run via script** (same module; script creates a venv with Python 3.12 or 3.10 and uses `.env`):
 
 ```bash
 ./run_with_venv.sh
@@ -242,7 +242,7 @@ You can run the advocate-mediator Climate Feedback experiment in either of these
    python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
    ```
 
-**2. Via the venv script** — Same module; the script ensures a Python 3.12 venv and loads `.env`:
+**2. Via the venv script** — Same module; the script ensures a venv (Python 3.12 or 3.10) and loads `.env`:
 
    ```bash
    ./run_with_venv.sh
@@ -250,11 +250,11 @@ You can run the advocate-mediator Climate Feedback experiment in either of these
 
 ---
 
-### Working with limited sources
+### Running with few claims or limited sources
 
-The experiment downloads PDFs from a CSV by default. To run quickly or with less data:
-
+- **Few claims:** When using the experiment runner script, you can limit how many claims are evaluated with `--samples N` (e.g. `--samples 1`). Example: `python run_experiments.py --samples 1 --sources-limit 1` runs a single claim with a single source for quick checks.
 - **Limit downloads:** In `advocate_mediator_climatefeedback.py`, set `sources_max_sources`: `1` (or another number) in `EXPERIMENT_PARAMS`. Only that many PDFs are downloaded; the indexer loads only those files, not the whole directory.
+- **Persistent index:** The vector index can be saved and reloaded (e.g. via `index_path` / load when present, save after build) so repeated runs with the same sources skip re-indexing.
 - **Use a folder of your own PDFs (no download):** Put your PDF(s) in a folder (e.g. `data/sources/ipcc/`). In `main()`, comment out the download step and build a list of paths to pass in:
   ```python
   # downloaded_files = setup_sources(params=params)
