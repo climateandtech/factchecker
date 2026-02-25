@@ -1,5 +1,11 @@
+import pandas as pd
 import pytest
-from factchecker.utils.climatefeedback_utils import map_verdict, VALID_LEVELS
+
+from factchecker.utils.climatefeedback_utils import (
+    evaluate_climatefeedback_claims,
+    map_verdict,
+    VALID_LEVELS,
+)
 
 def test_map_verdict_level_7():
     # Test level 7 mapping (most granular)
@@ -72,4 +78,91 @@ def test_map_verdict_invalid_level():
     with pytest.raises(ValueError, match=f"Level must be one of {VALID_LEVELS}"):
         map_verdict("correct", level=6)
     with pytest.raises(ValueError, match=f"Level must be one of {VALID_LEVELS}"):
-        map_verdict("correct", level=0) 
+        map_verdict("correct", level=0)
+
+
+# --- evaluate_climatefeedback_claims: return (collectors, errors), error tracking, claim_indices ---
+
+
+def test_evaluate_climatefeedback_claims_returns_collectors_and_errors():
+    """evaluate_climatefeedback_claims returns (collectors, errors); no errors when all succeed."""
+    strategy = _make_mock_strategy(
+        [
+            ("correct", ["SUPPORTS"], ["r1"]),
+            ("incorrect", ["REFUTES"], ["r2"]),
+        ]
+    )
+    claims_df = pd.DataFrame({
+        "Claim": ["First claim.", "Second claim."],
+        "Climate Feedback": ["correct", "incorrect"],
+    })
+    collectors, errors = evaluate_climatefeedback_claims(strategy, claims_df, num_advocates=1)
+    assert isinstance(collectors, dict)
+    assert isinstance(errors, list)
+    assert len(errors) == 0
+    assert len(collectors["true_labels"]) == 2
+    assert "claim_indices" in collectors
+    assert len(collectors["claim_indices"]) == 2
+
+
+def test_evaluate_climatefeedback_claims_tracks_errors_on_failure():
+    """When strategy raises on some claims, errors list is populated and collectors only have successes."""
+    strategy = _make_mock_strategy(
+        [
+            ("correct", ["SUPPORTS"], ["r1"]),
+            None,  # second call raises
+            ("correct", ["SUPPORTS"], ["r3"]),
+        ],
+        raise_on_none=True,
+    )
+    claims_df = pd.DataFrame({
+        "Claim": ["Claim one.", "Claim two fail.", "Claim three."],
+        "Climate Feedback": ["correct", "incorrect", "correct"],
+    })
+    collectors, errors = evaluate_climatefeedback_claims(strategy, claims_df, num_advocates=1)
+    assert len(collectors["true_labels"]) == 2
+    assert len(errors) == 1
+    assert errors[0]["error_type"] == "ValueError"
+    assert "Intentional failure" in errors[0]["error_message"]
+    assert errors[0]["claim_index"] == 1
+    assert "Claim two" in errors[0]["claim_preview"]
+
+
+def test_evaluate_climatefeedback_claims_claim_indices_only_successes():
+    """claim_indices contains only indices of successfully evaluated claims."""
+    strategy = _make_mock_strategy(
+        [
+            ("correct", ["SUPPORTS"], ["r1"]),
+            None,  # raise on index 1
+            ("incorrect", ["REFUTES"], ["r3"]),
+        ],
+        raise_on_none=True,
+    )
+    claims_df = pd.DataFrame({
+        "Claim": ["A", "B", "C"],
+        "Climate Feedback": ["correct", "incorrect", "incorrect"],
+    })
+    collectors, errors = evaluate_climatefeedback_claims(strategy, claims_df, num_advocates=1)
+    # Indices from iterrows() are 0, 1, 2 (default RangeIndex)
+    assert collectors["claim_indices"] == [0, 2]
+    assert len(errors) == 1 and errors[0]["claim_index"] == 1
+
+
+def _make_mock_strategy(returns, raise_on_none=False):
+    """Strategy whose evaluate_claim returns the next item from returns; None means raise if raise_on_none."""
+
+    class MockStrategy:
+        def __init__(self):
+            self.returns = returns
+            self.raise_on_none = raise_on_none
+            self.call_count = 0
+
+        def evaluate_claim(self, claim):
+            i = self.call_count
+            self.call_count += 1
+            val = self.returns[i] if i < len(self.returns) else self.returns[-1]
+            if val is None and self.raise_on_none:
+                raise ValueError("Intentional failure for testing")
+            return val
+
+    return MockStrategy() 

@@ -19,7 +19,9 @@ from factchecker.utils.climatefeedback_utils import (
 from factchecker.utils.experiment_utils import (
     configure_logging,
     create_results_dataframe,
+    save_evaluation_errors,
     save_results,
+    show_evaluation_errors,
     verify_environment,
 )
 from factchecker.utils.metrics import calculate_classification_metrics
@@ -177,9 +179,29 @@ def main(experiment_options: Optional[Dict[str, Any]] = None):
     )
 
     # Evaluate claims
-    collectors = evaluate_climatefeedback_claims(strategy, sampled_claims)
+    collectors, errors = evaluate_climatefeedback_claims(strategy, sampled_claims)
 
-    # Create and save results DataFrame
+    # Show errors to the user (summary + details), not only in logs
+    show_evaluation_errors(errors, total_claims=len(sampled_claims))
+
+    total_claims = len(sampled_claims)
+    n_ok = len(collectors['true_labels'])
+    n_err = len(errors)
+    errors_file = None
+
+    # Persist errors to CSV for inspection
+    if errors:
+        errors_file = save_evaluation_errors(errors, base_path="experiments/results", prefix="evaluation_errors")
+        if errors_file:
+            logger.info(f"Evaluation errors saved to: {errors_file}")
+            print(f"Evaluation errors saved to: {errors_file}")
+
+    if n_ok == 0:
+        logger.warning("No claims were successfully evaluated; skipping results and metrics.")
+        print(f"Run summary: 0/{total_claims} claims evaluated successfully. {n_err} errors.")
+        return
+
+    # Create and save results DataFrame (partial results when some claims failed)
     logger.info("Creating results DataFrame...")
     results_df = create_results_dataframe(
         sampled_claims,
@@ -190,7 +212,7 @@ def main(experiment_options: Optional[Dict[str, Any]] = None):
     results_file = save_results(results_df)
     logger.info(f"Results saved to: {results_file}")
 
-    # Calculate and print metrics
+    # Calculate and print metrics (on successful claims only)
     logger.info("Calculating classification metrics...")
     metrics = calculate_classification_metrics(
         collectors['true_labels'],
@@ -199,6 +221,14 @@ def main(experiment_options: Optional[Dict[str, Any]] = None):
     )
     logger.info("\nClassification Metrics:")
     print(metrics)
+
+    # Run summary utilizing error output
+    summary = f"Run summary: {n_ok}/{total_claims} claims evaluated successfully."
+    if n_err:
+        summary += f" {n_err} errors."
+        if errors_file:
+            summary += f" Details: {errors_file}"
+    print(f"\n{summary}")
 
 
 if __name__ == "__main__":
