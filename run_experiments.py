@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Script to run the ClimateCheck fact-checking experiments with optimized settings.
-This uses the updated embeddings and indexer implementations for efficient processing.
+Script to run fact-checking experiments with optimized settings.
+Pass --experiment <module.path> to run any experiment that exposes a main().
 
 Ollama (LLM and embeddings) is controlled via .env: set LLM_TYPE=ollama,
 EMBEDDING_TYPE=ollama, OLLAMA_API_BASE_URL, OLLAMA_MODEL, etc. in .env.
 """
 
-import os
 import argparse
+import importlib
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -56,40 +57,59 @@ def setup_environment():
             logger.warning(f"Could not connect to Ollama server: {str(e)}")
             logger.warning("Set LLM_TYPE=ollama and EMBEDDING_TYPE=ollama in .env and ensure Ollama is running.")
 
-def run_experiment(experiment_options=None):
-    """Run the advocate-mediator experiment with the specified options.
+DEFAULT_EXPERIMENT = "factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback"
 
-    experiment_options overrides EXPERIMENT_PARAMS inside the experiment (sources, indexing, etc.).
-    """
+
+def run_experiment(experiment_module: str, experiment_options=None):
+    """Run an experiment by module path. Options are passed to main() when it accepts them."""
     if experiment_options is None:
         experiment_options = {}
 
-    logger.info("Starting advocate-mediator experiment")
+    logger.info("Starting experiment: %s", experiment_module)
 
     try:
-        from factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback import main
-        logger.info("Using advocate-mediator climatefeedback experiment module")
+        mod = importlib.import_module(experiment_module)
+        main = getattr(mod, "main", None)
+        if main is None:
+            logger.error("Module %s has no main() function.", experiment_module)
+            return
 
         start_time = time.time()
-        main(experiment_options=experiment_options)
+        # Prefer passing experiment_options for experiments that support it
+        try:
+            main(experiment_options=experiment_options)
+        except TypeError:
+            try:
+                main(indexer_options=experiment_options)
+            except TypeError:
+                main()
         elapsed = time.time() - start_time
 
-        logger.info(f"Experiment completed successfully in {elapsed//60:.0f}m {elapsed%60:.0f}s")
+        logger.info("Experiment completed successfully in %dm %ds", int(elapsed // 60), int(elapsed % 60))
 
     except ImportError as e:
-        logger.error(f"Could not import the experiment module: {str(e)}")
-        logger.error("Make sure you are in the factchecker directory and have installed the package.")
-        logger.error("Try running: pip install -e .")
+        logger.error("Could not import experiment module: %s", e)
+        logger.error("Use a full module path, e.g. factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback")
+        logger.error("Ensure the package is installed: pip install -e .")
 
     except Exception as e:
-        logger.error(f"Error running experiment: {str(e)}")
+        logger.error("Error running experiment: %s", e)
         import traceback
-        logger.error(f"Stack trace: {traceback.format_exc()}")
+        logger.error(traceback.format_exc())
 
 def parse_args():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description="Run ClimateCheck fact-checking experiments")
-    
+    parser = argparse.ArgumentParser(
+        description="Run fact-checking experiments. Use --experiment to choose which experiment module to run."
+    )
+    parser.add_argument(
+        "--experiment",
+        type=str,
+        default=DEFAULT_EXPERIMENT,
+        metavar="MODULE",
+        help="Experiment module path (default: %(default)s)",
+    )
+
     parser.add_argument(
         "--node-batch-size", 
         type=int, 
@@ -145,6 +165,15 @@ def parse_args():
         help="Re-download sources even if file already exists"
     )
 
+    # Claim sampling (passed into experiment)
+    parser.add_argument(
+        "--samples",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Number of claims to evaluate (default: use experiment default, e.g. 10)"
+    )
+
     return parser.parse_args()
 
 
@@ -153,7 +182,7 @@ if __name__ == "__main__":
 
     setup_environment()
 
-    # All options passed into experiment; experiment uses EXPERIMENT_PARAMS + these overrides
+    # Options passed into experiment when it accepts experiment_options
     experiment_options = {
         "chunk_size": args.chunk_size,
         "chunk_overlap": args.chunk_overlap,
@@ -163,8 +192,8 @@ if __name__ == "__main__":
         "force_rebuild": args.force_rebuild,
         "sources_max_sources": args.sources_limit,
         "sources_skip_existing": not args.no_skip_existing,
+        "total_samples": getattr(args, "samples", None),
     }
-    # Drop None values so experiment defaults apply
     experiment_options = {k: v for k, v in experiment_options.items() if v is not None}
 
-    run_experiment(experiment_options=experiment_options) 
+    run_experiment(experiment_module=args.experiment, experiment_options=experiment_options) 
