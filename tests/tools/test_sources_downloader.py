@@ -57,21 +57,24 @@ def test_output_folder_exists():
         output_folder='test_data',
         row_indices=None,
         url_column='external_link',
-        output_filename_column='output_filename',
-        output_subfolder_column='output_subfolder'
+        output_filename_column='pdf_title',
+        output_subfolder_column='output_subfolder',
+        limit=None,
+        no_skip_existing=False,
     )
-    
+
     # Patch argparse to return our mock arguments.
     with patch('gettext.translation'), \
          patch('argparse.ArgumentParser.parse_args', return_value=mock_args), \
          patch('os.path.exists', return_value=True), \
          patch('os.makedirs') as mock_makedirs, \
          patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
-            
+
         SourcesDownloader.run_cli()
         mock_makedirs.assert_not_called()
         mock_download.assert_called_once_with(
-            'test.csv', None, 'external_link', 'output_filename', 'output_subfolder'
+            'test.csv', None, 'external_link', 'pdf_title', 'output_subfolder',
+            skip_existing=True, max_sources=None
         )
 
 
@@ -81,5 +84,117 @@ def test_cli_arguments():
     with patch('sys.argv', testargs):
         with patch('factchecker.tools.sources_downloader.SourcesDownloader.download_pdfs_from_csv') as mock_download:
             SourcesDownloader.run_cli()
-            # The row_indices parameter should now be parsed as [1, 2]
-            mock_download.assert_called_once_with('test.csv', [1, 2], 'test_url', 'output_filename', 'output_subfolder')
+            # The row_indices parameter should now be parsed as [1, 2]; defaults include pdf_title, skip_existing, max_sources
+            mock_download.assert_called_once_with(
+                'test.csv', [1, 2], 'test_url', 'pdf_title', 'output_subfolder',
+                skip_existing=True, max_sources=None
+            )
+
+
+# --- Skip existing files (TDD) ---
+def test_skip_existing_file(tmp_path):
+    """When file already exists and skip_existing=True, download_pdf is not called."""
+    csv_path = tmp_path / "sources.csv"
+    csv_path.write_text("url,output_filename\nhttp://example.com/a.pdf,existing.pdf")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    existing_pdf = out_dir / "existing.pdf"
+    existing_pdf.write_bytes(b"existing content")
+
+    downloader = SourcesDownloader(str(out_dir))
+    with patch.object(downloader, 'download_pdf') as mock_download:
+        result = downloader.download_pdfs_from_csv(
+            str(csv_path),
+            url_column="url",
+            output_filename_column="output_filename",
+            skip_existing=True,
+        )
+    mock_download.assert_not_called()
+    assert result == [str(existing_pdf)]
+
+
+def test_download_when_file_missing(tmp_path):
+    """When file does not exist, download_pdf is called."""
+    csv_path = tmp_path / "sources.csv"
+    csv_path.write_text("url,output_filename\nhttp://example.com/a.pdf,missing.pdf")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    downloader = SourcesDownloader(str(out_dir))
+    with patch.object(downloader, 'download_pdf', return_value=True) as mock_download:
+        downloader.download_pdfs_from_csv(
+            str(csv_path),
+            url_column="url",
+            output_filename_column="output_filename",
+            skip_existing=True,
+        )
+    mock_download.assert_called_once()
+    call_args = mock_download.call_args[0]
+    assert call_args[2] == "missing.pdf"
+
+
+def test_skip_existing_false(tmp_path):
+    """When skip_existing=False, download is attempted even if file exists."""
+    csv_path = tmp_path / "sources.csv"
+    csv_path.write_text("url,output_filename\nhttp://example.com/a.pdf,existing.pdf")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "existing.pdf").write_bytes(b"old")
+
+    downloader = SourcesDownloader(str(out_dir))
+    with patch.object(downloader, 'download_pdf', return_value=True) as mock_download:
+        downloader.download_pdfs_from_csv(
+            str(csv_path),
+            url_column="url",
+            output_filename_column="output_filename",
+            skip_existing=False,
+        )
+    mock_download.assert_called_once()
+
+
+# --- max_sources (TDD) ---
+def test_max_sources_limits_downloads(tmp_path):
+    """With max_sources=2, at most 2 downloads are attempted."""
+    csv_path = tmp_path / "sources.csv"
+    csv_path.write_text(
+        "url,output_filename\n"
+        "http://a.com/1.pdf,one.pdf\n"
+        "http://a.com/2.pdf,two.pdf\n"
+        "http://a.com/3.pdf,three.pdf\n"
+    )
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    downloader = SourcesDownloader(str(out_dir))
+    with patch.object(downloader, 'download_pdf', return_value=True) as mock_download:
+        result = downloader.download_pdfs_from_csv(
+            str(csv_path),
+            url_column="url",
+            output_filename_column="output_filename",
+            max_sources=2,
+        )
+    assert mock_download.call_count == 2
+    assert len(result) == 2
+
+
+def test_max_sources_none(tmp_path):
+    """With max_sources=None, all rows are processed."""
+    csv_path = tmp_path / "sources.csv"
+    csv_path.write_text(
+        "url,output_filename\n"
+        "http://a.com/1.pdf,one.pdf\n"
+        "http://a.com/2.pdf,two.pdf\n"
+    )
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    downloader = SourcesDownloader(str(out_dir))
+    with patch.object(downloader, 'download_pdf', return_value=True) as mock_download:
+        result = downloader.download_pdfs_from_csv(
+            str(csv_path),
+            url_column="url",
+            output_filename_column="output_filename",
+            max_sources=None,
+        )
+    assert mock_download.call_count == 2
+    assert len(result) == 2

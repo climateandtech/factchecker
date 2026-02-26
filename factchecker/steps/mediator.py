@@ -46,10 +46,9 @@ class MediatorStep:
         self.llm = llm if llm is not None else load_llm()
         self.options = options if options is not None else {}
         self.system_prompt = self.options.pop('system_prompt', '')
-        self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
         self.max_retries = self.options.pop('max_retries', 3)
-        # Optional custom parser: (response_content: str) -> Optional[verdict_str]
         self.verdict_parser: Optional[Callable[[str], Optional[str]]] = self.options.pop('verdict_parser', None)
+        self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
 
     def synthesize_verdicts(self, verdicts_and_reasonings, claim):
         """

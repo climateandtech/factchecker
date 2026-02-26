@@ -129,8 +129,12 @@ class AbstractIndexer(ABC):
             documents = self.load_initial_documents()
             self.build_index(documents)
             if self.index_path:
-                logger.info("Persisting index to %s", self.index_path)
-                self.save_index()
+                try:
+                    logger.info("Persisting index to %s", self.index_path)
+                    self.save_index()
+                except NotImplementedError:
+                    # Some indexers (e.g. RagatouilleColBERT) persist during build_index()
+                    logger.debug("save_index not implemented; index may already be persisted by build")
 
         except FileNotFoundError as e:
             logger.error(f"File not found during initialization: {e}")
