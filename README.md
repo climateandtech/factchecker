@@ -26,12 +26,21 @@ There is a detailled explanation on sources below
 
 3. Run an example
 
-We recommend running the Advocate Mediator example, to test if you set up everything correctly:
+We recommend running the Advocate Mediator example, to test if you set up everything correctly.
 
+**Option A — Run as a module** (all options are set inside the experiment file and via `.env`):
 
-```
+```bash
 python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
 ```
+
+**Option B — Run via script** (same module; script creates a venv with Python 3.12 or 3.10 and uses `.env`):
+
+```bash
+./run_with_venv.sh
+```
+
+See "Running Experiments" below for both entry points in detail.
 
 
 
@@ -158,18 +167,20 @@ The project uses LlamaIndex's embedding interface through the `factchecker/core/
    - Uses `llama_index.embeddings.huggingface.HuggingFaceEmbedding`
 
 3. **Ollama Embeddings**
-   - Set `EMBEDDING_TYPE=ollama` in `.env`
-   - Required settings:
-     - `OLLAMA_MODEL`: Model to use (default: "nomic-embed-text")
+   - Set `EMBEDDING_TYPE=ollama` in `.env` (or pass `provider="ollama"`)
+   - Model selection (embedding model is separate from LLM):
+     - `OLLAMA_EMBEDDING_MODEL`: Embedding model (e.g. "jina/jina-embeddings-v2-base-de", "nomic-embed-text")
+     - `OLLAMA_MODEL`: Fallback if OLLAMA_EMBEDDING_MODEL not set (default: "nomic-embed-text")
    - Optional settings:
      - `OLLAMA_API_BASE_URL`: Custom API endpoint (default: "http://localhost:11434")
+     - `embed_batch_size`: Texts per request (default from LlamaIndex, typically 10)
    - Additional kwargs support:
      - `request_timeout`: Specific request timeout
    - Features:
-     - Local execution
-     - Integration with Ollama's model ecosystem
+     - Batch API: multiple texts per request (faster than one-by-one)
+     - Local or remote Ollama
      - No API key required
-   - Uses `llama_index.embeddings.ollama.OllamaEmbedding`
+   - Uses `factchecker.core.ollama_batch_embedding.BatchedOllamaEmbedding`
 
 Example usage:
 ```python
@@ -194,11 +205,12 @@ embeddings = load_embedding_model(
     normalize_embeddings=True
 )
 
-# Ollama with custom settings
+# Ollama with custom settings (batch embeddings)
 embeddings = load_embedding_model(
     embedding_type="ollama",
     model_name="nomic-embed-text",
-    base_url="http://custom-server:11434",
+    api_base="http://custom-server:11434",
+    embed_batch_size=32,
     request_timeout=60
 )
 ```
@@ -218,7 +230,42 @@ Additional utilities handle common operations like data processing, API interact
 
 ## Running Experiments
 
-The project includes several experiment scripts to evaluate different fact-checking approaches:
+The project includes several experiment scripts to evaluate different fact-checking approaches.
+
+### Advocate-Mediator (Climate Feedback): two ways to run
+
+You can run the advocate-mediator Climate Feedback experiment in either of these ways:
+
+**1. As a module** — Options are set in the experiment file `factchecker/experiments/advocate_mediator_climatefeedback/advocate_mediator_climatefeedback.py`. LLM and embeddings are controlled via `.env` (e.g. `LLM_TYPE=ollama`, `EMBEDDING_TYPE=ollama`, `OLLAMA_EMBEDDING_MODEL`).
+
+   ```bash
+   python -m factchecker.experiments.advocate_mediator_climatefeedback.advocate_mediator_climatefeedback
+   ```
+
+**2. Via the venv script** — Same module; the script ensures a venv (Python 3.12 or 3.10) and loads `.env`:
+
+   ```bash
+   ./run_with_venv.sh
+   ```
+
+---
+
+### Running with few claims or limited sources
+
+- **Few claims:** When using the experiment runner script, you can limit how many claims are evaluated with `--samples N` (e.g. `--samples 1`). Example: `python run_experiments.py --samples 1 --sources-limit 1` runs a single claim with a single source for quick checks.
+- **Limit downloads:** In `advocate_mediator_climatefeedback.py`, set `sources_max_sources`: `1` (or another number) in `EXPERIMENT_PARAMS`. Only that many PDFs are downloaded; the indexer loads only those files, not the whole directory.
+- **Persistent index:** The vector index can be saved and reloaded (e.g. via `index_path` / load when present, save after build) so repeated runs with the same sources skip re-indexing.
+- **Use a folder of your own PDFs (no download):** Put your PDF(s) in a folder (e.g. `data/sources/ipcc/`). In `main()`, comment out the download step and build a list of paths to pass in:
+  ```python
+  # downloaded_files = setup_sources(params=params)
+  import pathlib
+  folder = pathlib.Path("data/sources/ipcc")  # or your path
+  downloaded_files = [str(p) for p in folder.glob("*.pdf")]
+  strategy = setup_strategy(params=params, downloaded_files=downloaded_files)
+  ```
+  The indexer will load only those files. Use this when you already have sources and want to skip the downloader.
+
+---
 
 1. Climate Feedback Advocate-Mediator Experiment:
    ```bash

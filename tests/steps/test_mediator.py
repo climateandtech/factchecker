@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import Mock, MagicMock, patch
-from factchecker.steps.mediator import MediatorStep
 from llama_index.core.llms import ChatMessage
+
+from factchecker.steps.mediator import MediatorStep, MEDIATOR_VERDICT_FORMAT
 
 @pytest.fixture
 def mock_llm():
@@ -73,4 +74,49 @@ def test_empty_verdicts(mock_llm):
     result = mediator.synthesize_verdicts([], "Test claim")
     
     # The actual implementation returns the LLM response even for empty verdicts
-    assert result == "CORRECT" 
+    assert result == "CORRECT"
+
+
+def test_mediator_retry_includes_format_feedback(mock_llm):
+    """On retry after wrong format, second chat call receives messages with last answer and format instruction."""
+    wrong = '{ "verdict": ("correct", "medium") }'
+    right = "((correct))"
+    mock_llm.chat.side_effect = [
+        MagicMock(message=MagicMock(content=wrong)),
+        MagicMock(message=MagicMock(content=right)),
+    ]
+    mediator = MediatorStep(llm=mock_llm)
+    result = mediator.synthesize_verdicts([("CORRECT", "r1")], "Claim")
+    assert result == "CORRECT"
+    assert mock_llm.chat.call_count == 2
+    # Second call: messages include assistant (wrong) + user retry with format feedback
+    messages_second = mock_llm.chat.call_args[0][0]
+    assert len(messages_second) >= 4
+    retry_user = next(m for m in messages_second if m.role == "user" and "wrong format" in m.content)
+    assert "Your previous response was in the wrong format" in retry_user.content
+    assert "This was your last answer" in retry_user.content
+    assert "wrong" in retry_user.content.lower()
+    assert MEDIATOR_VERDICT_FORMAT in retry_user.content or "((correct))" in retry_user.content
+
+
+def test_mediator_custom_verdict_parser(mock_llm):
+    """When verdict_parser is provided, it is used and can parse alternative formats."""
+    def parse_json_style(content):
+        if '"verdict":' in content and "correct" in content.lower():
+            return "CORRECT"
+        if '"verdict":' in content and "incorrect" in content.lower():
+            return "INCORRECT"
+        return None
+    mock_llm.chat.return_value = MagicMock(
+        message=MagicMock(content='{ "verdict": ("correct", "medium") }\nSome reasoning.')
+    )
+    mediator = MediatorStep(llm=mock_llm, options={"verdict_parser": parse_json_style})
+    result = mediator.synthesize_verdicts([("CORRECT", "r1")], "Claim")
+    assert result == "CORRECT"
+    assert mock_llm.chat.call_count == 1
+
+
+def test_mediator_max_retries_from_options(mock_llm):
+    """max_retries can be overridden via options."""
+    mediator = MediatorStep(llm=mock_llm, options={"max_retries": 5})
+    assert mediator.max_retries == 5 

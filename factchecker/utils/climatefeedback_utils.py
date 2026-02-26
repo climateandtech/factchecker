@@ -174,7 +174,8 @@ def evaluate_climatefeedback_claim(
         collectors = collect_evaluation_results(
             collectors,
             (true_label, final_verdict, verdicts, reasonings),
-            num_advocates=len(verdicts) if not collectors['advocate_evidences'] else None
+            num_advocates=len(verdicts) if not collectors['advocate_evidences'] else None,
+            claim_index=claim_index,
         )
         
         logger.debug(f"\nClaim {claim_index + 1}/{total_claims}:")
@@ -189,42 +190,48 @@ def evaluate_climatefeedback_claim(
         
     return collectors
 
-def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int = 1) -> Dict:
+def evaluate_climatefeedback_claims(strategy, sampled_claims, num_advocates: int = 1) -> Tuple[Dict, List[Dict]]:
     """
     Evaluate a batch of Climate Feedback claims using the provided strategy.
-    
+
     Args:
         strategy: The evaluation strategy to use
         sampled_claims: DataFrame containing claims to evaluate
         num_advocates: Number of advocates in the strategy
-        
+
     Returns:
-        Dictionary containing collected results
-        
-    Raises:
-        ValueError: If sampled_claims is empty or missing required columns
+        Tuple of (collectors, errors). errors is a list of dicts with keys:
+        claim_index, error_type, error_message, claim_preview.
     """
     if sampled_claims.empty:
         raise ValueError("sampled_claims cannot be empty")
-        
+
     if 'Claim' not in sampled_claims.columns or 'Climate Feedback' not in sampled_claims.columns:
         raise ValueError("sampled_claims must contain 'Claim' and 'Climate Feedback' columns")
-    
+
     collectors = initialize_results_collectors(num_advocates)
-    
+    errors: List[Dict] = []
+
     logger.info("Starting claim evaluation...")
     for idx, row in tqdm(sampled_claims.iterrows(), total=len(sampled_claims), desc="Evaluating claims"):
+        claim_text = row['Claim']
         try:
             collectors = evaluate_climatefeedback_claim(
                 strategy=strategy,
-                claim=row['Claim'],
+                claim=claim_text,
                 true_label=row['Climate Feedback'],
                 collectors=collectors,
                 claim_index=idx,
                 total_claims=len(sampled_claims)
             )
         except Exception as e:
-            logger.error(f"Skipping claim {idx + 1} due to error {str(e)}")
+            errors.append({
+                'claim_index': idx,
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'claim_preview': (claim_text[:80] + '...') if len(claim_text) > 80 else claim_text,
+            })
+            logger.error(f"Skipping claim (index {idx}) due to error: {e}")
             continue
-            
-    return collectors 
+
+    return collectors, errors 

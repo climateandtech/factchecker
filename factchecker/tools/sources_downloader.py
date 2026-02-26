@@ -2,6 +2,7 @@ import argparse
 import csv
 import logging
 import os
+from typing import List, Optional
 from urllib.parse import urlparse
 
 import requests
@@ -102,20 +103,22 @@ class SourcesDownloader:
             return False
 
     def download_pdfs_from_csv(
-            self, 
-            sourcefile: str = "sources/sources.csv", 
-            row_indices: list[int] | None = None, 
-            url_column: str = "url",
-            output_filename_column: str = "output_filename",
+            self,
+            sourcefile: str = "sources/sources.csv",
+            row_indices: Optional[List[int]] = None,
+            url_column: str = "external_link",
+            output_filename_column: str = "pdf_title",
             output_subfolder_column: str = "output_subfolder",
-        ) -> list[str]:
+            skip_existing: bool = True,
+            max_sources: Optional[int] = None,
+        ) -> List[str]:
         """
         Download source documents from URLs specified in a claims database CSV file.
-        
+
         This function processes a CSV file containing fact-checking claims and their associated
         source documents. It downloads the source documents that support or are referenced by the claims,
         maintaining the connection between claims and their supporting evidence.
-        
+
         Args:
             sourcefile (str): Path to the CSV file containing claims and their source URLs.
             row_indices (list[int], optional): List of specific claim indices to download sources for.
@@ -123,50 +126,61 @@ class SourcesDownloader:
             url_column (str): Name of the column containing source document URLs.
             output_filename_column (str): Name of the column specifying the filename for the downloaded file
             output_subfolder_column (str): Name of the column specifying the subfolder where to download each file
+            skip_existing (bool): If True, skip rows where the output file already exists. Default True.
+            max_sources (int, optional): If set, stop after this many successful downloads. Default None.
 
         Raises:
             FileNotFoundError: If the specified CSV file does not exist.
             KeyError: If the specified url_column does not exist in the CSV file.
-        
+
         Returns:
-            list[str]: A list of file paths for the downloaded documents.
+            list[str]: A list of file paths for the downloaded (or skipped existing) documents.
 
         """
         downloaded_files = []
-        
+
         # Check if file exists before attempting to open it
         if not os.path.isfile(sourcefile):
             logger.error(f"Source file not found: {sourcefile}")
             raise FileNotFoundError(f"Source file not found: {sourcefile}")
-        
+
         with open(sourcefile, 'r') as csvfile:
             reader = csv.DictReader(csvfile, skipinitialspace=True)
-            
+
             # Validate that required columns exist
             if reader.fieldnames and url_column not in reader.fieldnames:
                 logger.error(f"Column {url_column} does not exist in the CSV file.")
                 raise KeyError(f"Column {url_column} does not exist in the CSV file.")
-            
+
             for i, row in enumerate(reader):
+                if max_sources is not None and len(downloaded_files) >= max_sources:
+                    break
                 if row_indices and i not in row_indices:
                     continue
-                
+
                 url = row.get(url_column, "").strip()
                 if not url:
                     logger.warning(f"Empty URL in row {i}, skipping")
                     continue
-                    
+
                 output_filename = row.get(output_filename_column, f"document_{i}.pdf")
+                if not output_filename.lower().endswith('.pdf'):
+                    output_filename += '.pdf'
                 subfolder = row.get(output_subfolder_column, "").strip()
                 output_folder = os.path.join(self.output_folder, subfolder) if subfolder else self.output_folder
-                
+                pdf_path = os.path.join(output_folder, output_filename)
+
                 if not os.path.exists(output_folder):
                     os.makedirs(output_folder)
-                
+
+                if skip_existing and os.path.exists(pdf_path):
+                    downloaded_files.append(pdf_path)
+                    continue
+
                 success = self.download_pdf(url, output_folder, output_filename)
                 if success:
-                    downloaded_files.append(os.path.join(output_folder, output_filename))
-                
+                    downloaded_files.append(pdf_path)
+
         return downloaded_files
 
     @staticmethod
@@ -202,11 +216,11 @@ class SourcesDownloader:
             help='Specify which claims to download sources for (0-indexed).'
         )
         parser.add_argument(
-            '--url_column', type=str, default='url',
+            '--url_column', type=str, default='external_link',
             help='Specify the column containing source URLs.'
         )
         parser.add_argument(
-            '--output_filename_column', type=str, default='output_filename',
+            '--output_filename_column', type=str, default='pdf_title',
             help='Specify the column containing filenames for downloaded files.'
         )
         parser.add_argument(
@@ -217,16 +231,26 @@ class SourcesDownloader:
             '--output_folder', type=str, default='data/sources',
             help='Main output folder for the downloaded source documents.'
         )
+        parser.add_argument(
+            '--limit', type=int, default=None,
+            help='Maximum number of sources to download (first N).'
+        )
+        parser.add_argument(
+            '--no-skip-existing', action='store_true',
+            help='Re-download even if file already exists.'
+        )
         args = parser.parse_args()
 
         downloader = SourcesDownloader(args.output_folder)
         try:
             downloader.download_pdfs_from_csv(
-                args.sourcefile, 
-                args.row_indices, 
+                args.sourcefile,
+                args.row_indices,
                 args.url_column,
                 args.output_filename_column,
-                args.output_subfolder_column
+                args.output_subfolder_column,
+                skip_existing=not args.no_skip_existing,
+                max_sources=args.limit,
             )
         except (FileNotFoundError, KeyError) as e:
             logger.error(f"Error: {e}")

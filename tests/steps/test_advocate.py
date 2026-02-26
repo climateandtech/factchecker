@@ -5,7 +5,7 @@ from llama_index.core.schema import NodeWithScore, TextNode
 
 from factchecker.indexing.abstract_indexer import AbstractIndexer
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
-from factchecker.steps.advocate import AdvocateStep
+from factchecker.steps.advocate import ADVOCATE_VERDICT_FORMAT, AdvocateStep
 
 
 @pytest.fixture
@@ -119,4 +119,43 @@ def test_retry_mechanism(mock_llm: MagicMock, mock_retriever: MagicMock) -> None
     
     verdict, reasoning = advocate.evaluate_claim("Test claim")
     assert verdict == "CORRECT"
-    assert mock_llm.chat.call_count == 3 
+    assert mock_llm.chat.call_count == 3
+
+
+def test_advocate_retry_includes_format_feedback(mock_llm: MagicMock, mock_retriever: MagicMock) -> None:
+    """On retry after wrong format, second chat call receives messages with last answer and format instruction."""
+    wrong = '{ "verdict": ("correct", "medium") }'
+    right = "Reasoning here. ((correct))"
+    mock_llm.chat.side_effect = [
+        MagicMock(message=MagicMock(content=wrong)),
+        MagicMock(message=MagicMock(content=right)),
+    ]
+    advocate = AdvocateStep(retriever=mock_retriever, llm=mock_llm)
+    verdict, _ = advocate.evaluate_claim("Test claim")
+    assert verdict == "CORRECT"
+    assert mock_llm.chat.call_count == 2
+    messages_second = mock_llm.chat.call_args[0][0]
+    retry_user = next(m for m in messages_second if m.role == "user" and "wrong format" in m.content)
+    assert "Your previous response was in the wrong format" in retry_user.content
+    assert "This was your last answer" in retry_user.content
+    assert ADVOCATE_VERDICT_FORMAT in retry_user.content or "((correct))" in retry_user.content
+
+
+def test_advocate_custom_verdict_parser(mock_llm: MagicMock, mock_retriever: MagicMock) -> None:
+    """When verdict_parser is provided, it is used and can parse alternative formats."""
+    def parse_json_style(content):
+        if '"verdict":' in content and "correct" in content.lower():
+            return ("CORRECT", "Parsed from JSON-style response.")
+        return None
+    mock_llm.chat.return_value = MagicMock(
+        message=MagicMock(content='{ "verdict": ("correct", "medium") }\nReasoning here.')
+    )
+    advocate = AdvocateStep(
+        retriever=mock_retriever,
+        llm=mock_llm,
+        options={"verdict_parser": parse_json_style},
+    )
+    verdict, reasoning = advocate.evaluate_claim("Test claim")
+    assert verdict == "CORRECT"
+    assert "Parsed from JSON-style" in reasoning
+    assert mock_llm.chat.call_count == 1 

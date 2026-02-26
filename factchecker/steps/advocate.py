@@ -1,4 +1,5 @@
 import logging
+from typing import Callable, Optional, Tuple
 
 from llama_index.core.llms import ChatMessage
 
@@ -8,6 +9,26 @@ from factchecker.datastructures import LabelOption
 from factchecker.prompts.advocate_prompts import get_default_system_prompt, get_default_user_prompt
 from factchecker.retrieval.abstract_retriever import AbstractRetriever
 from factchecker.steps.evidence import EvidenceStep
+from factchecker.steps.verdict_retry import chat_with_verdict_retry
+
+logger = logging.getLogger(__name__)
+
+# Format we require from the LLM; repeated in retry instructions
+ADVOCATE_VERDICT_FORMAT = (
+    "Respond with exactly one verdict in double parentheses: ((correct)), ((incorrect)), or ((not_enough_information)). "
+    "Put your reasoning first, then the verdict at the end, e.g. \"Your reasoning here. ((correct))\"."
+)
+
+
+def _default_advocate_parser(response_content: str) -> Optional[Tuple[str, str]]:
+    """Extract verdict and reasoning from response using (( )) format. Returns (label, reasoning) or None."""
+    start = response_content.find("((")
+    end = response_content.find("))")
+    if start == -1 or end == -1:
+        return None
+    label = response_content[start + 2 : end].strip().upper().replace(" ", "_")
+    reasoning = (response_content[:start].strip() + " " + response_content[end + 2 :].strip()).strip()
+    return label, reasoning
 
 
 class AdvocateStep:
@@ -49,6 +70,8 @@ class AdvocateStep:
         self.label_options = self.options.pop('label_options', DEFAULT_LABEL_OPTIONS)
         self.max_retries = self.options.pop('max_retries', 3)
         self.chat_completion_options = self.options.pop('chat_completion_options', {})
+        # Optional custom parser: (response_content: str) -> Optional[Tuple[label, reasoning]]
+        self.verdict_parser: Optional[Callable[[str], Optional[Tuple[str, str]]]] = self.options.pop('verdict_parser', None)
         
         # Initialize EvidenceStep
         self.evidence_step = EvidenceStep(
@@ -92,20 +115,16 @@ class AdvocateStep:
             ChatMessage(role="system", content=self.system_prompt),
             ChatMessage(role="user", content=user_prompt)
         ]
-
-
-        for attempt in range(self.max_retries):
-            response = self.llm.chat(messages, **self.chat_completion_options)
-            response_content = response.message.content.strip()
-            # Extract the verdict from the response
-            start = response_content.find("((")
-            end = response_content.find("))")
-            if start != -1 and end != -1:
-                label = response_content[start+2:end].strip().upper().replace(" ", "_")
-                # Remove the label inside (( )) from the response content
-                reasoning = response_content[:start].strip() + response_content[end+2:].strip()
-                return label, reasoning
-            else:
-                logging.warning(f"Unexpected response content on attempt {attempt + 1}: {response_content}")
-        
+        parse_fn = self.verdict_parser if self.verdict_parser is not None else _default_advocate_parser
+        result = chat_with_verdict_retry(
+            messages,
+            self.llm,
+            parse_fn,
+            ADVOCATE_VERDICT_FORMAT,
+            self.max_retries,
+            self.chat_completion_options,
+            logger,
+        )
+        if result is not None:
+            return result[0], result[1]
         return "ERROR_PARSING_RESPONSE", "No reasoning available"

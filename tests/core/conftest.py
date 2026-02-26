@@ -1,3 +1,4 @@
+from __future__ import annotations
 
 from typing import Generator
 from unittest.mock import MagicMock, patch
@@ -15,6 +16,7 @@ def mock_env(monkeypatch: MonkeyPatch) -> MonkeyPatch:
         "OPENAI_API_KEY": None,
         "OPENAI_API_BASE": None,
         "HUGGINGFACE_EMBEDDING_MODEL": None,
+        "OLLAMA_EMBEDDING_MODEL": None,
         "OLLAMA_MODEL": None,
         "OLLAMA_API_BASE_URL": None
     }
@@ -36,8 +38,8 @@ def mock_huggingface() -> Generator[MagicMock, None, None]:
 
 @pytest.fixture
 def mock_ollama() -> Generator[MagicMock, None, None]:
-    """Mock Ollama embedding."""
-    with patch('factchecker.core.embeddings.OllamaEmbedding', autospec=True) as mock:
+    """Mock Ollama batch embedding."""
+    with patch('factchecker.core.embeddings.BatchedOllamaEmbedding', autospec=True) as mock:
         yield mock
 
 class MockEmbedding:

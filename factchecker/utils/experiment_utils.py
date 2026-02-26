@@ -10,12 +10,43 @@ from llama_index.core import Settings
 
 logger = logging.getLogger(__name__)
 
+
+def show_evaluation_errors(errors: List[Dict[str, Any]], total_claims: Optional[int] = None) -> None:
+    """
+    Print evaluation errors to stdout (summary and per-error details), in addition to logging.
+    """
+    if not errors:
+        return
+    n = len(errors)
+    total = total_claims if total_claims is not None else "?"
+    print("\n--- Evaluation errors ---")
+    print(f"Failed claims: {n} / {total}")
+    by_type: Dict[str, int] = {}
+    for e in errors:
+        t = e.get("error_type", "Unknown")
+        by_type[t] = by_type.get(t, 0) + 1
+    print("By error type:", by_type)
+    print("Details:")
+    for e in errors:
+        idx = e.get("claim_index", "?")
+        typ = e.get("error_type", "?")
+        msg = e.get("error_message", "?")
+        preview = e.get("claim_preview", "")
+        print(f"  [{idx}] {typ}: {msg}")
+        if preview:
+            print(f"       Claim: {preview}")
+    print("---\n")
+
+
 def configure_logging():
-    """Configure basic logging for experiments."""
+    """Configure basic logging for experiments. Ensures indexers and LlamaIndex show INFO logs."""
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
+    # Ensure factchecker and LlamaIndex loggers show INFO (indexing, retrieval, etc.)
+    for name in ('factchecker', 'llama_index', 'root'):
+        logging.getLogger(name).setLevel(logging.INFO)
 
 def configure_llama_index():
     """Configure LlamaIndex settings."""
@@ -81,50 +112,54 @@ def initialize_results_collectors(num_advocates: int) -> ResultsDict:
         'mediator_reasonings': [],
         'advocate_evidences': [[] for _ in range(num_advocates)],
         'advocate_verdicts': [[] for _ in range(num_advocates)],
-        'advocate_reasonings': [[] for _ in range(num_advocates)]
+        'advocate_reasonings': [[] for _ in range(num_advocates)],
+        'claim_indices': [],
     }
 
 def collect_evaluation_results(
     collectors: ResultsDict,
     claim_data: ClaimData,
-    num_advocates: Optional[int] = None
+    num_advocates: Optional[int] = None,
+    claim_index: Optional[Any] = None,
 ) -> ResultsDict:
     """
     Collects results from a single claim evaluation.
-    
+
     Args:
         collectors: Dictionary of result collectors
         claim_data: Tuple of (true_label, final_verdict, verdicts, reasonings)
         num_advocates: Number of advocates (optional, for initialization)
-        
+        claim_index: Index of the claim in the source DataFrame (for partial-results alignment)
+
     Returns:
         Updated collectors dictionary
-        
-    Raises:
-        ValueError: If collectors is None or empty when num_advocates is None
-        ValueError: If claim_data components don't match expected structure
     """
     if not collectors and num_advocates is None:
         raise ValueError("collectors cannot be empty when num_advocates is None")
-        
+
     true_label, final_verdict, verdicts, reasonings = claim_data
-    
+
     if not isinstance(verdicts, list) or not isinstance(reasonings, list):
         raise ValueError("verdicts and reasonings must be lists")
-    
+
     # Initialize collectors if first run
     if num_advocates is not None and not collectors.get('advocate_evidences'):
         collectors = initialize_results_collectors(num_advocates)
 
-    collectors['true_labels'].append(true_label)
-    collectors['predicted_results'].append(final_verdict)
-    collectors['mediator_reasonings'].append(reasonings[-1])
-    
+    if "claim_indices" not in collectors:
+        collectors["claim_indices"] = []
+
+    collectors["true_labels"].append(true_label)
+    collectors["predicted_results"].append(final_verdict)
+    collectors["mediator_reasonings"].append(reasonings[-1])
+    if claim_index is not None:
+        collectors["claim_indices"].append(claim_index)
+
     for i in range(len(verdicts)):
-        collectors['advocate_evidences'][i].append(verdicts[i])
-        collectors['advocate_verdicts'][i].append(verdicts[i])
-        collectors['advocate_reasonings'][i].append(reasonings[i])
-    
+        collectors["advocate_evidences"][i].append(verdicts[i])
+        collectors["advocate_verdicts"][i].append(verdicts[i])
+        collectors["advocate_reasonings"][i].append(reasonings[i])
+
     return collectors
 
 def create_results_dataframe(
@@ -149,12 +184,20 @@ def create_results_dataframe(
     """
     if 'Claim' not in claims.columns:
         raise ValueError("claims DataFrame must contain 'Claim' column")
-        
-    if len(claims) != len(collectors['true_labels']):
-        raise ValueError("Number of claims doesn't match number of collected results")
-    
+
+    claim_indices = collectors.get('claim_indices')
+    if claim_indices is not None and len(claim_indices) > 0:
+        # Partial results: align claims to successful evaluations only
+        if len(claim_indices) != len(collectors['true_labels']):
+            raise ValueError("claim_indices length must match collected results length")
+        claims_subset = claims.loc[claim_indices].reset_index(drop=True)
+    else:
+        if len(claims) != len(collectors['true_labels']):
+            raise ValueError("Number of claims doesn't match number of collected results")
+        claims_subset = claims
+
     results_dict = {
-        'Claim': claims['Claim'],
+        'Claim': claims_subset['Claim'].values,
         'True Label': collectors['true_labels'],
         'Predicted Verdict': collectors['predicted_results'],
         'Mediator Reasoning': collectors['mediator_reasonings']
@@ -202,4 +245,30 @@ def save_results(
     filename = f"{base_path}/{prefix}_{timestamp}.csv"
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     results_df.to_csv(filename, index=False)
-    return filename 
+    return filename
+
+
+def save_evaluation_errors(
+    errors: List[Dict[str, Any]],
+    base_path: str = "experiments/results",
+    prefix: str = "evaluation_errors",
+) -> Optional[str]:
+    """
+    Save evaluation errors to a timestamped CSV for inspection.
+
+    Args:
+        errors: List of error dicts (claim_index, error_type, error_message, claim_preview)
+        base_path: Directory to save in
+        prefix: Filename prefix
+
+    Returns:
+        Path to the saved file, or None if errors is empty
+    """
+    if not errors:
+        return None
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{base_path}/{prefix}_{timestamp}.csv"
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    df = pd.DataFrame(errors)
+    df.to_csv(filename, index=False)
+    return filename

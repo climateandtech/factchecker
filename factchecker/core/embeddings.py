@@ -4,6 +4,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.embeddings.openai import OpenAIEmbedding
 
+from factchecker.core.ollama_batch_embedding import BatchedOllamaEmbedding
+
 
 def load_embedding_model(
     embedding_type=None,
@@ -21,11 +23,11 @@ def load_embedding_model(
 
     Args:
         embedding_type (str, optional): Type of embedding model to use ('openai', 'huggingface', or 'ollama').
-            Defaults to env var EMBEDDING_TYPE or 'openai'.
+            May be passed as ``provider`` for compatibility. Defaults to env var EMBEDDING_TYPE or 'openai'.
         model_name (str, optional): Name of the model to use. Defaults vary by embedding type:
             - OpenAI: env var OPENAI_EMBEDDING_MODEL or 'text-embedding-ada-002'
             - HuggingFace: env var HUGGINGFACE_EMBEDDING_MODEL or 'BAAI/bge-small-en-v1.5'
-            - Ollama: env var OLLAMA_MODEL or 'nomic-embed-text'
+            - Ollama: env var OLLAMA_EMBEDDING_MODEL, then OLLAMA_MODEL, or 'nomic-embed-text'
         api_key (str, optional): API key for OpenAI. Defaults to env var OPENAI_API_KEY.
         api_base (str, optional): Base API URL. Defaults vary by embedding type:
             - OpenAI: env var OPENAI_API_BASE
@@ -45,10 +47,15 @@ def load_embedding_model(
         OPENAI_API_KEY: API key for OpenAI
         OPENAI_API_BASE: Base URL for OpenAI API
         HUGGINGFACE_EMBEDDING_MODEL: Model name for HuggingFace embeddings
-        OLLAMA_MODEL: Model name for Ollama embeddings
+        OLLAMA_EMBEDDING_MODEL: Model name for Ollama embeddings (overrides OLLAMA_MODEL for embeddings)
+        OLLAMA_MODEL: Model name for Ollama (used for embeddings if OLLAMA_EMBEDDING_MODEL not set)
         OLLAMA_API_BASE_URL: Base URL for Ollama API
     """
-    embedding_type = embedding_type or os.getenv("EMBEDDING_TYPE", "openai").lower()
+    embedding_type = (
+        embedding_type or kwargs.pop("provider", None) or os.getenv("EMBEDDING_TYPE", "openai")
+    )
+    if embedding_type:
+        embedding_type = str(embedding_type).lower()
     
     if embedding_type == "openai":
         model_name = model_name or os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
@@ -74,10 +81,14 @@ def load_embedding_model(
         )
         
     elif embedding_type == "ollama":
-        model_name = model_name or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+        model_name = (
+            model_name
+            or os.getenv("OLLAMA_EMBEDDING_MODEL")
+            or os.getenv("OLLAMA_MODEL", "nomic-embed-text")
+        )
         api_base = api_base or os.getenv("OLLAMA_API_BASE_URL", "http://localhost:11434")
         
-        return OllamaEmbedding(
+        return BatchedOllamaEmbedding(
             model_name=model_name,
             base_url=api_base,
             **kwargs
