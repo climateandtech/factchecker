@@ -108,6 +108,8 @@ class AbstractIndexer(ABC):
     def initialize_index(self) -> None:
         """
         Initializes the index by loading an existing index or building a new one.
+        If index_path is set and a persisted index exists, loads from disk.
+        Otherwise builds from documents and, if index_path is set, persists to disk.
 
         Raises:
             Exception: If an error occurs during index initialization.
@@ -116,11 +118,19 @@ class AbstractIndexer(ABC):
         if self.index is not None:
             logger.info("In-memory index already exists. Skipping creation.")
             return
-        
+
+        if self.index_path and self.check_persisted_index_exists():
+            logger.info("Loading existing index from %s", self.index_path)
+            self.load_index()
+            return
+
         try:
             logger.info("No existing index found. Building a new index...")
             documents = self.load_initial_documents()
             self.build_index(documents)
+            if self.index_path:
+                logger.info("Persisting index to %s", self.index_path)
+                self.save_index()
 
         except FileNotFoundError as e:
             logger.error(f"File not found during initialization: {e}")

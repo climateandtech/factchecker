@@ -7,8 +7,20 @@ deactivate 2>/dev/null || true
 # Remove existing venv
 rm -rf venv
 
-# Create fresh venv with Python 3.12
-python3.12 -m venv venv
+# Prefer Python 3.12, fallback to 3.10
+PYTHON=""
+for p in python3.12 python3.10; do
+  if command -v "$p" &>/dev/null; then
+    PYTHON="$p"
+    break
+  fi
+done
+if [[ -z "$PYTHON" ]]; then
+  echo "Need Python 3.12 or 3.10. Install with e.g. pyenv or your system package manager."
+  exit 1
+fi
+echo "Using $PYTHON for venv"
+"$PYTHON" -m venv venv
 
 # Activate venv
 source venv/bin/activate

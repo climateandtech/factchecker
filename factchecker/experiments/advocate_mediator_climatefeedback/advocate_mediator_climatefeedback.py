@@ -41,6 +41,7 @@ EXPERIMENT_PARAMS = {
 
     # Indexing parameters
     'main_source_directory': 'data/sources',
+    'index_path': 'data/indices/advocate_mediator_climatefeedback',  # Persist vector store for reuse
 
     # Sources download (CSV -> PDFs)
     'sources_csv': 'factchecker/experiments/advocate_mediator_climatefeedback/advocate_mediator_climatefeedback_sources.csv',
@@ -125,8 +126,12 @@ def setup_strategy(params: Optional[Dict[str, Any]] = None, downloaded_files: Op
         'embedding_type', 'embedding_model', 'show_progress'
     )}
     if indexer_overrides:
+        base_index_path = indexer_overrides.pop('index_path', None)
         for opts in indexer_options_list:
             opts.update(indexer_overrides)
+            # Per-indexer persist path so multiple indexers don't overwrite
+            if base_index_path:
+                opts['index_path'] = os.path.join(base_index_path, opts['index_name'])
 
     retriever_options_list = [{'top_k': p['top_k']} for _ in indexer_options_list]
 
