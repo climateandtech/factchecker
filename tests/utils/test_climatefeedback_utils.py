@@ -87,11 +87,11 @@ def test_map_verdict_invalid_level():
 def test_evaluate_climatefeedback_claims_returns_collectors_and_errors():
     """evaluate_climatefeedback_claims returns (collectors, errors); no errors when all succeed."""
     strategy = _make_mock_strategy(
-        [
-            ("correct", ["SUPPORTS"], ["r1"]),
-            ("incorrect", ["REFUTES"], ["r2"]),
-        ]
-    )
+            [
+                ("correct", ["SUPPORTS"], ["r1"], None, None),
+                ("incorrect", ["REFUTES"], ["r2"], None, None),
+            ]
+        )
     claims_df = pd.DataFrame({
         "Claim": ["First claim.", "Second claim."],
         "Climate Feedback": ["correct", "incorrect"],
@@ -109,9 +109,9 @@ def test_evaluate_climatefeedback_claims_tracks_errors_on_failure():
     """When strategy raises on some claims, errors list is populated and collectors only have successes."""
     strategy = _make_mock_strategy(
         [
-            ("correct", ["SUPPORTS"], ["r1"]),
+            ("correct", ["SUPPORTS"], ["r1"], None, None),
             None,  # second call raises
-            ("correct", ["SUPPORTS"], ["r3"]),
+            ("correct", ["SUPPORTS"], ["r3"], None, None),
         ],
         raise_on_none=True,
     )
@@ -132,9 +132,9 @@ def test_evaluate_climatefeedback_claims_claim_indices_only_successes():
     """claim_indices contains only indices of successfully evaluated claims."""
     strategy = _make_mock_strategy(
         [
-            ("correct", ["SUPPORTS"], ["r1"]),
+            ("correct", ["SUPPORTS"], ["r1"], None, None),
             None,  # raise on index 1
-            ("incorrect", ["REFUTES"], ["r3"]),
+            ("incorrect", ["REFUTES"], ["r3"], None, None),
         ],
         raise_on_none=True,
     )

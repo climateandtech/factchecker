@@ -132,6 +132,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv*
 env/
 venv/
 ENV/
@@ -183,3 +184,6 @@ concatenated_python_code.py
 
 # storage folder
 storage/
+
+# Drafts and narrative (LaTeX, visualizations) — not for version control
+drafts/

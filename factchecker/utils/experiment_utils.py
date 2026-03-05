@@ -113,6 +113,7 @@ def initialize_results_collectors(num_advocates: int) -> ResultsDict:
         'advocate_evidences': [[] for _ in range(num_advocates)],
         'advocate_verdicts': [[] for _ in range(num_advocates)],
         'advocate_reasonings': [[] for _ in range(num_advocates)],
+        'advocate_weighted_verdicts': [[] for _ in range(num_advocates)],
         'claim_indices': [],
     }
 

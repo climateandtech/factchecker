@@ -78,7 +78,38 @@ class EvidenceStep:
         logging.info(f"Extracted text from {len(evidence_texts)} evidence nodes")
 
         return evidence_texts
-    
+
+    def gather_evidence_with_metadata(self, claim: str) -> list[dict]:
+        """
+        Gather evidence and return list of dicts with chunk_id, text, and score
+        for tracking and for use with evidence classifier (relevant phrase, etc.).
+        """
+        query = self.build_query(claim)
+        evidence = self.retriever.retrieve(query)
+        if not isinstance(evidence, list) or not evidence:
+            return []
+        if not isinstance(evidence[0], NodeWithScore):
+            logging.error("Evidence items are not NodeWithScore; returning empty list.")
+            return []
+        filtered_evidence = self.classify_evidence(evidence)
+        if not filtered_evidence:
+            return []
+        result = []
+        for i, item in enumerate(filtered_evidence):
+            node = item.node
+            chunk_id = getattr(node, "node_id", None) or getattr(node, "id", None)
+            if chunk_id is None:
+                chunk_id = f"chunk_{i}"
+            if hasattr(chunk_id, "hex"):  # UUID
+                chunk_id = str(chunk_id)
+            result.append({
+                "chunk_id": chunk_id,
+                "text": node.text,
+                "score": float(item.score) if item.score is not None else 0.0,
+            })
+        logging.info(f"Retrieved {len(result)} evidence nodes with metadata for claim: {claim}")
+        return result
+
     def extract_text_from_evidence(self, evidence: list[NodeWithScore]) -> list[str]:
         """
         Extract text from evidence nodes.

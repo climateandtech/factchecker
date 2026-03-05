@@ -71,9 +71,10 @@ The project follows a modular structure:
 - `factchecker/`: Main package directory
   - `core/`: Core functionality including LLM and embedding models
   - `experiments/`: Contains experiment scripts for different fact-checking approaches
+  - `services/`: Re-exports from `utils` for compatibility; analysis logic lives in `utils/`
   - `strategies/`: Core fact-checking strategy implementations
   - `utils/`: Utility functions and helper modules
-  - `tools/`: Utility scripts for tasks like downloading sources
+  - `tools/`: Utility scripts for tasks like downloading sources, analyzing results
 - `tests/`: Test suite following the same structure as the main package
 - `storage/`: Data storage for indices and other persistent data
 - `data/`: (gitignored) Directory for storing downloaded source documents
@@ -449,6 +450,17 @@ This will result in files being downloaded to:
 data/sources/ipcc/example_report.pdf
 data/sources/wmo/another.pdf
 ```
+
+#### 4. **Analyzing Spectrum results**
+
+To re-run metrics (classification report, log loss, top-k accuracy) on an existing Spectrum results CSV without calling the model:
+
+```bash
+python -m factchecker.tools.analyze_spectrum_results
+python -m factchecker.tools.analyze_spectrum_results --results path/to/spectrum_claims_results_*.csv
+```
+
+Business logic is in `factchecker.utils.spectrum_analysis` (same layer as `metrics`, `experiment_utils`); the tool is a thin CLI over it.
 
 ---
 

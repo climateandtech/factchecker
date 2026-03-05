@@ -36,4 +36,6 @@ def calculate_classification_metrics(
         true_labels = [label.lower() for label in true_labels]
         predicted_results = [result.lower() for result in predicted_results]
     
-    return classification_report(true_labels, predicted_results) 
+    return classification_report(
+        true_labels, predicted_results, zero_division=0
+    ) 

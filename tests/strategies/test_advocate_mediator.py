@@ -13,13 +13,13 @@ def test_advocate_evaluation_with_evidence(
     # Configure the dummy advocate (returned by the patched AdvocateStep) to return different values.
     dummy_adv = mock_advocate_step.return_value
     dummy_adv.evaluate_claim.side_effect = [
-        ("SUPPORTS", "High confidence support"),
-        ("PARTIALLY_SUPPORTS", "Medium confidence support"),
-        ("REFUTES", "Low confidence support")
+        ("SUPPORTS", "High confidence support", None, None, None),
+        ("PARTIALLY_SUPPORTS", "Medium confidence support", None, None, None),
+        ("REFUTES", "Low confidence support", None, None, None),
     ]
 
     claim = "Test claim for evidence evaluation"
-    final_verdict, verdicts, reasonings = advocate_mediator_strategy.evaluate_claim(claim)
+    final_verdict, verdicts, reasonings, _, _ = advocate_mediator_strategy.evaluate_claim(claim)
 
     # Verify that evaluate_claim was called three times (one per advocate).
     assert dummy_adv.evaluate_claim.call_count == 3
@@ -39,8 +39,8 @@ def test_mediator_synthesis_logic(
     """Test that mediator properly synthesizes different combinations of verdicts."""
     dummy_adv = mock_advocate_step.return_value
     dummy_adv.evaluate_claim.side_effect = [
-        ("SUPPORTS", "Support reasoning"),
-        ("REFUTES", "Refute reasoning")
+        ("SUPPORTS", "Support reasoning", None, None, None),
+        ("REFUTES", "Refute reasoning", None, None, None),
     ]
 
     dummy_med = mock_mediator_step.return_value
@@ -49,11 +49,11 @@ def test_mediator_synthesis_logic(
     strategy = advocate_mediator_strategy_factory(2)
 
     claim = "Test claim for mediator synthesis"
-    final_verdict, verdicts, reasonings = strategy.evaluate_claim(claim)
+    final_verdict, verdicts, reasonings, _, _ = strategy.evaluate_claim(claim)
 
     expected_verdicts = [
         ("SUPPORTS", "Support reasoning"),
-        ("REFUTES", "Refute reasoning")
+        ("REFUTES", "Refute reasoning"),
     ]
     dummy_med.synthesize_verdicts.assert_called_once_with(expected_verdicts, claim)
     assert final_verdict == "INCONCLUSIVE"
@@ -114,7 +114,7 @@ def test_fail_fast_on_advocate_error(
     advocate1 = Mock()
     advocate1.evaluate_claim.side_effect = Exception("Evidence evaluation failed")
     advocate2 = Mock()
-    advocate2.evaluate_claim.return_value = ("SUPPORTS", "Successful evaluation")
+    advocate2.evaluate_claim.return_value = ("SUPPORTS", "Successful evaluation", None, None, None)
     
     # Set the side effect on the patched AdvocateStep: first call fails, second would succeed.
     mock_advocate_step.side_effect = [advocate1, advocate2]
@@ -182,7 +182,7 @@ def test_real_world_configuration(mock_llama_indexer, mock_llama_retriever, mock
 
     # Test with a realistic climate claim
     claim = "Global temperatures have not risen in the past decade"
-    final_verdict, verdicts, reasonings = strategy.evaluate_claim(claim)
+    final_verdict, verdicts, reasonings, _, _ = strategy.evaluate_claim(claim)
 
     # Verify the configuration was properly passed to the advocate step
     mock_advocate_step.assert_called_with(

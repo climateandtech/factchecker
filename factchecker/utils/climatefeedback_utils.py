@@ -170,7 +170,7 @@ def evaluate_climatefeedback_claim(
         Exception: If evaluation fails
     """
     try:
-        final_verdict, verdicts, reasonings = strategy.evaluate_claim(claim)
+        final_verdict, verdicts, reasonings, _, _ = strategy.evaluate_claim(claim)
         collectors = collect_evaluation_results(
             collectors,
             (true_label, final_verdict, verdicts, reasonings),
