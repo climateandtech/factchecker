@@ -85,7 +85,7 @@ def test_evaluate_claim(mock_llm: MagicMock, mock_retriever: MagicMock) -> None:
         options=options, 
         evidence_options=evidence_options
     )
-    verdict, reasoning = advocate.evaluate_claim("Test claim")
+    verdict, reasoning, _, _, _ = advocate.evaluate_claim("Test claim")
     
     assert mock_llm.chat.called
     assert verdict == "CORRECT"
@@ -98,7 +98,7 @@ def test_llm_error_handling(mock_llm: MagicMock, mock_retriever: MagicMock) -> N
         retriever=mock_retriever,
         llm=mock_llm,
     )
-    verdict, reasoning = advocate.evaluate_claim("Test claim")
+    verdict, reasoning, _, _, _ = advocate.evaluate_claim("Test claim")
     
     assert verdict == "ERROR_PARSING_RESPONSE"
     assert reasoning == "No reasoning available"
@@ -117,7 +117,7 @@ def test_retry_mechanism(mock_llm: MagicMock, mock_retriever: MagicMock) -> None
         llm=mock_llm,
     )
     
-    verdict, reasoning = advocate.evaluate_claim("Test claim")
+    verdict, reasoning, _, _, _ = advocate.evaluate_claim("Test claim")
     assert verdict == "CORRECT"
     assert mock_llm.chat.call_count == 3
 
@@ -131,7 +131,7 @@ def test_advocate_retry_includes_format_feedback(mock_llm: MagicMock, mock_retri
         MagicMock(message=MagicMock(content=right)),
     ]
     advocate = AdvocateStep(retriever=mock_retriever, llm=mock_llm)
-    verdict, _ = advocate.evaluate_claim("Test claim")
+    verdict, _, _, _, _ = advocate.evaluate_claim("Test claim")
     assert verdict == "CORRECT"
     assert mock_llm.chat.call_count == 2
     messages_second = mock_llm.chat.call_args[0][0]
@@ -155,7 +155,7 @@ def test_advocate_custom_verdict_parser(mock_llm: MagicMock, mock_retriever: Mag
         llm=mock_llm,
         options={"verdict_parser": parse_json_style},
     )
-    verdict, reasoning = advocate.evaluate_claim("Test claim")
+    verdict, reasoning, _, _, _ = advocate.evaluate_claim("Test claim")
     assert verdict == "CORRECT"
     assert "Parsed from JSON-style" in reasoning
     assert mock_llm.chat.call_count == 1 

@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Callable, Optional
 
@@ -48,28 +49,47 @@ class MediatorStep:
         self.system_prompt = self.options.pop('system_prompt', '')
         self.max_retries = self.options.pop('max_retries', 3)
         self.verdict_parser: Optional[Callable[[str], Optional[str]]] = self.options.pop('verdict_parser', None)
+        self.verdict_format_instruction: Optional[str] = self.options.pop('verdict_format_instruction', None)
+        self.user_message_suffix: Optional[str] = self.options.pop('user_message_suffix', None)
         self.additional_options = {key: self.options.pop(key) for key in list(self.options.keys())}
 
-    def synthesize_verdicts(self, verdicts_and_reasonings, claim):
+    def synthesize_verdicts(
+        self,
+        verdicts_and_reasonings,
+        claim: str,
+        evidence_summary: Optional[str] = None,
+    ):
         """
         Synthesize multiple verdicts and their reasoning into a final consensus verdict.
 
         Args:
-            verdicts_and_reasonings (list): List of (verdict, reasoning) tuples from advocates
+            verdicts_and_reasonings (list): List of (verdict, reasoning) or (verdict, reasoning, weights_dict) per advocate
             claim (str): The claim being evaluated
+            evidence_summary (str, optional): Most relevant supporting/refuting evidence to show the mediator
 
         Returns:
-            str: The final consensus verdict (CORRECT, INCORRECT, NOT_ENOUGH_INFORMATION, or ERROR_PARSING_RESPONSE)
+            str: The final consensus verdict (or weighted JSON string when using custom verdict_parser)
         """
-        # Format the verdicts and reasonings with <> tags
-        formatted_verdicts_and_reasonings = "\n".join(
-            [f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>" for verdict, reasoning in verdicts_and_reasonings]
-        )
+        lines = []
+        for item in verdicts_and_reasonings:
+            verdict = item[0]
+            reasoning = item[1] if len(item) > 1 else ""
+            line = f"<verdict>{verdict}</verdict><reasoning>{reasoning}</reasoning>"
+            if len(item) > 2 and item[2] is not None:
+                weights = item[2]
+                if isinstance(weights, dict):
+                    line += f"<weight_distribution>{json.dumps(weights)}</weight_distribution>"
+            lines.append(line)
+        formatted_verdicts_and_reasonings = "\n".join(lines)
         
         user_content = (
             f"Here are the verdicts and reasonings of the different advocates:\n{formatted_verdicts_and_reasonings}\n"
             f"Please provide the final verdict as ((correct)), ((incorrect)), or ((not_enough_information)) for the claim: {claim}"
         )
+        if evidence_summary:
+            user_content += f"\n\nMost relevant evidence from the advocates:\n{evidence_summary}"
+        if self.user_message_suffix:
+            user_content += self.user_message_suffix
         messages = [
             ChatMessage(role="system", content=self.system_prompt),
             ChatMessage(role="user", content=user_content)
@@ -77,11 +97,12 @@ class MediatorStep:
 
         valid_options = {key: value for key, value in self.additional_options.items() if key in ["response_format", "temperature", "max_tokens", "top_p", "frequency_penalty", "presence_penalty"]}
         parse_fn = self.verdict_parser if self.verdict_parser is not None else _default_mediator_parser
+        format_instruction = self.verdict_format_instruction if self.verdict_format_instruction is not None else MEDIATOR_VERDICT_FORMAT
         result = chat_with_verdict_retry(
             messages,
             self.llm,
             parse_fn,
-            MEDIATOR_VERDICT_FORMAT,
+            format_instruction,
             self.max_retries,
             valid_options,
             logger,

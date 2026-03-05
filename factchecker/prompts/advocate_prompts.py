@@ -77,3 +77,76 @@ def get_default_user_prompt(
 
     # Return as formatted JSON string for better readability
     return json.dumps(input_data, indent=4, ensure_ascii=False)
+
+
+def chunk_stats_from_classified(classified_evidence: list[dict]) -> dict:
+    """
+    Compute counts from classified evidence so NIN and chunks without relevant_phrase are tracked.
+    Returns dict with n_supports, n_refutes, n_nin, n_with_relevant_phrase, n_without_relevant_phrase, n_total.
+    """
+    n_supports = n_refutes = n_nin = n_with_phrase = 0
+    for c in classified_evidence or []:
+        if not isinstance(c, dict):
+            continue
+        stance = (c.get("stance") or "").strip().lower()
+        if stance == "supports":
+            n_supports += 1
+        elif stance == "refutes":
+            n_refutes += 1
+        else:
+            n_nin += 1
+        if (c.get("relevant_phrase") or "").strip():
+            n_with_phrase += 1
+    n_total = n_supports + n_refutes + n_nin
+    n_without_phrase = n_total - n_with_phrase
+    return {
+        "n_supports": n_supports,
+        "n_refutes": n_refutes,
+        "n_nin": n_nin,
+        "n_with_relevant_phrase": n_with_phrase,
+        "n_without_relevant_phrase": n_without_phrase,
+        "n_total": n_total,
+    }
+
+
+def get_classified_evidence_user_prompt(
+        claim: str,
+        classified_evidence: list[dict],
+        label_options: dict[str, str],
+        evidence_display_mode: str = "full",
+        chunk_stats: dict | None = None,
+    ) -> str:
+    """
+    User prompt variant that includes pre-classified evidence (with stance labels).
+
+    Args:
+        claim: The claim to be fact-checked.
+        classified_evidence: List of dicts with text, stance, optional relevant_phrase, chunk_id, reason.
+        label_options: Dict mapping verdict labels to their Science Feedback descriptions.
+        evidence_display_mode: "full" = pass full chunk text; "relevant_only" = pass only relevant_phrase
+            or "[no specific relevant part]" so chunks without a phrase and NIN chunks still appear with a placeholder.
+        chunk_stats: Optional dict from chunk_stats_from_classified(); added as chunk_summary so model sees counts.
+
+    Returns:
+        JSON-formatted string for the advocate LLM.
+    """
+    display = classified_evidence
+    if evidence_display_mode == "relevant_only" and classified_evidence:
+        display = []
+        for c in classified_evidence:
+            copy = dict(c)
+            phrase = (c.get("relevant_phrase") or "").strip()
+            copy["text"] = phrase if phrase else "[no specific relevant part]"
+            display.append(copy)
+    input_data = {
+        "claim": claim,
+        "classified_evidence": display,
+        "label_options": label_options,
+    }
+    if chunk_stats:
+        input_data["chunk_summary"] = (
+            f"Chunks: {chunk_stats.get('n_supports', 0)} supporting, {chunk_stats.get('n_refutes', 0)} refuting, "
+            f"{chunk_stats.get('n_nin', 0)} NIN; {chunk_stats.get('n_with_relevant_phrase', 0)} with highlighted relevant phrase, "
+            f"{chunk_stats.get('n_without_relevant_phrase', 0)} without."
+        )
+    return json.dumps(input_data, indent=4, ensure_ascii=False)

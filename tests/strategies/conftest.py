@@ -70,7 +70,7 @@ def mock_advocate_step()-> Generator[Mock, None, None]:
     """Fixture to mock the AdvocateStep class."""
     with patch('factchecker.strategies.advocate_mediator.AdvocateStep', autospec=True) as mock:
         advocate = Mock()
-        advocate.evaluate_claim.return_value = ("SUPPORTS", "Based on strong evidence, this claim is supported")
+        advocate.evaluate_claim.return_value = ("SUPPORTS", "Based on strong evidence, this claim is supported", None, None, None)
         mock.return_value = advocate
         yield mock
 
