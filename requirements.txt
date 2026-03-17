@@ -149,7 +149,7 @@ ptyprocess==0.7.0
 pure-eval==0.2.2
 pyarrow==16.1.0
 pyarrow-hotfix==0.6
-pyasn1==0.6.0
+pyasn1==0.6.3
 pyasn1_modules==0.4.0
 pydantic==2.10.4
 pydantic_core==2.27.2
