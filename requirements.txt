@@ -154,7 +154,7 @@ pyasn1_modules==0.4.0
 pydantic==2.10.4
 pydantic_core==2.27.2
 pydub==0.25.1
-Pygments==2.18.0
+Pygments==2.20.0
 PyMuPDF==1.24.5
 PyMuPDFb==1.24.3
 pynvml==11.5.0
