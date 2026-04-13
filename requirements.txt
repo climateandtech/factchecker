@@ -161,7 +161,7 @@ pynvml==11.5.0
 pypdf==4.0.1
 PyPika==0.48.9
 pyproject_hooks==1.1.0
-pytest==8.2.2
+pytest==9.0.3
 pytest-cov==6.0.0
 pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
