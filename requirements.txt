@@ -137,7 +137,7 @@ packaging==23.2
 pandas==2.2.2
 parso==0.8.4
 pexpect==4.9.0
-pillow==10.3.0
+pillow==12.2.0
 pipdeptree==2.22.0
 platformdirs==4.2.2
 pluggy==1.5.0
