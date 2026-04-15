@@ -166,7 +166,7 @@ pytest-cov==6.0.0
 pytest-mock==3.14.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.0.1
-python-multipart==0.0.20
+python-multipart==0.0.26
 pytz==2024.1
 PyYAML==6.0.1
 pyzmq==26.0.3
