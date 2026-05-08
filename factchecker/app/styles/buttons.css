@@ -1,0 +1,30 @@
+.confirm-btn {
+    font-size: 1rem;
+	background: var(--aw-color-red);
+    border-radius: 9999px;
+    padding: .7rem 3rem .7rem 3rem;
+    width: 20rem; 
+}
+
+.learn-more-btn {
+    font-size: 1rem;
+	background: rgb(229, 229, 229);
+    border-radius: 9999px;
+    border-width: .1rem;
+    border-color: rgb(183, 183, 183);
+    padding: .7rem 3rem .7rem 3rem;
+    width: 20rem;
+}
+
+/* .confirm-btn font color */
+.secondary.svelte-xzq5jh {
+    color: var(--aw-color-bg-lightest);
+}
+
+
+.btn-group, div.svelte-1p9262q, element.style {
+    background: none;
+    border: none;
+    gap: .3rem;
+    align-items: center;
+}

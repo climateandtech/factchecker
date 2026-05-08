@@ -11,3 +11,8 @@
     --aw-color-text-darker: #141A29;
 	--aw-color-blue: #3457B5;
 }
+
+/* bg-color of whole Website */
+.bg-color, .gradio-container {
+    background-color: var(--aw-color-bg-light);
+}

@@ -1,10 +1,3 @@
-.main-container {
-    max-width: 1200px;
-    margin: auto;
-    padding: 2rem;
-    
-}
-
 .fact-checker-container {
     max-width: 1200px;
     background-color: var(--aw-color-bg-lightest);
@@ -13,6 +6,3 @@
     border-radius: 0.5rem;
     
 }
-
-
-

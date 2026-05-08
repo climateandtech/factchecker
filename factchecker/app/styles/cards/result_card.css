@@ -1,0 +1,31 @@
+.result-card {
+    padding: 1rem 1.8rem 1rem 1.3rem;
+    box-shadow: .1rem .2rem .4rem rgba(20, 26, 41, 0.3);
+    border-radius: .5rem;
+}
+
+
+.pill-evidence{
+    border-width: .15rem;
+    padding: .2rem .65rem ;
+    border-radius: 9999px;
+    border-color: var(--aw-color-green);
+    background: var(--aw-color-bg-lightest);
+    margin: .1rem;
+    font-weight:100;
+    position: relative;
+    top: .2rem;
+}
+
+h2 i {
+    position: relative;
+    top: -.5rem;
+    left: 1rem; 
+    font-size: 1rem;
+    background-color: var(--aw-color-red);
+    color: white;
+    border-radius: 9999px;
+    padding: .7rem 3rem .7rem 3rem;
+    width: 20rem; 
+    font-size: 1.2rem;
+}

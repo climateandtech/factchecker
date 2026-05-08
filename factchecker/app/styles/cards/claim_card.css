@@ -1,0 +1,10 @@
+.claim-card {
+    padding: 2rem;
+    align-items: center;
+}
+
+.claim-text-area, textarea{
+    min-height: 10vh;
+    border: 0;
+    background-color: var(--aw-color-bg-lightest);
+}

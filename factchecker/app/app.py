@@ -10,6 +10,11 @@ BASE_DIR = Path(__file__).resolve().parent / "styles"
 css_files = [
     "styles.css",
     "colors.css",
+    "fonts.css",
+    "buttons.css",
+    "cards/result_card.css",
+    "cards/claim_card.css",
+    "cards/factchecker_card.css",
 ]
 
 css = ""
