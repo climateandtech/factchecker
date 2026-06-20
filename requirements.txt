@@ -158,7 +158,7 @@ Pygments==2.18.0
 PyMuPDF==1.24.5
 PyMuPDFb==1.24.3
 pynvml==11.5.0
-pypdf==4.0.1
+pypdf==6.13.3
 PyPika==0.48.9
 pyproject_hooks==1.1.0
 pytest==8.2.2
