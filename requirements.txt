@@ -83,7 +83,7 @@ langchain==0.1.20
 langchain-community==0.0.38
 langchain-core==0.1.52
 langchain-text-splitters==0.0.2
-langsmith==0.1.77
+langsmith==0.8.18
 llama-cloud==0.1.9
 llama-index-agent-openai==0.3.3
 llama-index-cli==0.3.1
