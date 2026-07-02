@@ -1,0 +1,8 @@
+.fact-checker-container {
+    max-width: 1200px;
+    background-color: var(--aw-color-bg-lightest);
+    border-width: 0.1rem;
+    border-color: var(--aw-color-red);
+    border-radius: 0.5rem;
+    
+}
