@@ -183,3 +183,6 @@ concatenated_python_code.py
 
 # storage folder
 storage/
+
+# gradio
+*.pem
