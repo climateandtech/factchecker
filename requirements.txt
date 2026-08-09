@@ -50,7 +50,7 @@ frozenlist==1.4.1
 fsspec==2024.3.1
 git-python==1.0.3
 gitdb==4.0.11
-GitPython==3.1.43
+GitPython==3.1.58
 google-auth==2.32.0
 googleapis-common-protos==1.63.2
 gradio==5.12.0
