@@ -16,7 +16,7 @@ blinker==1.8.2
 build==1.2.1
 cachetools==5.3.3
 catalogue==2.0.10
-certifi==2024.12.14
+certifi==2026.10.19
 charset-normalizer==3.3.2
 chroma-hnswlib==0.7.5
 chromadb==0.5.4
