@@ -33,7 +33,7 @@ Deprecated==1.2.14
 dill==0.3.8
 dirtyjson==1.0.8
 distro==1.9.0
-dnspython==2.6.1
+dnspython==2.9.0
 email_validator==2.2.0
 exceptiongroup==1.2.1
 executing==2.0.1
